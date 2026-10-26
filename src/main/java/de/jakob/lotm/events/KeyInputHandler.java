@@ -8,9 +8,11 @@ import de.jakob.lotm.data.ModDataComponents;
 import de.jakob.lotm.gui.custom.ability_wheel.AbilityWheelScreen;
 import de.jakob.lotm.network.PacketHandler;
 import de.jakob.lotm.network.packets.toServer.*;
+import de.jakob.lotm.rendering.AbilityHotBarRenderer;
 import de.jakob.lotm.util.ClientBeyonderCache;
 import de.jakob.lotm.util.data.AbilityWheelClientData;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
@@ -212,35 +214,15 @@ public class KeyInputHandler {
             holdAbilityWheelCooldownTicks--;
         }
 
-        if(LOTMCraft.useAbilityBarAbility1 != null && LOTMCraft.useAbilityBarAbility1.consumeClick()) {
-            PacketHandler.sendToServer(new UseKeyboundAbilityPacket(0));
+        if (LOTMCraft.toggleAbilityHotbarKey != null && LOTMCraft.toggleAbilityHotbarKey.consumeClick()) {
+            AbilityHotBarRenderer.toggle();
         }
-        if(LOTMCraft.useAbilityBarAbility2 != null && LOTMCraft.useAbilityBarAbility2.consumeClick()) {
-            PacketHandler.sendToServer(new UseKeyboundAbilityPacket(1));
-        }
-        if(LOTMCraft.useAbilityBarAbility3 != null && LOTMCraft.useAbilityBarAbility3.consumeClick()) {
-            PacketHandler.sendToServer(new UseKeyboundAbilityPacket(2));
-        }
-        if(LOTMCraft.useAbilityBarAbility4 != null && LOTMCraft.useAbilityBarAbility4.consumeClick()) {
-            PacketHandler.sendToServer(new UseKeyboundAbilityPacket(3));
-        }
-        if(LOTMCraft.useAbilityBarAbility5 != null && LOTMCraft.useAbilityBarAbility5.consumeClick()) {
-            PacketHandler.sendToServer(new UseKeyboundAbilityPacket(4));
-        }
-        if(LOTMCraft.useAbilityBarAbility6 != null && LOTMCraft.useAbilityBarAbility6.consumeClick()) {
-            PacketHandler.sendToServer(new UseKeyboundAbilityPacket(5));
-        }
-        if(LOTMCraft.useAbilityBarAbility7 != null && LOTMCraft.useAbilityBarAbility7.consumeClick()) {
-            PacketHandler.sendToServer(new UseKeyboundAbilityPacket(6));
-        }
-        if(LOTMCraft.useAbilityBarAbility8 != null && LOTMCraft.useAbilityBarAbility8.consumeClick()) {
-            PacketHandler.sendToServer(new UseKeyboundAbilityPacket(7));
-        }
-        if(LOTMCraft.useAbilityBarAbility9 != null && LOTMCraft.useAbilityBarAbility9.consumeClick()) {
-            PacketHandler.sendToServer(new UseKeyboundAbilityPacket(8));
-        }
-        if(LOTMCraft.useAbilityBarAbility0 != null && LOTMCraft.useAbilityBarAbility0.consumeClick()) {
-            PacketHandler.sendToServer(new UseKeyboundAbilityPacket(9));
+
+        for (int i = 0; i < LOTMCraft.useAbilityBarKeys.length; i++) {
+            KeyMapping keyMapping = LOTMCraft.useAbilityBarKeys[i];
+            if (keyMapping != null && keyMapping.consumeClick()) {
+                PacketHandler.sendToServer(new UseKeyboundAbilityPacket(i));
+            }
         }
 
 
