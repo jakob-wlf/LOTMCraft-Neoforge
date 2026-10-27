@@ -37,19 +37,23 @@ public class SpiritHandler {
         return 10;
     }
 
-    public static boolean isCapturableSpirit(Entity spirit) {
+    public static boolean isSpirit(Entity spirit) {
         return
                 spirit instanceof SpiritBubblesEntity ||
-                spirit instanceof SpiritDervishEntity ||
-                spirit instanceof SpiritMalmouthEntity ||
-                spirit instanceof SpiritGhostEntity ||
-                spirit instanceof RabbitOfKnowledgeEntity ||
-                spirit instanceof SpiritBlueWizardEntity ||
-                spirit instanceof SpiritTranslucentWizardEntity ||
-                spirit instanceof AbscessedHandEntity ||
-                spirit instanceof SpiritGrimReaperEntity ||
-                spirit instanceof HeadlessBrideEntity ||
-                spirit instanceof SpiritBizarroBaneEntity ||
+                        spirit instanceof SpiritDervishEntity ||
+                        spirit instanceof SpiritMalmouthEntity ||
+                        spirit instanceof SpiritGhostEntity ||
+                        spirit instanceof RabbitOfKnowledgeEntity ||
+                        spirit instanceof SpiritBlueWizardEntity ||
+                        spirit instanceof SpiritTranslucentWizardEntity ||
+                        spirit instanceof AbscessedHandEntity ||
+                        spirit instanceof SpiritGrimReaperEntity ||
+                        spirit instanceof HeadlessBrideEntity ||
+                        spirit instanceof SpiritBizarroBaneEntity;
+    }
+
+    public static boolean isCapturableSpirit(Entity spirit) {
+        return
                 spirit instanceof ZombieVillager ||
                 spirit instanceof Husk ||
                 spirit instanceof Drowned ||
@@ -59,6 +63,7 @@ public class SpiritHandler {
                 spirit instanceof Stray ||
                 spirit instanceof Phantom ||
                 spirit instanceof Vex ||
-                spirit instanceof Hoglin;
+                spirit instanceof Hoglin ||
+                isSpirit(spirit);
     }
 }

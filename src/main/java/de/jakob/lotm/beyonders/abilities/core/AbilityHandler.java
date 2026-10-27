@@ -53,6 +53,7 @@ public class AbilityHandler {
         abilities.add(new SunHaloAbility("sun_halo_ability"));
         abilities.add(new HolyOathAbility("holy_oath_ability"));
         abilities.add(new HolyLightSummoningAbility("holy_light_summoning_ability"));
+        abilities.add(new HolyWaterAbility("holy_water_ability"));
         abilities.add(new NotarizationAbility("notarization_ability"));
         abilities.add(new GodSaysItsEffectiveAbility("notary_buff_ability"));
         abilities.add(new GodSaysItsNotEffectiveAbility("notary_debuff_ability"));
@@ -64,6 +65,9 @@ public class AbilityHandler {
         abilities.add(new UnshadowedDomainAbility("unshadowed_domain_ability"));
         abilities.add(new WallOfLightAbility("wall_of_light_ability"));
         abilities.add(new SwordOfJusticeAbility("sword_of_justice_ability"));
+        abilities.add(new SetOfPrinciplesAbility("set_of_principles_ability"));
+        abilities.add(new JudgementOfJusticeAbility("judgement_of_justice_ability"));
+        abilities.add(new JusticeHaloAbility("justice_halo_ability"));
         abilities.add(new SpearOfLightAbility("spear_of_light_ability"));
         abilities.add(new SolarEnvoyAbility("solar_envoy_ability"));
         abilities.add(new WingsOfLightAbility("wings_of_light_ability"));

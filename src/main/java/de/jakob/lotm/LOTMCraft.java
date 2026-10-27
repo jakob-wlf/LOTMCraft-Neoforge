@@ -114,6 +114,7 @@ import de.jakob.lotm.gui.custom.encyclopedia.IngredientEncyclopediaScreen;
 import de.jakob.lotm.gui.custom.flaming_jump.FlamingJumpScreen;
 import de.jakob.lotm.gui.custom.introspect.IntrospectScreen;
 import de.jakob.lotm.gui.custom.honorific_names.HonorificNamesScreen;
+import de.jakob.lotm.gui.custom.justice_selection.JusticePrincipleScreen;
 import de.jakob.lotm.gui.custom.marionettes.MarionetteControlScreen;
 import de.jakob.lotm.gui.custom.mass_puppeteering.MassPuppeteeringScreen;
 import de.jakob.lotm.gui.custom.notarization.ConfirmMenu;
@@ -444,6 +445,7 @@ public class LOTMCraft
             event.register(ModMenuTypes.INGREDIENT_ENCYCLOPEDIA.get(), IngredientEncyclopediaScreen::new);
             event.register(ModMenuTypes.CONTRACT.get(), ContractScreen::new);
             event.register(ModMenuTypes.CONFIRM_CONTRACT.get(), ConfirmScreen::new);
+            event.register(ModMenuTypes.JUSTICE_PRINCIPLES.get(), JusticePrincipleScreen::new);
         }
 
         @SubscribeEvent

@@ -1,6 +1,7 @@
 package de.jakob.lotm.beyonders.abilities.door;
 
 import de.jakob.lotm.LOTMCraft;
+import de.jakob.lotm.attachments.BlockExpiryData;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.particle.ModParticles;
 import de.jakob.lotm.util.BeyonderData;
@@ -124,6 +125,7 @@ public class SpatialCageAbility extends SelectableAbility {
             }
 
             this.barrierBlocks.addAll(barrierBlocks);
+            BlockExpiryData.get(level).scheduleAll(level, barrierBlocks, 20 * 60);
         }
 
         void removeCage() {
@@ -131,6 +133,7 @@ public class SpatialCageAbility extends SelectableAbility {
                 level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
             }
             activeCages.getOrDefault(owner, new HashSet<>()).remove(this);
+
         }
 
         void updateCage() {
@@ -139,6 +142,7 @@ public class SpatialCageAbility extends SelectableAbility {
                     continue;
                 }
                 level.setBlockAndUpdate(pos, Blocks.BARRIER.defaultBlockState());
+                BlockExpiryData.get(level).schedule(level, pos, 20 * 60);
             }
         }
 

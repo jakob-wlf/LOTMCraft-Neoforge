@@ -10,6 +10,7 @@ import de.jakob.lotm.gui.custom.honorific_names.HonorificNamesMenu;
 import de.jakob.lotm.gui.custom.ability_wheel.AbilityWheelMenu;
 import de.jakob.lotm.gui.custom.brewing_cauldron.BrewingCauldronMenu;
 import de.jakob.lotm.gui.custom.introspect.IntrospectMenu;
+import de.jakob.lotm.gui.custom.justice_selection.JusticePrincipleMenu;
 import de.jakob.lotm.gui.custom.marionettes.MarionetteMenu;
 import de.jakob.lotm.gui.custom.mass_puppeteering.MassPuppeteeringMenu;
 import de.jakob.lotm.gui.custom.notarization.ConfirmMenu;
@@ -126,6 +127,9 @@ public class ModMenuTypes {
                 return new ArtifactWheelMenu(windowId, inv, stack);
             })
     );
+
+    public static final DeferredHolder<MenuType<?>, MenuType<JusticePrincipleMenu>> JUSTICE_PRINCIPLES =
+            MENU_TYPES.register("justice_principles", () -> IMenuTypeExtension.create((id, inventory, buf) -> new JusticePrincipleMenu(id, inventory)));
 
     public static void register(IEventBus eventBus) {
         MENU_TYPES.register(eventBus);
