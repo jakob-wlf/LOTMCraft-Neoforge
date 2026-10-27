@@ -60,9 +60,9 @@ public class NightmareAbility extends SelectableAbility {
     private static final HashMap<ResourceKey<Level>, HashSet<BlockPos>> noDropPositions = new HashMap<>();
     private static final Map<UUID, Dream> dreams = new HashMap<>();
     private static final Set<UUID> ending = new HashSet<>();
-    private static final int COPY_RADIUS = 24;
+    private static final int COPY_RADIUS = 25;
+    private static final int SEQUENCE_SCALE = 5;
     private static final String RETURN_TAG = "lotm_nightmare_return";
-    private static int plots;
     private static UUID loggingOut;
 
     public static HashMap<ResourceKey<Level>, HashSet<BlockPos>> getNoDropPositions() {
@@ -308,13 +308,13 @@ public class NightmareAbility extends SelectableAbility {
                 sendBack(server, target.id, target.spot);
                 discard(server, target.body);
             }
-            fill(dream.maze, dream.plot, dream.maze, dream.plot, true);
+            fill(dream.maze, dream.plot, dream.maze, dream.plot, dream.radius, true);
             HashSet<BlockPos> marked = noDropPositions.get(dream.maze.dimension());
             if (marked != null) {
                 Vec3 center = Vec3.atBottomCenterOf(dream.plot);
-                marked.removeIf(pos -> pos.getCenter().distanceToSqr(center) <= (COPY_RADIUS * COPY_RADIUS));
+                marked.removeIf(pos -> pos.getCenter().distanceToSqr(center) <= (dream.radius * dream.radius));
             }
-            syncFog(server, uuid, dream.targets, false, Vec3.ZERO);
+            syncFog(server, uuid, dream.targets, false, Vec3.ZERO, 0);
         } finally {
             ending.remove(uuid);
         }
@@ -349,18 +349,37 @@ public class NightmareAbility extends SelectableAbility {
             stopNightmare(caster.getUUID());
             return;
         }
+
+        MinecraftServer server = caster.getServer();
+        if (server == null) return;
+        int playerSeq = BeyonderData.getSequence(caster);
+        List<UUID> same = new ArrayList<>();
+        for (Map.Entry<UUID, Dream> entry : dreams.entrySet()) {
+            LivingEntity other = find(server, entry.getKey());
+            int otherSeq = other == null ? entry.getValue().casterSeq : BeyonderData.getSequence(other);
+            if (otherSeq == playerSeq) same.add(entry.getKey());
+        }
+        if (!same.isEmpty()) {
+            bar(caster, "Both nightmares are broken.");
+            for (UUID id : same) {
+                LivingEntity other = find(server, id);
+                if (other instanceof ServerPlayer player && player != caster) bar(player, "Both nightmares are broken.");
+                stopNightmare(id);
+            }
+            return;
+        }
         if (dreamOf(caster.getUUID()) != null) {
             bar(caster, "You are already dreaming.");
             return;
         }
 
         int seq = AbilityUtil.getSeqWithArt(caster, this);
+        int reach = COPY_RADIUS + SEQUENCE_SCALE * Math.max(0, 7 - seq);
         List<LivingEntity> pool = new ArrayList<>();
         if (seq <= 4) {
-            double pullRadius = 15.0 * (4 - seq + 1);
-            pool.addAll(AbilityUtil.getNearbyEntities(caster, (ServerLevel) caster.level(), caster.position(), pullRadius, false, true));
+            pool.addAll(AbilityUtil.getNearbyEntities(caster, (ServerLevel) caster.level(), caster.position(), reach, false, true));
         } else {
-            LivingEntity looked = AbilityUtil.getTargetEntity(caster, baseDistance, 2);
+            LivingEntity looked = AbilityUtil.getTargetEntity(caster, reach, 2);
             if (looked != null && looked != caster) pool.add(looked);
         }
         pool.removeIf(candidate -> candidate instanceof NightmareBodyEntity);
@@ -392,84 +411,50 @@ public class NightmareAbility extends SelectableAbility {
             return;
         }
 
-        LivingEntity focus = pulled.get(0);
-        double closest = Double.MAX_VALUE;
-        for (LivingEntity candidate : pulled) {
-            double distance = candidate.distanceToSqr(caster);
-            if (distance < closest) {
-                closest = distance;
-                focus = candidate;
-            }
-        }
-        LivingEntity looked = AbilityUtil.getTargetEntity(caster, baseDistance, 2);
-        if (looked != null && pulled.contains(looked)) focus = looked;
-
-        MinecraftServer server = caster.getServer();
-        if (server == null) return;
         ServerLevel maze = server.getLevel(ModDimensions.DREAM_MAZE_DIMENSION_KEY);
         if (maze == null) {
             bar(caster, "The dream has nowhere to open.");
             return;
         }
 
-        ServerLevel source = (ServerLevel) focus.level();
-        BlockPos anchor = focus.blockPosition();
-        if (focus instanceof ServerPlayer focusPlayer && focusPlayer.getRespawnPosition() != null) {
-            ServerLevel respawnLevel = server.getLevel(focusPlayer.getRespawnDimension());
-            if (respawnLevel != null) {
-                source = respawnLevel;
-                anchor = focusPlayer.getRespawnPosition();
-            }
-        }
+        ServerLevel source = (ServerLevel) caster.level();
+        BlockPos anchor = caster.blockPosition();
+        int minY = maze.getMinBuildHeight();
+        int maxY = maze.getMaxBuildHeight() - 1;
+        int margin = Math.min(reach, Math.max(1, (maxY - minY) / 2));
+        int low = minY + margin;
+        int high = maxY - margin;
+        int shiftedY = low <= high ? Math.clamp(anchor.getY(), low, high) : Math.clamp(anchor.getY(), minY + 1, maxY - 1);
+        int yShift = shiftedY - anchor.getY();
+        BlockPos plot = anchor.offset(0, yShift, 0);
+        Vec3 centerPos = caster.position().add(0, yShift, 0);
 
         int seconds = (int) Math.min(60f, 8 + (casterSpirit - strongest) / 150f);
-        BlockPos plot = new BlockPos(-20000 - plots++ * 40, 64, 0);
-        fill(source, anchor, maze, plot, false);
+        fill(source, anchor, maze, plot, reach, false);
 
         Spot casterSpot = spot(caster);
         remember(caster);
         ParticleUtil.spawnParticles((ServerLevel) caster.level(), dustSmall, caster.position().add(0, 1, 0), 30, .3, .5, .3, 0);
         UUID casterBody = leaveBody(caster, caster.getUUID());
 
-        Vec3 anchorVec = Vec3.atBottomCenterOf(anchor);
-        Vec3 plotVec = Vec3.atBottomCenterOf(plot);
-        List<Vec3> occupied = new ArrayList<>();
-        Vec3 casterDest = stand(maze, fit(caster.position(), anchorVec, plotVec));
-        occupied.add(casterDest);
-
         List<Target> targets = new ArrayList<>();
-        List<Vec3> destinations = new ArrayList<>();
         for (LivingEntity target : pulled) {
             if (target instanceof ServerPlayer targetPlayer) remember(targetPlayer);
             ParticleUtil.spawnParticles((ServerLevel) target.level(), dustSmall, target.position().add(0, 1, 0), 30, .3, .5, .3, 0);
             UUID body = leaveBody(target, caster.getUUID());
-            Vec3 dest = stand(maze, fit(target.position(), anchorVec, plotVec));
-            for (int nudge = 0; nudge < 8; nudge++) {
-                boolean crowded = false;
-                for (Vec3 taken : occupied) {
-                    if (dest.distanceToSqr(taken) < 0.25) {
-                        crowded = true;
-                        break;
-                    }
-                }
-                if (!crowded) break;
-                dest = stand(maze, dest.add(1, 0, 0));
-            }
-            occupied.add(dest);
-            destinations.add(dest);
             targets.add(new Target(target.getUUID(), spot(target), body));
         }
 
-        place(caster, maze, casterDest, caster.getYRot(), caster.getXRot());
+        place(caster, maze, new Vec3(casterSpot.x, casterSpot.y + yShift, casterSpot.z), casterSpot.yRot, casterSpot.xRot);
         for (int i = 0; i < pulled.size(); i++) {
             LivingEntity target = pulled.get(i);
-            place(target, maze, destinations.get(i), target.getYRot(), target.getXRot());
+            Spot at = targets.get(i).spot();
+            place(target, maze, new Vec3(at.x(), at.y() + yShift, at.z()), at.yRot(), at.xRot());
         }
 
-        Vec3 centerPos = Vec3.atBottomCenterOf(plot);
-        dreams.put(caster.getUUID(), new Dream(maze, casterSpot, plot, casterBody, targets, seq));
-        activeNightmaresServer.put(caster.getUUID(), new NightmareCenter(maze, centerPos, COPY_RADIUS * COPY_RADIUS));
-        syncFog(maze.getServer(), caster.getUUID(), targets, true, centerPos);
+        dreams.put(caster.getUUID(), new Dream(maze, casterSpot, plot, casterBody, targets, seq, reach, yShift));
+        activeNightmaresServer.put(caster.getUUID(), new NightmareCenter(maze, centerPos, reach * reach));
+        syncFog(maze.getServer(), caster.getUUID(), targets, true, centerPos, reach);
 
         UUID casterId = caster.getUUID();
         int[] remaining = {seconds * 20};
@@ -627,9 +612,9 @@ public class NightmareAbility extends SelectableAbility {
         return null;
     }
 
-    private static void syncFog(MinecraftServer server, UUID casterId, List<Target> targets, boolean active, Vec3 center) {
+    private static void syncFog(MinecraftServer server, UUID casterId, List<Target> targets, boolean active, Vec3 center, int radius) {
         if (server == null) return;
-        SyncNightmareAbilityPacket packet = new SyncNightmareAbilityPacket(center.x, center.y, center.z, active ? COPY_RADIUS : 0, active);
+        SyncNightmareAbilityPacket packet = new SyncNightmareAbilityPacket(center.x, center.y, center.z, active ? radius : 0, active);
         ServerPlayer caster = server.getPlayerList().getPlayer(casterId);
         if (caster != null) PacketHandler.sendToPlayer(caster, packet);
         for (Target target : targets) {
@@ -640,15 +625,25 @@ public class NightmareAbility extends SelectableAbility {
 
     private static boolean escaped(ServerLevel maze, Dream dream, UUID id, Vec3 center) {
         LivingEntity entity = find(maze.getServer(), id);
-        if (entity == null || !entity.isAlive()) return true;
-        boolean outside = entity.level() != maze || entity.position().distanceToSqr(center) > (COPY_RADIUS * COPY_RADIUS);
+        if (entity == null) return false;
+        if (!entity.isAlive()) return true;
+        if (entity.level() != maze) {
+            Spot back = dream.casterSpot;
+            for (Target target : dream.targets) {
+                if (target.id.equals(id)) {
+                    back = target.spot;
+                    break;
+                }
+            }
+            place(entity, maze, new Vec3(back.x, back.y + dream.yShift, back.z), back.yRot, back.xRot);
+            return false;
+        }
+        boolean outside = entity.position().distanceToSqr(center) > (dream.radius * (double) dream.radius);
         if (!outside) return false;
         if (BeyonderData.getSequence(entity) <= dream.casterSeq - 1) return true;
         Vec3 back = center;
-        if (entity.level() == maze) {
-            Vec3 offset = entity.position().subtract(center);
-            if (offset.lengthSqr() > 1.0E-4) back = center.add(offset.normalize().scale(COPY_RADIUS - 1));
-        }
+        Vec3 offset = entity.position().subtract(center);
+        if (offset.lengthSqr() > 1.0E-4) back = center.add(offset.normalize().scale(dream.radius - 1));
         place(entity, maze, stand(maze, back), entity.getYRot(), entity.getXRot());
         return false;
     }
@@ -682,13 +677,6 @@ public class NightmareAbility extends SelectableAbility {
         entity.level().addFreshEntity(body);
         body.holdChunk();
         return body.getUUID();
-    }
-
-    private static Vec3 fit(Vec3 feet, Vec3 anchor, Vec3 plot) {
-        Vec3 offset = feet.subtract(anchor);
-        double max = COPY_RADIUS - 1;
-        if (offset.lengthSqr() > max * max && offset.lengthSqr() > 1.0E-4) offset = offset.normalize().scale(max);
-        return plot.add(offset);
     }
 
     private static Vec3 stand(ServerLevel level, Vec3 preferred) {
@@ -734,11 +722,11 @@ public class NightmareAbility extends SelectableAbility {
         return null;
     }
 
-    private static void fill(ServerLevel from, BlockPos anchor, ServerLevel to, BlockPos plot, boolean clear) {
-        int r2 = COPY_RADIUS * COPY_RADIUS;
-        for (int x = -COPY_RADIUS; x <= COPY_RADIUS; x++) {
-            for (int y = -COPY_RADIUS; y <= COPY_RADIUS; y++) {
-                for (int z = -COPY_RADIUS; z <= COPY_RADIUS; z++) {
+    private static void fill(ServerLevel from, BlockPos anchor, ServerLevel to, BlockPos plot, int radius, boolean clear) {
+        int r2 = radius * radius;
+        for (int x = -radius; x <= radius; x++) {
+            for (int y = -radius; y <= radius; y++) {
+                for (int z = -radius; z <= radius; z++) {
                     if (x * x + y * y + z * z > r2) continue;
                     BlockPos dest = plot.offset(x, y, z);
                     if (dest.getY() < to.getMinBuildHeight() || dest.getY() >= to.getMaxBuildHeight()) continue;
@@ -796,6 +784,6 @@ public class NightmareAbility extends SelectableAbility {
 
     private record Target(UUID id, Spot spot, UUID body) {}
 
-    private record Dream(ServerLevel maze, Spot casterSpot, BlockPos plot, UUID casterBody, List<Target> targets, int casterSeq) {}
+    private record Dream(ServerLevel maze, Spot casterSpot, BlockPos plot, UUID casterBody, List<Target> targets, int casterSeq, int radius, int yShift) {}
 
 }

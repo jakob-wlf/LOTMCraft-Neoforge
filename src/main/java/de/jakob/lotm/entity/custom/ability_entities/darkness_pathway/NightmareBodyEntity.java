@@ -101,7 +101,7 @@ public class NightmareBodyEntity extends Mob {
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
-        if (!level().isClientSide && amount > 0) {
+        if (!level().isClientSide && amount > 0 && source.getEntity() != null) {
             UUID session = entityData.get(SESSION).orElse(null);
             if (session != null) NightmareAbility.stopNightmare(session);
         }
