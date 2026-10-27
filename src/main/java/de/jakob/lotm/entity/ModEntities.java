@@ -5,6 +5,7 @@ import de.jakob.lotm.beyonders.abilities.death.handlers.SpiritHandler;
 import de.jakob.lotm.entity.custom.*;
 import de.jakob.lotm.entity.custom.ability_entities.*;
 import de.jakob.lotm.entity.custom.ability_entities.darkness_pathway.ConcealedDomainEntity;
+import de.jakob.lotm.entity.custom.ability_entities.darkness_pathway.NightmareBodyEntity;
 import de.jakob.lotm.entity.custom.ability_entities.death_pathway.DeathDivineKingdomEntity;
 import de.jakob.lotm.entity.custom.ability_entities.death_pathway.UnderworldGateEntity;
 import de.jakob.lotm.entity.custom.ability_entities.demoness_pathway.ChaosVortexEntity;
@@ -483,6 +484,13 @@ public class ModEntities {
                     .noSave()
                     .noSummon()
                     .build("control_body_double"));
+
+    public static final Supplier<EntityType<NightmareBodyEntity>> NIGHTMARE_BODY =
+            ENTITY_TYPES.register("nightmare_body", () -> EntityType.Builder.<NightmareBodyEntity>of(NightmareBodyEntity::new, MobCategory.MISC)
+                    .sized(0.6F, 1.8F)
+                    .noSave()
+                    .noSummon()
+                    .build("nightmare_body"));
 
     // Utility
 

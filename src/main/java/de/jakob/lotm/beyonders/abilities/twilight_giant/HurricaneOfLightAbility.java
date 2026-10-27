@@ -12,6 +12,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -90,6 +91,13 @@ public class HurricaneOfLightAbility extends ToggleAbility {
             return;
         }
 
+        if (entity instanceof ServerPlayer player && !player.isCreative() && !player.isSpectator()) {
+            boolean changed = player.getAbilities().flying || player.getAbilities().mayfly || player.isFallFlying();
+            player.getAbilities().flying = false;
+            player.getAbilities().mayfly = false;
+            if (player.isFallFlying()) player.stopFallFlying();
+            if (changed) player.onUpdateAbilities();
+        }
         entity.setDeltaMovement(0, Math.min(entity.getDeltaMovement().y, 0), 0);
         entity.hurtMarked = true;
         boolean twilight = BeyonderData.getSequence(entity) <= 2;

@@ -22,6 +22,7 @@ import de.jakob.lotm.entity.ModEntities;
 import de.jakob.lotm.entity.client.ability_entities.big_moon.BigMoonRenderer;
 import de.jakob.lotm.entity.client.ability_entities.big_sun.BigSunRenderer;
 import de.jakob.lotm.entity.client.ability_entities.body_double.ControlBodyDoubleRenderer;
+import de.jakob.lotm.entity.client.ability_entities.darkness_pathway.NightmareBodyRenderer;
 import de.jakob.lotm.entity.client.ability_entities.darkness_pathway.concealed_domain.ConcealedDomainRenderer;
 import de.jakob.lotm.entity.client.ability_entities.death_pathway.divine_kingdom_death.DeathDivineKingdomEntityRenderer;
 import de.jakob.lotm.entity.client.ability_entities.death_pathway.underworld_gate.UnderworldGateRenderer;
@@ -358,6 +359,7 @@ public class LOTMCraft
             EntityRenderers.register(ModEntities.PLANET.get(), PlanetRenderer::new);
             EntityRenderers.register(ModEntities.CHAOS_VORTEX.get(), ChaosVortextRenderer::new);
             EntityRenderers.register(ModEntities.CONTROL_BODY_DOUBLE.get(), ControlBodyDoubleRenderer::new);
+            EntityRenderers.register(ModEntities.NIGHTMARE_BODY.get(), NightmareBodyRenderer::new);
             EntityRenderers.register(ModEntities.RABBIT_OF_KNOWLEDGE.get(), RabbitOfKnowledgeRenderer::new);
             EntityRenderers.register(ModEntities.FORS_WALL.get(), BeyonderNPCRenderer::new);
 

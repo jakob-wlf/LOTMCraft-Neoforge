@@ -57,6 +57,7 @@ import de.jakob.lotm.entity.client.spirits.translucent_wizard.SpiritTranslucentW
 import de.jakob.lotm.entity.client.stone_golem.StoneGolemModel;
 import de.jakob.lotm.entity.custom.*;
 import de.jakob.lotm.entity.custom.ability_entities.ControlBodyDouble;
+import de.jakob.lotm.entity.custom.ability_entities.darkness_pathway.NightmareBodyEntity;
 import de.jakob.lotm.entity.custom.ability_entities.twilight_giant.SilverRapierEntity;
 import de.jakob.lotm.entity.custom.ability_entities.door_pathway.BlinkAfterimageEntity;
 import de.jakob.lotm.entity.custom.npc.ForsWallEntity;
@@ -196,6 +197,7 @@ public class ModEvents {
         event.put(ModEntities.BLINK_AFTERIMAGE.get(), BlinkAfterimageEntity.createAttributes().build());
         event.put(ModEntities.DAMAGE_TRACKER.get(), DamageTrackerEntity.createAttributes().build());
         event.put(ModEntities.CONTROL_BODY_DOUBLE.get(), ControlBodyDouble.createAttributes().build());
+        event.put(ModEntities.NIGHTMARE_BODY.get(), NightmareBodyEntity.createAttributes().build());
         event.put(ModEntities.MURLOC.get(), MurlocEntity.createAttributes().build());
         event.put(ModEntities.RABBIT_OF_KNOWLEDGE.get(), RabbitOfKnowledgeEntity.createAttributes().build());
 

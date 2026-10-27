@@ -1,6 +1,7 @@
 package de.jakob.lotm.events;
 
 import de.jakob.lotm.LOTMCraft;
+import de.jakob.lotm.dimension.ModDimensions;
 import de.jakob.lotm.beyonders.abilities.darkness.NightmareAbility;
 import de.jakob.lotm.util.data.ClientCorrosionFovCache;
 import de.jakob.lotm.beyonders.artifacts.SealedArtifactData;
@@ -161,7 +162,8 @@ public class ClientEvents {
     @SubscribeEvent
     public static void onFogColor(ViewportEvent.ComputeFogColor event) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player != null && (NightmareAbility.hasActiveNightmare(mc.player) || NightmareAbility.isAffectedByNightmare(mc.player))) {
+        if (mc.player != null && mc.player.level().dimension().equals(ModDimensions.DREAM_MAZE_DIMENSION_KEY)
+                && (NightmareAbility.hasActiveNightmare(mc.player) || NightmareAbility.isAffectedByNightmare(mc.player))) {
             int color = 0xFFff2b4f; // ARGB (0xAARRGGBB)
 
             float r = ((color >> 16) & 0xFF) / 255f;
