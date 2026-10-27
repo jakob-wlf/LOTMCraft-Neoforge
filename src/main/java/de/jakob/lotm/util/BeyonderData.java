@@ -524,10 +524,12 @@ public class BeyonderData {
 
 
     public static double getMultiplierForSequence(int sequence) {
+        if (sequence < 0 || sequence >= multiplier.length) return 1.0;
         return multiplier[sequence];
     }
 
     public static double getSanityDecreaseMultiplierForSequence(int sequence) {
+        if (sequence < 0 || sequence >= sanityDecreaseMultiplier.length) return 1.0;
         return sanityDecreaseMultiplier[sequence];
     }
 

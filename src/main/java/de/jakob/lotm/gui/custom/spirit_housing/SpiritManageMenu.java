@@ -8,6 +8,7 @@ import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
@@ -48,12 +49,28 @@ public class SpiritManageMenu extends AbstractContainerMenu {
     }
 
     @Override
+    public void clicked(int slotId, int button, @NotNull ClickType clickType, @NotNull Player player) {
+        if (clickType == ClickType.THROW || clickType == ClickType.SWAP || slotId == SLOT_CLICKED_OUTSIDE) return;
+        super.clicked(slotId, button, clickType, player);
+    }
+
+    @Override
     public boolean stillValid(Player player) {
         return true;
     }
 
     @Override
     public void removed(Player player) {
+        if (!getCarried().isEmpty()) {
+            String type = SpiritCommandingAbility.typeOf(getCarried());
+            for (int i = 0; i < BIN && !type.isEmpty(); i++) {
+                if (!spirits.getItem(i).isEmpty()) continue;
+                if (i < BODY && !SpiritCommandingAbility.allows(type, i)) continue;
+                spirits.setItem(i, getCarried());
+                break;
+            }
+            setCarried(ItemStack.EMPTY);
+        }
         super.removed(player);
         if (player.level().isClientSide) return;
         SpiritHousingComponent housing = player.getData(ModAttachments.SPIRIT_HOUSING);
