@@ -28,6 +28,10 @@ public class ContractFulfillmentHandler {
                 if (!(stack.getItem() instanceof ContractItem)) continue;
                 ContractData data = ContractItem.readData(stack);
                 if (data.isLifeDeathContract()) continue;
+                if (data.isNpcContract()) {
+                    if (data.isActive() && NpcContractHandler.process(caster, data)) ContractItem.writeData(stack, data);
+                    continue;
+                }
                 if (!data.isActive()) continue;
                 checkItemTerm(caster, data, true);
                 checkItemTerm(caster, data, false);
@@ -54,7 +58,6 @@ public class ContractFulfillmentHandler {
             }
         }
     }
-
     private static void checkDigestTerm(ServerPlayer caster, ContractData data, boolean isTermA) {
         if (data.isKillContract()) return;
         ContractData.TermType type = isTermA ? data.termAType() : data.termBType();
@@ -77,30 +80,49 @@ public class ContractFulfillmentHandler {
             ContractSoulHandler.startDrain(data.getTermSender(oppositeIsA), data.getTermRecipient(oppositeIsA));
         }
     }
-
     private static void checkItemTerm(ServerPlayer caster, ContractData data, boolean isTermA) {
         boolean alreadyFulfilled = isTermA ? data.termAFulfilled() : data.termBFulfilled();
-        if (alreadyFulfilled) return;
-        if (!data.hasBothParties()) return;
-        if (data.isKillContract()) {
-            if (!isTermA) return;
-            if (!data.killPaidOut()) return;
-        }
+        if (alreadyFulfilled || !data.hasBothParties()) return;
+        if (data.isKillContract()) if (!isTermA || !data.killPaidOut()) return;
         ContractData.TermType type = isTermA ? data.termAType() : data.termBType();
         if (type != ContractData.TermType.ITEM) return;
         String itemId = isTermA ? data.termAItem() : data.termBItem();
         int count = isTermA ? data.termACount() : data.termBCount();
+        if (count < 1) return;
+
+        // NPC CONTRACT: Party A pays the item cost for the NPC's soul.
+        if (data.isNpcContract()) {
+            if (data.getPartyA() == null || !caster.getUUID().equals(data.getPartyA())) return;
+            // Only the item-payment term should be processed here.
+            boolean soulA = data.termAType() == ContractData.TermType.SOUL && !data.termASoulOwnerIsPartyA();
+            boolean soulB = data.termBType() == ContractData.TermType.SOUL && !data.termBSoulOwnerIsPartyA();
+            if (soulA == soulB) return;
+            boolean paymentIsA = !soulA;
+            if (isTermA != paymentIsA) return;
+            Item required;
+            try {required = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));}
+            catch (Exception ignored) {return;}
+            // Verify Party A owns enough items before consuming anything.
+            if (countItem(caster, required) < count) return;
+            if (!consumeItems(caster, required, count)) return;
+            if (isTermA) data.setTermAFulfilled(true);
+            else data.setTermBFulfilled(true);
+            if (data.termAType() == ContractData.TermType.SOUL && !data.termAFulfilled()) data.setTermAFulfilled(true);
+            if (data.termBType() == ContractData.TermType.SOUL && !data.termBFulfilled()) data.setTermBFulfilled(true);
+            return;
+        }
         ServerPlayer sender = caster.server.getPlayerList().getPlayer(data.getTermSender(isTermA));
         ServerPlayer recipient = caster.server.getPlayerList().getPlayer(data.getTermRecipient(isTermA));
         if (sender == null || recipient == null) return;
         Item required;
-        try {required = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
+        try {
+            required = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
         } catch (Exception ignored) {
             return;
         }
         if (countItem(recipient, required) < count) return;
-        if (isTermA) {data.setTermAFulfilled(true);}
-        else {data.setTermBFulfilled(true);}
+        if (isTermA) data.setTermAFulfilled(true);
+        else data.setTermBFulfilled(true);
         if (data.isIou()) {
             SoulOwnershipRegistry.release(data.getPartyA());
             data.setComplete(true);
@@ -117,5 +139,24 @@ public class ContractFulfillmentHandler {
         int total = 0;
         for (ItemStack stack : player.getInventory().items) {if (stack.getItem() == item) {total += stack.getCount();}}
         return total;
+    }
+    public static boolean consumeItems(ServerPlayer player, Item item, int count) {
+        if (count < 1 || countItem(player, item) < count) return false;
+        int remaining = count;
+        for (ItemStack stack : player.getInventory().items) {
+            if (remaining <= 0) break;
+            if (stack.isEmpty() || stack.getItem() != item) continue;
+            int taken = Math.min(remaining, stack.getCount());
+            stack.shrink(taken);
+            remaining -= taken;
+        }
+        for (ItemStack stack : player.getInventory().offhand) {
+            if (remaining <= 0) break;
+            if (stack.isEmpty() || stack.getItem() != item) continue;
+            int taken = Math.min(remaining, stack.getCount());
+            stack.shrink(taken);
+            remaining -= taken;
+        }
+        return remaining == 0;
     }
 }

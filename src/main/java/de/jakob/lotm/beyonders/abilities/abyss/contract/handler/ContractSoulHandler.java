@@ -6,6 +6,8 @@ import de.jakob.lotm.beyonders.abilities.abyss.contract.registry.SoulOwnershipRe
 import de.jakob.lotm.beyonders.abilities.core.PhysicalEnhancementsAbility;
 import de.jakob.lotm.util.BeyonderData;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
@@ -26,16 +28,34 @@ public class ContractSoulHandler {
     }
     public static void consumeSoul(ServerPlayer holder, UUID ownerUUID) {
         var server = ServerLifecycleHooks.getCurrentServer();
-        if (server == null) return;
-        ServerPlayer owner = server.getPlayerList().getPlayer(ownerUUID);
+        if (server == null || holder == null) return;
+        LivingEntity owner = null;
+        // First check if the soul owner is a player.
+        owner = server.getPlayerList().getPlayer(ownerUUID);
+        // If not a player, find the NPC in the loaded server worlds.
+        if (owner == null) {
+            for (var level : server.getAllLevels()) {
+                Entity entity = level.getEntity(ownerUUID);
+                if (entity instanceof   LivingEntity living) {
+                    owner = living;
+                    break;
+                }
+            }
+        }
         if (owner == null) return;
-        // Keep the soul drain active until the owner dies.
+        // Keep the drain active until the owner dies.
         activeDrains.put(ownerUUID, holder.getUUID());
-        int holderSeq = BeyonderData.getSequence(holder);
-        int ownerResistance = PhysicalEnhancementsAbility.getResistanceLevel(ownerUUID);
-        if (ownerResistance > 0) {PhysicalEnhancementsAbility.addEnhancementBoost(holder, PhysicalEnhancementsAbility.EnhancementType.RESISTANCE, "contract_soul_" + ownerUUID, Math.max(1, ownerResistance / 2), 20_000L);}
-        owner.getData(ModAttachments.SANITY_COMPONENT).decreaseSanityWithSequenceDifference(SANITY_DAMAGE, owner, holderSeq, BeyonderData.getSequence(owner));
+        // Grant the soul's pathway enhancements to the player consuming it.
+        PhysicalEnhancementsAbility ability = SoulBuffs.getAbility(BeyonderData.getPathway(owner));
+        if (ability != null) SoulBuffs.grant(holder, ability, BeyonderData.getSequence(owner));
+        // Sanity damage only applies if the soul owner is a player.
+        if (owner instanceof ServerPlayer ownerPlayer) {
+            int holderSeq = BeyonderData.getSequence(holder);
+            ownerPlayer.getData(ModAttachments.SANITY_COMPONENT).decreaseSanityWithSequenceDifference(SANITY_DAMAGE, ownerPlayer, holderSeq, BeyonderData.getSequence(ownerPlayer));
+        }
     }
+
+
     @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Post event) {
         if (++tickCounter < DRAIN_INTERVAL_TICKS) return;
@@ -43,22 +63,37 @@ public class ContractSoulHandler {
         if (activeDrains.isEmpty()) return;
         var server = event.getServer();
         for (Map.Entry<UUID, UUID> entry : activeDrains.entrySet()) {
-            ServerPlayer owner = server.getPlayerList().getPlayer(entry.getKey());
+            UUID ownerUUID = entry.getKey();
+            UUID holderUUID = entry.getValue();
+            LivingEntity owner = null;
+            // Check players first.
+            owner = server.getPlayerList().getPlayer(ownerUUID);
+            // If not a player, look for the NPC in loaded worlds.
+            if (owner == null) {
+                for (var level : server.getAllLevels()) {
+                    Entity entity = level.getEntity(ownerUUID);
+                    if (entity instanceof LivingEntity living) {
+                        owner = living;
+                        break;
+                    }
+                }
+            }
             if (owner == null) continue;
             if (owner.isDeadOrDying()) {
-                activeDrains.remove(entry.getKey());
-                SoulOwnershipRegistry.release(entry.getKey());
+                activeDrains.remove(ownerUUID);
+                SoulOwnershipRegistry.release(ownerUUID);
                 continue;
             }
-            ServerPlayer holder = server.getPlayerList().getPlayer(entry.getValue());
+            ServerPlayer holder = server.getPlayerList().getPlayer(holderUUID);
             if (holder == null) {
-                activeDrains.remove(entry.getKey());
+                activeDrains.remove(ownerUUID);
                 continue;
             }
             int holderSeq = BeyonderData.getSequence(holder);
             owner.getData(ModAttachments.SANITY_COMPONENT).decreaseSanityWithSequenceDifference(SANITY_DAMAGE, owner, holderSeq, BeyonderData.getSequence(owner));
-            ContractDeathHandler.markContractDeath(owner.getUUID());
+            if (owner instanceof ServerPlayer) ContractDeathHandler.markContractDeath(ownerUUID);
         }
     }
+
     public static void cancelDrain(UUID soulOwnerUUID) {if (soulOwnerUUID != null) activeDrains.remove(soulOwnerUUID);}
 }

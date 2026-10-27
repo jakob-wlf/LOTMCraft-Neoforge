@@ -3,15 +3,22 @@ package de.jakob.lotm.beyonders.abilities.abyss.contract;
 import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.beyonders.abilities.abyss.contract.handler.ContractScreenHandler;
 import de.jakob.lotm.beyonders.abilities.abyss.contract.handler.ContractSoulHandler;
+import de.jakob.lotm.beyonders.abilities.abyss.contract.handler.NpcDesire;
 import de.jakob.lotm.beyonders.abilities.abyss.contract.registry.PendingReleaseRegistry;
 import de.jakob.lotm.beyonders.abilities.abyss.contract.registry.SoulOwnershipRegistry;
-import de.jakob.lotm.beyonders.abilities.core.ToggleAbility;
+import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.helper.AbilityUtil;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -22,13 +29,13 @@ import java.util.Map;
 import java.util.UUID;
 
 @EventBusSubscriber(modid = LOTMCraft.MOD_ID)
-public class ContractAbility extends ToggleAbility {
+public class ContractAbility extends SelectableAbility {
 
     public static final Map<UUID, PendingProposal> pendingProposals = new HashMap<>();
 
     public record PendingProposal(UUID casterUUID, ContractData data) {}
     public ContractAbility(String id) {
-        super(id);
+        super(id,3);
         canBeUsedByNPC = false;
         canBeCopied = false;
         canBeReplicated = false;
@@ -42,55 +49,47 @@ public class ContractAbility extends ToggleAbility {
     }
     @Override
     protected float getSpiritualityCost() {
-        return 0;
+        return 100;
     }
     @Override
-    public void start(Level level, LivingEntity entity) {
-        if (!level.isClientSide) {
+    protected String[] getAbilityNames() {
+        return new String[]{
+                "ability.lotmcraft.contract.make_contract",
+                "ability.lotmcraft.contract.destroy_unsigned_contract",
+                "ability.lotmcraft.contract.check_desire"
+        };
+    }
+    @Override
+    protected void castSelectedAbility(Level level, LivingEntity entity, int abilityIndex) {
+        if (abilityIndex == 0) {
+            if (level.isClientSide) {ContractScreenHandler.open(entity.isShiftKeyDown());}
             return;
         }
-        openContractScreen(entity.isShiftKeyDown());
+        if (level.isClientSide || !(entity instanceof ServerPlayer player)) {return;}
+        switch (abilityIndex) {
+            case 1 -> destroyUnsignedContract(player);
+            case 2 -> checkDesire(player);
+        }
     }
-    private static void openContractScreen(boolean showHelp) {
-        // client GUI opening is delegated to the client handler.
-        ContractScreenHandler.open(showHelp);
-    }
-    public static void proposeDirect(
-            ServerPlayer caster,
-            ServerPlayer partyA,
-            ServerPlayer partyB,
-            ContractData data
-    ) {
+    public static void proposeDirect(ServerPlayer caster, ServerPlayer partyA, ServerPlayer partyB, ContractData data) {
         data.setPartyA(partyA.getUUID());
         data.setPartyB(partyB.getUUID());
-
         data.setPartyAName(partyA.getName().getString());
         data.setPartyBName(partyB.getName().getString());
         pendingProposals.put(partyB.getUUID(), new PendingProposal(partyA.getUUID(), data));
         partyB.sendSystemMessage(Component.literal("══════════════════════════════").withColor(0x9932cc));
-        partyB.sendSystemMessage(Component.literal("       CONTRACT REQUEST").withColor(0xFFD700));
-        partyB.sendSystemMessage(Component.literal(partyA.getName().getString() + " wants you to accept:").withColor(0xFFFFFF));
-        partyB.sendSystemMessage(Component.literal(data.describe()).withColor(0xCCCCCC));
-        partyB.sendSystemMessage(Component.literal("Type 'accept' or 'decline'").withColor(0x9932cc));
+        partyB.sendSystemMessage(Component.literal("       CONTRACT REQUEST").withColor(0xFFa3070c));
+        partyB.sendSystemMessage(Component.literal(partyA.getName().getString() + " wants you to accept:").withColor(0xFFa3070c));
+        partyB.sendSystemMessage(Component.literal(data.describe()).withColor(0xFFa3070c));
+        partyB.sendSystemMessage(Component.literal("Type 'accept' or 'decline'").withColor(0xFFa3070c));
         partyB.sendSystemMessage(Component.literal("══════════════════════════════").withColor(0x9932cc));
         if (!caster.getUUID().equals(partyB.getUUID())) {AbilityUtil.sendActionBar(caster, Component.literal("Proposal sent to " + partyB.getName().getString() + ".").withColor(0x9932cc));
         }
     }
-
-    @Override
-    public void tick(Level level, LivingEntity entity) {
-    }
-
-    @Override
-    public void stop(Level level, LivingEntity entity) {
-    }
-
     @SubscribeEvent(priority = EventPriority.HIGHEST, receiveCanceled = true)
     public static void onChatMessage(ServerChatEvent event) {
         ServerPlayer player = event.getPlayer();
-        if (!pendingProposals.containsKey(player.getUUID())) {
-            return;
-        }
+        if (!pendingProposals.containsKey(player.getUUID())) {return;}
         String msg = event.getRawText().trim().toLowerCase();
         if (msg.equals("accept")) {
             event.setCanceled(true);
@@ -102,9 +101,7 @@ public class ContractAbility extends ToggleAbility {
     }
     private static void acceptProposal(ServerPlayer target) {
         PendingProposal proposal = pendingProposals.remove(target.getUUID());
-        if (proposal == null) {
-            return;
-        }
+        if (proposal == null) {return;}
         ServerPlayer caster = target.server.getPlayerList().getPlayer(proposal.casterUUID());
         if (caster == null) {
             AbilityUtil.sendActionBar(target, Component.literal("The caster is no longer online.").withColor(0xFFff124d));
@@ -124,28 +121,21 @@ public class ContractAbility extends ToggleAbility {
             // Do not mark the payment as fulfilled when accepting.
             data.setTermAFulfilled(false);
             data.setTermBFulfilled(false);
-            if (data.isKillerPartyA()) {
-                data.setKillerName(data.partyAName());
-            } else {
-                data.setKillerName(data.partyBName());
-            }
+            if (data.isKillerPartyA()) {data.setKillerName(data.partyAName());}
+            else {data.setKillerName(data.partyBName());}
             var contractItem = ContractItem.create(data);
-
             if (!caster.getInventory().add(contractItem)) {caster.drop(contractItem, false);}
-            AbilityUtil.sendActionBar(caster, Component.literal("Contract formed.").withColor(0x9932cc));
-            AbilityUtil.sendActionBar(target, Component.literal("Contract formed.").withColor(0x9932cc));
+            AbilityUtil.sendActionBar(caster, Component.literal("Contract formed.").withColor(0xFFa3070c));
+            AbilityUtil.sendActionBar(target, Component.literal("Contract formed.").withColor(0xFFa3070c));
             return;
         }
-
-
         boolean soulForSoul = data.termAType() == ContractData.TermType.SOUL && data.termBType() == ContractData.TermType.SOUL;
-
         if (data.hasSoulTermA()) {
             UUID soulOwner = data.getSoulOwner(true);
             if (soulOwner == null) {return;}
             if (SoulOwnershipRegistry.isSoulBound(soulOwner)) {
                 ServerPlayer owner = target.server.getPlayerList().getPlayer(soulOwner);
-                if (owner != null) {AbilityUtil.sendActionBar(owner, Component.literal("Your Soul Belongs to the Abyss").withColor(0xFFff124d));}
+                if (owner != null) {AbilityUtil.sendActionBar(owner, Component.literal("Your Soul Belongs to the Abyss").withColor(0xFFa3070c));}
                 return;
             }
             if (!data.isLifeDeathContract()){SoulOwnershipRegistry.bind(soulOwner);}
@@ -157,11 +147,10 @@ public class ContractAbility extends ToggleAbility {
         }
         if (data.hasSoulTermB()) {
             UUID soulOwner = data.getSoulOwner(false);
-
             if (soulOwner == null) {return;}
             if (SoulOwnershipRegistry.isSoulBound(soulOwner)) {
                 ServerPlayer owner = target.server.getPlayerList().getPlayer(soulOwner);
-                if (owner != null) {AbilityUtil.sendActionBar(owner, Component.literal("Your Soul Belongs to the Abyss").withColor(0xFFff124d));}
+                if (owner != null) {AbilityUtil.sendActionBar(owner, Component.literal("Your Soul Belongs to the Abyss").withColor(0xFFa3070c));}
                 return;
             }
             if (!data.isLifeDeathContract())SoulOwnershipRegistry.bind(soulOwner);
@@ -174,16 +163,14 @@ public class ContractAbility extends ToggleAbility {
         if (data.isIou()) {
             UUID soulOwner = caster.getUUID();
             if (SoulOwnershipRegistry.isSoulBound(soulOwner)) {
-                AbilityUtil.sendActionBar(caster, Component.literal("Your Soul Belongs to the Abyss").withColor(0xFFff124d));
+                AbilityUtil.sendActionBar(caster, Component.literal("Your Soul Belongs to the Abyss").withColor(0xFFa3070c));
                 return;
             }
             SoulOwnershipRegistry.bind(soulOwner);
         }
         var contractItem = ContractItem.create(data);
         ServerPlayer recipient = data.isIou() ? target : caster;
-        if (!recipient.getInventory().add(contractItem)) {
-            recipient.drop(contractItem, false);
-        }
+        if (!recipient.getInventory().add(contractItem)) {recipient.drop(contractItem, false);}
         AbilityUtil.sendActionBar(caster, Component.literal("Contract formed.").withColor(0x9932cc));
         AbilityUtil.sendActionBar(target, Component.literal("Contract formed.").withColor(0x9932cc));
         if (data.termAType() == ContractData.TermType.RELEASE_SOUL || data.termBType() == ContractData.TermType.RELEASE_SOUL) {
@@ -197,13 +184,44 @@ public class ContractAbility extends ToggleAbility {
     }
     private static void declineProposal(ServerPlayer target) {
         PendingProposal proposal = pendingProposals.remove(target.getUUID());
-
         if (proposal == null) {
             return;
         }
         ServerPlayer caster = target.server.getPlayerList().getPlayer(proposal.casterUUID());
         if (caster != null) {
-            AbilityUtil.sendActionBar(caster, Component.literal(target.getName().getString() + " declined.").withColor(0xFFff124d));
+            AbilityUtil.sendActionBar(caster, Component.literal(target.getName().getString() + " declined.").withColor(0xFFa3070c));
         }
+    }
+    private void destroyUnsignedContract(ServerPlayer player) {
+        ItemStack stack = player.getMainHandItem();
+        if (!(stack.getItem() instanceof ContractItem)) {
+            AbilityUtil.sendActionBar(player, Component.literal("You must hold a contract in your main hand.").withColor(0xFFa3070c));
+            return;
+        }
+        ContractData data = ContractItem.readData(stack);
+        // Both parties must not have signed yet.
+        if (data.hasBothParties()) {
+            AbilityUtil.sendActionBar(player, Component.literal("A signed contract cannot be destroyed this way.").withColor(0xFFa3070c));
+            return;
+        }
+        stack.shrink(1);
+        AbilityUtil.sendActionBar(player, Component.literal("The unsigned contract dissolves.").withColor(0xFFa3070c));
+    }
+    private void checkDesire(ServerPlayer player) {
+        LivingEntity target = getTargetLivingEntity(player);
+        if (target == null || target instanceof Player) {
+            AbilityUtil.sendActionBar(player, Component.literal("You must look at a non-player creature.").withColor(0xFFa3070c));
+            return;
+        }
+        NpcDesire.check(player, target);
+    }
+
+    private static LivingEntity getTargetLivingEntity(ServerPlayer player) {
+        Vec3 start = player.getEyePosition();
+        Vec3 end = start.add(player.getLookAngle().scale(8.0));
+        AABB searchBox = player.getBoundingBox().expandTowards(player.getLookAngle().scale(8.0)).inflate(1.0);
+        EntityHitResult hit = ProjectileUtil.getEntityHitResult(player, start, end, searchBox, target -> target instanceof LivingEntity && target != player && target.isPickable(), 8.0 * 8.0);
+        if (hit != null && hit.getEntity() instanceof LivingEntity living) {return living;}
+        return null;
     }
 }

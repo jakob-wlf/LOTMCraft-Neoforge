@@ -187,7 +187,7 @@ public class ContractData {
     }
     public String victimEntityType() {
         String type = tag.getString("victimEntityType");
-        if (type == null || type.isBlank()) {
+        if (type.isBlank()) {
             return "ALL";
         }
         return type.toUpperCase(java.util.Locale.ROOT);
@@ -259,48 +259,46 @@ public class ContractData {
     public boolean hasSoulTermB() {return termBType() == TermType.SOUL;}
     public boolean hasAnySoulTerm() {return hasSoulTermA() || hasSoulTermB();}
 
+    // NPC TERMS
+    public boolean isNpcContract() { return tag.getBoolean("npcContract"); }
+    public void setNpcContract(boolean v) { tag.putBoolean("npcContract", v); }
+    public String soulPathway() { return tag.getString("soulPathway"); }
+    public void setSoulPathway(String p) { tag.putString("soulPathway", p == null ? "" : p); }
+    public int soulSequence() { return tag.contains("soulSeq") ? tag.getInt("soulSeq") : 9; }
+    public void setSoulSequence(int s) { tag.putInt("soulSeq", s); }
+
+    public UUID npcKillTarget() { return tag.hasUUID("npcKillTarget") ? tag.getUUID("npcKillTarget") : null; }
+    public void setNpcKillTarget(UUID u) { if (u == null) tag.remove("npcKillTarget"); else tag.putUUID("npcKillTarget", u); }
+    public boolean npcKillDone() { return tag.getBoolean("npcKillDone"); }
+    public void setNpcKillDone(boolean v) { tag.putBoolean("npcKillDone", v); }
+    public String npcKillProfession() { return tag.getString("npcKillProf"); }
+    public void setNpcKillProfession(String p) { tag.putString("npcKillProf", p == null ? "" : p); }
+    public int npcKillLevel() { return Math.max(1, tag.getInt("npcKillLevel")); }
+    public void setNpcKillLevel(int l) { tag.putInt("npcKillLevel", l); }
+
     public String describe() {
         if ("KILL".equals(contractKind())) {
             String status;
-            if (isComplete()) {
-                status = " (Fulfilled)";
-            } else if (killPaidOut() && termAFulfilled()) {
-                status = " (Kill Complete - Payment Complete)";
-            } else if (killPaidOut()) {
-                status = " (Kill Complete - Payment Pending)";
-            } else if (termAFulfilled()) {
-                status = " (Payment Complete - Kill Pending)";
-            } else {
-                status = " (Pending Kill and Payment)";
-            }
-            return killerName()
-                    + " kills "
-                    + victimName()
-                    + status
-                    + "\nPaid by "
-                    + payerName()
-                    + ": "
-                    + describeTerm(termAType(), termAItem(), termACount())
-                    + (termAFulfilled() ? " (Paid)" : " (Unpaid)");
+            if (isComplete()) {status = " (Fulfilled)";}
+            else if (killPaidOut() && termAFulfilled()) {status = " (Kill Complete - Payment Complete)";}
+            else if (killPaidOut()) {status = " (Kill Complete - Payment Pending)";}
+            else if (termAFulfilled()) {status = " (Payment Complete - Kill Pending)";}
+            else {status = " (Pending Kill and Payment)";}
+            return killerName() + " kills " + victimName() + status + "\nPaid by " + payerName() + ": " + describeTerm(termAType(), termAItem(), termACount()) + (termAFulfilled() ? " (Paid)" : " (Unpaid)");
         }
         StringBuilder sb = new StringBuilder();
+        if (isLifeDeathContract()) {
+            sb.append(partyAName()).append(" binds life and death with ").append(partyBName()).append(lifeDeathDurationTicks() >= 0 ? " for " + formatDuration(lifeDeathDurationTicks()) : " until one of them dies");
+        }
         if (hasTermB()) {
-            sb.append(partyAName())
-                    .append(" → ")
-                    .append(partyBName())
-                    .append(": ")
-                    .append(describeTerm(termBType(), termBItem(), termBCount()));
+            if (!sb.isEmpty()) sb.append("\n");
+            sb.append(partyAName()).append(" → ").append(partyBName()).append(": ").append(describeTermFull(false));
         }
         if (hasTermA()) {
-            if (!sb.isEmpty()) {sb.append("\n");}
-            sb.append(partyBName())
-                    .append(" → ")
-                    .append(partyAName())
-                    .append(": ")
-                    .append(describeTerm(termAType(), termAItem(), termACount()));
+            if (!sb.isEmpty()) sb.append("\n");
+            sb.append(partyBName()).append(" → ").append(partyAName()).append(": ").append(describeTermFull(true));
         }
-        if (sb.isEmpty()) {return "No terms";}
-        return sb.toString();
+        return sb.isEmpty() ? "No terms" : sb.toString();
     }
     public static String describeTerm(TermType type, String item, int count) {
         return switch (type) {
@@ -322,5 +320,16 @@ public class ContractData {
             sb.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
         }
         return sb.toString();
+    }
+    public String describeTermFull(boolean termA) {
+        TermType type = termA ? termAType() : termBType();
+        if (type == TermType.SOUL) return getSoulOwnerName(termA) + "'s soul";
+        return describeTerm(type, termA ? termAItem() : termBItem(), termA ? termACount() : termBCount());
+    }
+    private static String formatDuration(long ticks) {
+        long s = ticks / 20;
+        if (s % 86400 == 0) return (s / 86400) + " days";
+        if (s % 60 == 0) return (s / 60) + " minutes";
+        return s + " seconds";
     }
 }

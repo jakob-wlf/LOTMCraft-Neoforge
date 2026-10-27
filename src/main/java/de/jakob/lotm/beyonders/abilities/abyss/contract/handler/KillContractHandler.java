@@ -46,7 +46,6 @@ public class KillContractHandler {
         PendingKill pending = new PendingKill(killer.getUUID(), killer.getGameProfile().getName(), victim.getName().getString(), victim instanceof Player);
         synchronized (PENDING_KILLS) {PENDING_KILLS.add(pending);}
         log("Registered pending kill: " + pending.killerName() + " killed " + pending.victimName());
-        // Try immediately; the periodic scan retries if necessary.
         processPendingKills(server);
     }
     // PERIODIC RETRY
@@ -82,7 +81,7 @@ public class KillContractHandler {
             ItemStack stack = container.getItem(i);
             if (!(stack.getItem() instanceof ContractItem)) {continue;}
             ContractData data = ContractItem.readData(stack);
-            if (!data.isActive() || !data.isKillContract() || data.killPaidOut() || data.getPartyA() == null || data.getPartyB() == null){continue;}
+            if (!data.isActive() || !data.isKillContract() || data.killPaidOut() || data.getPartyA() == null || data.getPartyB() == null || data.isNpcContract()){continue;}
             if (!data.killerName().equalsIgnoreCase(pending.killerName())) {continue;}
             if (!data.victimName().equalsIgnoreCase(pending.victimName())) {continue;}
             String entityType = data.victimEntityType();
@@ -95,7 +94,6 @@ public class KillContractHandler {
                 return true;
             }
         }
-
         return false;
     }
     // FULFILL CONTRACT
@@ -111,11 +109,8 @@ public class KillContractHandler {
                 } catch (Exception exception) {
                     return false;
                 }
-                if (required == Items.AIR) {
-                    return false;
-                }
+                if (required == Items.AIR) return false;
             }
-
             case SOUL -> {
                 UUID payerUUID = data.isKillPayerPartyA() ? data.getPartyA() : data.getPartyB();
                 UUID killerUUID = data.isKillerPartyA() ? data.getPartyA() : data.getPartyB();
@@ -133,17 +128,13 @@ public class KillContractHandler {
             case DIGEST -> {
                 UUID payerUUID = data.isKillPayerPartyA() ? data.getPartyA() : data.getPartyB();
                 UUID killerUUID = data.isKillerPartyA() ? data.getPartyA() : data.getPartyB();
-                if (payerUUID == null || killerUUID == null || payerUUID.equals(killerUUID)) {
-                    return false;
-                }
+                if (payerUUID == null || killerUUID == null || payerUUID.equals(killerUUID)) return false;
                 ServerPlayer payer = killer.server.getPlayerList().getPlayer(payerUUID);
                 ServerPlayer receiver = killer.server.getPlayerList().getPlayer(killerUUID);
                 // Both must be online. The pending kill is kept and retried.
                 if (payer == null || receiver == null) {return false;}
                 DigestTransferHandler.Result result = DigestTransferHandler.transfer(payer, receiver, data.termACount());
-                if (result != DigestTransferHandler.Result.DONE) {
-                    return false;
-                }
+                if (result != DigestTransferHandler.Result.DONE) return false;
                 data.setTermAFulfilled(true);
             }
             case RELEASE_SOUL, NONE -> {
@@ -153,24 +144,15 @@ public class KillContractHandler {
         }
         // The kill requirement is satisfied.
         data.setKillPaidOut(true);
-        // Persist both state changes together.
         ContractItem.writeData(stack, data);
-        // Only remove the contract when every obligation is fulfilled.
         boolean allTermsFulfilled = data.termAFulfilled() && data.termBFulfilled();
         if (allTermsFulfilled) {
             data.setComplete(true);
             data.setActive(false);
             ContractItem.writeData(stack, data);
             stack.shrink(1);
-        } else {
         }
         return true;
-    }
-    private static int countItem(ServerPlayer player, Item item) {
-        int total = 0;
-        for (ItemStack stack : player.getInventory().items) {if (stack.getItem() == item) {total += stack.getCount();}}
-        for (ItemStack stack : player.getInventory().offhand) {if (stack.getItem() == item) {total += stack.getCount();}}
-        return total;
     }
     private static boolean hasEligibleKillContract(MinecraftServer server, ServerPlayer killer, LivingEntity victim) {
         String killerName = killer.getGameProfile().getName();
@@ -183,12 +165,8 @@ public class KillContractHandler {
                 if (!(stack.getItem() instanceof ContractItem)) {continue;}
                 ContractData data = ContractItem.readData(stack);
                 // Contract must be active and both parties must exist.
-                if (!data.isActive() || !data.isKillContract() || data.killPaidOut() || data.getPartyA() == null || data.getPartyB() == null) {
-                    continue;
-                }
-                if (!data.killerName().equalsIgnoreCase(killerName) || !data.victimName().equalsIgnoreCase(victimName)) {
-                    continue;
-                }
+                if (!data.isActive() || !data.isKillContract() || data.killPaidOut() || data.getPartyA() == null || data.getPartyB() == null || data.isNpcContract()) continue;
+                if (!data.killerName().equalsIgnoreCase(killerName) || !data.victimName().equalsIgnoreCase(victimName)) continue;
                 String entityType = data.victimEntityType();
                 if ("PLAYER".equals(entityType) && !victimWasPlayer) {continue;}
                 if ("MOB".equals(entityType) && victimWasPlayer) {continue;}

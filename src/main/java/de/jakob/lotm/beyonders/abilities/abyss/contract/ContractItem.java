@@ -2,10 +2,14 @@ package de.jakob.lotm.beyonders.abilities.abyss.contract;
 
 import de.jakob.lotm.beyonders.abilities.abyss.contract.handler.ContractAssignmentHandler;
 import de.jakob.lotm.beyonders.abilities.abyss.contract.handler.ContractSoulHandler;
+import de.jakob.lotm.beyonders.abilities.abyss.contract.handler.NpcContractHandler;
+import de.jakob.lotm.beyonders.abilities.abyss.contract.handler.SoulBuffs;
 import de.jakob.lotm.beyonders.abilities.abyss.contract.menu.ContractDisplay;
 import de.jakob.lotm.beyonders.abilities.abyss.contract.menu.ContractDisplayBuilder;
+import de.jakob.lotm.beyonders.abilities.abyss.contract.menu.TooltipCentering;
 import de.jakob.lotm.beyonders.abilities.abyss.contract.registry.PendingReleaseRegistry;
 import de.jakob.lotm.beyonders.abilities.abyss.contract.registry.SoulOwnershipRegistry;
+import de.jakob.lotm.beyonders.abilities.core.PhysicalEnhancementsAbility;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.helper.AbilityUtil;
 import net.minecraft.core.component.DataComponents;
@@ -60,10 +64,33 @@ public class ContractItem extends Item {
         ContractData data = readData(stack);
         if (!data.isActive()) return InteractionResultHolder.fail(stack);
         if (!data.hasBothParties()) return InteractionResultHolder.fail(stack);
+        //NPC CONTRACTS
+        if (data.isNpcContract()) {
+            if (!serverPlayer.getUUID().equals(data.getPartyA())) {
+                AbilityUtil.sendActionBar(serverPlayer, Component.literal("This bargain is not yours.").withColor(0xFFa3070c));
+                return InteractionResultHolder.fail(stack);
+            }
+            if (!data.areAllTermsFulfilled()) {
+                AbilityUtil.sendActionBar(serverPlayer, Component.literal("The bargain is not yet sealed.").withColor(0xFFa3070c));
+                return InteractionResultHolder.fail(stack);
+            }
+            UUID npcUUID = data.getPartyB();
+            PhysicalEnhancementsAbility ability = SoulBuffs.getAbility(data.soulPathway());
+            if (ability != null) {SoulBuffs.grant(serverPlayer, ability, data.soulSequence());}
+            SoulOwnershipRegistry.release(npcUUID);
+            data.setActive(false);
+            writeData(stack, data);
+            stack.shrink(1);
+            // If the creature is still alive, its soul is consumed with it.
+            LivingEntity npc = NpcContractHandler.find(Objects.requireNonNull(serverPlayer.getServer()), npcUUID);
+            if (npc != null && npc.isAlive()) {ContractSoulHandler.consumeSoul(serverPlayer, npcUUID);}
+            AbilityUtil.sendActionBar(serverPlayer, Component.literal("You consume their soul.").withColor(0xFFa3070c));
+            return InteractionResultHolder.success(stack);
+        }
         // LIFE / DEATH CONTRACTS, Handled completely here for Party A and Party B anyone else falls through to the intruder logic below.
-        boolean isPartyA = serverPlayer.getUUID().equals(data.getPartyA());
+        boolean isOwner = serverPlayer.getUUID().equals(data.getPartyA());
         boolean isPartyB = serverPlayer.getUUID().equals(data.getPartyB());
-        if (data.isLifeDeathContract() && (isPartyA || isPartyB)) {
+        if (data.isLifeDeathContract() && (isOwner || isPartyB)) {
             if (!data.lifeDeathExpired()) {
                 AbilityUtil.sendActionBar(serverPlayer, Component.literal("The life-bond is still active.").withColor(0x9932cc));
                 return InteractionResultHolder.fail(stack);
@@ -74,8 +101,6 @@ public class ContractItem extends Item {
             if (!soulIsTermA && !soulIsTermB) return InteractionResultHolder.fail(stack);   // item contract
             UUID soulOwner = soulIsTermA ? data.getSoulOwner(true) : data.getSoulOwner(false);
             if (soulOwner == null) return InteractionResultHolder.fail(stack);
-            // No ownership check either party may use it
-            // The soul always drains from its owner to the OTHER party
             UUID receiver = soulOwner.equals(data.getPartyA()) ? data.getPartyB() : data.getPartyA();
             ContractSoulHandler.startDrain(soulOwner, receiver);
             SoulOwnershipRegistry.release(soulOwner);
@@ -83,21 +108,20 @@ public class ContractItem extends Item {
             data.setActive(false);
             writeData(stack, data);
             stack.shrink(1);
-            AbilityUtil.sendActionBar(serverPlayer, Component.literal("The soul is claimed by the contract.").withColor(0x9932cc));
+            AbilityUtil.sendActionBar(serverPlayer, Component.literal("The soul is claimed by the contract.").withColor(0xFFa3070c));
             return InteractionResultHolder.success(stack);
         }
 
         // INTRUDERS (anyone who isn't Party A)
-        boolean isOwner = isPartyA;
         if (!isOwner) {
             int intruderSeq = BeyonderData.getSequence(serverPlayer);
             boolean strongEnough = intruderSeq <= data.casterSeqAtCreation() + 1;
             if (strongEnough) {
                 voidContract(data, (ServerLevel) level);
                 stack.shrink(stack.getCount());
-                AbilityUtil.sendActionBar(serverPlayer, Component.literal("The contract unravels.").withColor(0x9932cc));
+                AbilityUtil.sendActionBar(serverPlayer, Component.literal("The contract unravels.").withColor(0xFFa3070c));
             }
-            else {AbilityUtil.sendActionBar(serverPlayer, Component.literal("You lack the strength to unmake this.").withColor(0xFFff124d));}
+            else {AbilityUtil.sendActionBar(serverPlayer, Component.literal("You lack the strength to unmake this.").withColor(0xFFa3070c));}
             return InteractionResultHolder.success(stack);
         }
         // PARTY A: curse
@@ -115,10 +139,10 @@ public class ContractItem extends Item {
             return InteractionResultHolder.success(stack);
         }
         // STANDARD SOUL CONTRACT
-        if (data.termAType() == ContractData.TermType.SOUL && data.termAFulfilled() && otherTermsFulfilled(data, true) && !data.isComplete()) {
+        if (data.termAType() == ContractData.TermType.SOUL && data.termAFulfilled() && otherTermsFulfilled(data) && !data.isComplete()) {
             ServerPlayer owner = Objects.requireNonNull(level.getServer()).getPlayerList().getPlayer(data.getPartyB());
             if (owner == null) {
-                AbilityUtil.sendActionBar(serverPlayer, Component.literal("The Abyss Rejects your offer.").withColor(0xFFff124d));
+                AbilityUtil.sendActionBar(serverPlayer, Component.literal("The Abyss Rejects your offer.").withColor(0xFFa3070c));
                 return InteractionResultHolder.fail(stack);
             }
             ContractSoulHandler.consumeSoul(serverPlayer, data.getPartyB());
@@ -131,7 +155,7 @@ public class ContractItem extends Item {
         if (data.isKillContract() && data.termAType() == ContractData.TermType.SOUL) {
             UUID killerUUID = data.isKillerPartyA() ? data.getPartyA() : data.getPartyB();
             if (!serverPlayer.getUUID().equals(killerUUID)) {
-                AbilityUtil.sendActionBar(serverPlayer, Component.literal("Only the contracted killer can claim this soul.").withColor(0xFFff124d));
+                AbilityUtil.sendActionBar(serverPlayer, Component.literal("Only the contracted killer can claim this soul.").withColor(0xFFa3070c));
                 return InteractionResultHolder.fail(stack);
             }
             ContractSoulHandler.consumeSoul(serverPlayer, data.getPartyB());
@@ -144,7 +168,7 @@ public class ContractItem extends Item {
             // Preserve the existing ownership behavior for other contracts.
             UUID soulOwnerUUID = data.getSoulOwner(true);
             if (!serverPlayer.getUUID().equals(soulOwnerUUID)) {
-                AbilityUtil.sendActionBar(serverPlayer, Component.literal("This is not your soul to offer.").withColor(0xFFff124d));
+                AbilityUtil.sendActionBar(serverPlayer, Component.literal("This is not your soul to offer.").withColor(0xFFa3070c));
                 return InteractionResultHolder.fail(stack);
             }
         }
@@ -154,13 +178,26 @@ public class ContractItem extends Item {
     public @NotNull InteractionResult interactLivingEntity(@NotNull ItemStack stack, Player player, @NotNull LivingEntity target, @NotNull InteractionHand hand) {
         if (player.level().isClientSide) return InteractionResult.PASS;
         if (!(player instanceof ServerPlayer caster)) return InteractionResult.PASS;
-        if (!(target instanceof ServerPlayer targetPlayer)) return InteractionResult.PASS;
+        if (!(target instanceof ServerPlayer targetPlayer)) {
+            ContractData npcData = readData(stack);
+            if (target instanceof net.minecraft.world.entity.Mob) {
+                if (!npcData.isActive() || npcData.hasBothParties() || npcData.contractUUID() == null) {
+                    return InteractionResult.PASS;
+                }
+                if (!caster.getUUID().equals(npcData.getPartyA())) {
+                    return InteractionResult.PASS;
+                }
+                ContractAssignmentHandler.assignNpc(caster, target, npcData.contractUUID());
+                return InteractionResult.SUCCESS;
+            }
+            return InteractionResult.PASS;
+        }
         ContractData data = readData(stack);
         if (!data.isActive() || data.hasBothParties()) return InteractionResult.PASS;
         UUID contractUUID = data.contractUUID();
         if (contractUUID == null) return InteractionResult.PASS;
         if (targetPlayer.getUUID().equals(data.getPartyA()) || targetPlayer.getUUID().equals(data.getPartyB())) return InteractionResult.PASS;
-        ContractAssignmentHandler.sendRequest(caster, targetPlayer, contractUUID);
+        ContractAssignmentHandler.sendRequest(caster, targetPlayer, contractUUID,data);
         return InteractionResult.SUCCESS;
     }
     @Override
@@ -170,16 +207,16 @@ public class ContractItem extends Item {
         ContractDisplay display = ContractDisplayBuilder.build(data);
         tooltip.add(display.title());
         tooltip.addAll(display.lines());
+        if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {TooltipCentering.center(tooltip);}
     }
     private void tryCurseThroughContract(ServerPlayer holder, ContractData data, ItemStack stack, ServerLevel level) {
         UUID holderUUID = holder.getUUID();
         UUID victimUUID = null;
-        if (holderUUID.equals(data.getPartyA()) && data.termAType() == ContractData.TermType.SOUL && data.termAFulfilled()) {
-            victimUUID = data.getPartyB();
-        } else if (holderUUID.equals(data.getPartyB()) && data.termBType() == ContractData.TermType.SOUL && data.termBFulfilled()) victimUUID = data.getPartyA();
+        if (holderUUID.equals(data.getPartyA()) && data.termAType() == ContractData.TermType.SOUL && data.termAFulfilled()) {victimUUID = data.getPartyB();}
+        else if (holderUUID.equals(data.getPartyB()) && data.termBType() == ContractData.TermType.SOUL && data.termBFulfilled()) victimUUID = data.getPartyA();
         if (victimUUID == null) return;
         if (!BeyonderData.isBeyonder(holder) || !"abyss".equals(BeyonderData.getPathway(holder)) || BeyonderData.getSequence(holder) > 3) {
-            AbilityUtil.sendActionBar(holder, Component.literal("You lack the voice to reach them yet.").withColor(0xFFff124d));
+            AbilityUtil.sendActionBar(holder, Component.literal("You lack the voice to reach them yet.").withColor(0xFFa3070c));
             return;
         }
         long now = level.getGameTime();
@@ -192,7 +229,7 @@ public class ContractItem extends Item {
         if (victim == null) return;
         victim.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 20 * 5, 0, false, false));
         victim.hurt(victim.damageSources().magic(), 4f);
-        AbilityUtil.sendActionBar(victim, Component.literal("A voice from nowhere curses you.").withColor(0x9932cc));
+        AbilityUtil.sendActionBar(victim, Component.literal("A voice from nowhere curses you.").withColor(0xFFa3070c));
         data.setCurseLastUseGameTime(now);
         writeData(stack, data);
     }
@@ -208,8 +245,8 @@ public class ContractItem extends Item {
         var server = level.getServer();
         ServerPlayer partyA = server.getPlayerList().getPlayer(data.getPartyA());
         ServerPlayer partyB = server.getPlayerList().getPlayer(data.getPartyB());
-        if (partyA != null) AbilityUtil.sendActionBar(partyA, Component.literal("Your contract has been voided.").withColor(0xFFff124d));
-        if (partyB != null) AbilityUtil.sendActionBar(partyB, Component.literal("Your contract has been voided.").withColor(0xFFff124d));
+        if (partyA != null) AbilityUtil.sendActionBar(partyA, Component.literal("Your contract has been voided.").withColor(0xFFa3070c));
+        if (partyB != null) AbilityUtil.sendActionBar(partyB, Component.literal("Your contract has been voided.").withColor(0xFFa3070c));
     }
     private static void handleSoulOnVoid(UUID uuid, ContractData data, ServerLevel level) {
         boolean isHolderA = uuid.equals(data.getPartyA()) && data.termAType() == ContractData.TermType.SOUL;
@@ -248,16 +285,16 @@ public class ContractItem extends Item {
                 SoulOwnershipRegistry.release(soulOwnerUUID);
                 d.setComplete(true);
                 d.setActive(false);
-                AbilityUtil.sendActionBar(releaseCaster, Component.literal("Both obligations are fulfilled. The contract dissolves.").withColor(0x9932cc));
+                AbilityUtil.sendActionBar(releaseCaster, Component.literal("Both obligations are fulfilled. The contract dissolves.").withColor(0xFFa3070c));
             }
             return;
         }
     }
-    private static boolean otherTermsFulfilled(ContractData data, boolean soulIsTermA) {
+    private static boolean otherTermsFulfilled(ContractData data) {
         // Kill contracts must pay out before a soul can be sacrificed.
         if (data.isKillContract() && !data.killPaidOut()) return false;
-        ContractData.TermType otherType = soulIsTermA ? data.termBType() : data.termAType();
-        boolean otherFulfilled = soulIsTermA ? data.termBFulfilled() : data.termAFulfilled();
+        ContractData.TermType otherType = data.termBType();
+        boolean otherFulfilled = data.termBFulfilled();
         if (otherType == ContractData.TermType.SOUL) return true;
         return otherFulfilled;
     }

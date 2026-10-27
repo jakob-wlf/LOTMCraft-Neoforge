@@ -184,6 +184,9 @@ public class ContractBuilderConverter {
         data.setVictimEntityType(victimEntityType);
         data.setKillerIsPartyA(killerIsPartyA);
         data.setKillPaidOut(false);
+        if (reward != null && reward.ownerIsPartyA != null) {
+            data.setKillPayerIsPartyA(reward.ownerIsPartyA);
+        }
         if (reward != null && reward.ownerIsPartyA != null) data.setKillPayerIsPartyA(reward.ownerIsPartyA);
         if (reward != null) applyResourceOrNone(data, reward, true);
         else {
