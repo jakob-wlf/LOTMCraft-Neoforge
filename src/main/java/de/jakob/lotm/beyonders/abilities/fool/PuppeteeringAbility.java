@@ -3,6 +3,7 @@ package de.jakob.lotm.beyonders.abilities.fool;
 import com.google.common.util.concurrent.AtomicDouble;
 import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.attachments.*;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.FlameDevil.BloodlineFilthFlameSpiritAbility;
 import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.beyonders.abilities.core.ToggleAbility;
@@ -235,7 +236,15 @@ public class PuppeteeringAbility extends SelectableAbility {
     private void startPuppetProcess(ServerLevel level, LivingEntity entity, LivingEntity target, int time, boolean isMass) {
         int sequence = AbilityUtil.getSeqWithArt(entity, this);
         int targetSequence = BeyonderData.getSequence(target);
-
+        if (BloodlineFilthFlameSpiritAbility.shieldSpirit(sequence, entity, target)) {
+            if (isMass) {
+                removeMassTarget(entity.getUUID(), target.getUUID());
+            } else {
+                entitiesBeingManipulated.remove(entity.getUUID());
+            }
+            AbilityUtil.sendActionBar(entity, Component.literal("Their spirit burns your threads away!").withColor(0xB5651D));
+            return;
+        }
         if (LOTMCraft.abilityHandler.getById("divination_ability").hasAbility(target, false) || targetSequence < BeyonderData.getSequence(entity)) {
             if (target instanceof Mob mob) mob.setTarget(entity);
             if (target instanceof ServerPlayer targetPlayer) {

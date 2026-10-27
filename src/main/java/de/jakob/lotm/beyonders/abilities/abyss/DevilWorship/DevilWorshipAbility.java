@@ -53,19 +53,15 @@ import static de.jakob.lotm.entity.custom.BeyonderNPCEntity.getRandomBeyonderSki
 
 public class DevilWorshipAbility extends SelectableAbility {
     public static final int TARGET_RANGE = 30;
-
     // Swap cooldown for Select Mob
     public static final long COOLDOWN_TICKS = 20L * 60 * 30;
-
     public static final int DEFAULT_KILLS_FOR_FULL = 50;//normal 50
     public static final int PLAYER_KILLS_FOR_FULL = 10;
     public static final int NPC_KILLS_FOR_FULL = 25;
-
     //Devil seq, chance it answers, chance it escapes control
     public static final int[] DEVIL_SEQUENCE = { 6, 5, 4 };
     public static final int[] SUMMON_CHANCE  = { 60, 25, 15 };
     public static final int[] ESCAPE_CHANCE  = { 20, 40, 60 };
-
     // Percentage points taken off a mission's failure chance by the sequence of the Devil
     private static int successBonus(int sequence) {
         if (sequence == 0) return 60;
@@ -73,7 +69,6 @@ public class DevilWorshipAbility extends SelectableAbility {
         if (sequence <= 4) return 20;
         return sequence == 5 ? 10 : 0;
     }
-
     // Delay between choosing a mission and the Devil appearing; gives others time to answer
     public static final int SUMMON_DELAY_TICKS = 20 * 20;
     public static final double PROJECTION_RANGE_PER_SEQ = 1000;
@@ -89,7 +84,7 @@ public class DevilWorshipAbility extends SelectableAbility {
     public static final int SEEK_MAX_SEQ = 9;
     // Failure chance (%) at sequence 9 with any pathway
     public static final int SEEK_BASE_FAILURE = 15;
-    // Added for every sequence stronger than 9=
+    // Added for every sequence stronger than 9
     public static final int SEEK_FAILURE_PER_SEQ = 10;
     // Added when a specific pathway is chosen
     public static final int SEEK_PATHWAY_FAILURE = 10;
@@ -99,7 +94,6 @@ public class DevilWorshipAbility extends SelectableAbility {
     public static final int SEEK_SECONDS_PER_SEQ = 3 * 60;
     // Time is multiplied by this when a specific pathway is chosen
     public static final double SEEK_PATHWAY_TIME_MULT = 3.0;
-
     public static int seekFailurePercent(int sequence, boolean pathwayChosen) {
         int steps = SEEK_MAX_SEQ - sequence;
         int failure = SEEK_BASE_FAILURE + steps * SEEK_FAILURE_PER_SEQ + (pathwayChosen ? SEEK_PATHWAY_FAILURE : 0);
@@ -116,7 +110,7 @@ public class DevilWorshipAbility extends SelectableAbility {
         canBeUsedByNPC = false;
         canBeCopied = false;
         canBeUsedInArtifact = true;
-        canBeReplicated = false;
+        canBeReplicated = true;
         cannotBeStolen = true;
     }
     @Override
@@ -415,7 +409,6 @@ public class DevilWorshipAbility extends SelectableAbility {
             case SUB_INGREDIENT -> "sub-ingredient";
         };
     }
-
     // Builds a Seek mission for the chosen reward, pathway (null = any) and sequence
     private static MissionDef seekMission(Reward reward, String pathway, int sequence) {
         boolean chosen = pathway != null;
@@ -442,7 +435,6 @@ public class DevilWorshipAbility extends SelectableAbility {
     }
     private static Loot characteristic(int percent, PathwayRange... ranges) {return new Loot(label("characteristic", ranges), percent, () -> randomReward(Reward.CHARACTERISTIC, ranges));}
     private static Loot recipe(int percent, PathwayRange... ranges) {return new Loot(label("recipe", ranges), percent, () -> randomReward(Reward.RECIPE, ranges));}
-
     private static Loot subIngredient(int percent, PathwayRange... ranges) {return new Loot(label("sub-ingredient", ranges), percent, () -> randomReward(Reward.SUB_INGREDIENT, ranges));}
     public static List<String> availablePathways() {return BeyonderData.implementedPathways.stream().sorted().toList();}
     private static ItemStack randomReward(Reward type, PathwayRange... ranges) {
@@ -468,7 +460,6 @@ public class DevilWorshipAbility extends SelectableAbility {
         }
         return ItemStack.EMPTY;
     }
-
     private static String label(String what, PathwayRange... ranges) {
         if (ranges.length == 0) ranges = new PathwayRange[]{any(9, 5)};
         if (ranges.length == 1) {
@@ -515,7 +506,6 @@ public class DevilWorshipAbility extends SelectableAbility {
         }
         return ItemStack.EMPTY;
     }
-
     //player data
     public static final class Data {
         private Data() {}
@@ -549,24 +539,35 @@ public class DevilWorshipAbility extends SelectableAbility {
         }
     }
 
+
     private static final class ActiveMission {
         final UUID id = UUID.randomUUID();
         final UUID owner, target, responder;
         final MissionDef mission;
         final boolean escaped;
-        final int answerSeq, rolledSeq;   // sequence of whoever answered, and the rolled tier
-        UUID devilId;                     // null while the Devil is away
-        ResourceKey<Level> dimension;     // dimension of that Devil
+        final boolean failed; // Hidden failure result, revealed only when the mission ends
+        final int answerSeq, rolledSeq;
+        UUID devilId;
+        ResourceKey<Level> dimension;
         long endTick;
-        boolean hunting;                  // Kill Player: the Devil has reached its target
+        boolean hunting;
         boolean targetDied;
         boolean responderControlling;
-        ActiveMission(UUID owner, UUID devilId, ResourceKey<Level> dimension, MissionDef mission, UUID target, long endTick, boolean escaped, UUID responder, int answerSeq, int rolledSeq) {
-            this.owner = owner; this.devilId = devilId; this.dimension = dimension; this.mission = mission;
-            this.target = target; this.endTick = endTick; this.escaped = escaped;
-            this.responder = responder; this.answerSeq = answerSeq; this.rolledSeq = rolledSeq;
+        ActiveMission(UUID owner, UUID devilId, ResourceKey<Level> dimension, MissionDef mission, UUID target, long endTick, boolean escaped, boolean failed, UUID responder, int answerSeq, int rolledSeq) {
+            this.owner = owner;
+            this.devilId = devilId;
+            this.dimension = dimension;
+            this.mission = mission;
+            this.target = target;
+            this.endTick = endTick;
+            this.escaped = escaped;
+            this.failed = failed;
+            this.responder = responder;
+            this.answerSeq = answerSeq;
+            this.rolledSeq = rolledSeq;
         }
     }
+
     private static final Map<UUID, PendingSummon> PENDING = new ConcurrentHashMap<>();
     private static final Map<UUID, ActiveMission> ACTIVE = new ConcurrentHashMap<>();
     private static boolean hasPendingOrActive(UUID owner) {return PENDING.containsKey(owner) || ACTIVE.values().stream().anyMatch(m -> m.owner.equals(owner));}
@@ -623,11 +624,8 @@ public class DevilWorshipAbility extends SelectableAbility {
             // The original Devil was discarded by ControllingUtils.
             // Spawn a replacement so the mission can continue.
             BeyonderNPCEntity replacement = respawnControlledDevil(responder.server, m);
-            if (replacement == null) {
-                say(responder, "You release your projection, but it cannot reform.", 0xFF124D);
-            } else {
-                say(responder, "You release your projection. It reforms nearby.", 0xB22222);
-            }
+            if (replacement == null) say(responder, "You release your projection, but it cannot reform.", 0xFF124D);
+            else say(responder, "You release your projection. It reforms nearby.", 0xB22222);
             return;
         }
         m.responderControlling = false;
@@ -690,19 +688,16 @@ public class DevilWorshipAbility extends SelectableAbility {
             spawnDevil(server, owner, p, seq, responderId);
             return;
         }
-        // Mission failure is rolled here, with the answering Devil's sequence helping.
+        // Mission failure is rolled here
         int failurePercent = Math.max(0, p.mission.failurePercent() - successBonus(seq));
-        if (owner.getRandom().nextInt(100) < failurePercent) {
-            say(owner, "The Devil's projection fails and vanishes.", 0xFF124D);
-            return;
-        }
+        boolean failed = owner.getRandom().nextInt(100) < failurePercent;
         say(owner, "The Devil accepts your mission: " + p.mission.title() + ".", 0xFFD700);
         if (p.mission.kind() == Kind.PROTECTION) {
             spawnDevil(server, owner, p, seq, responderId); // guards you in person
             return;
         }
         // LOOT and KILL_PLAYER: the Devil departs and the timer starts.
-        ActiveMission m = new ActiveMission(owner.getUUID(), null, null, p.mission, p.target, now + p.mission.timerTicks(), false, responderId, seq, p.rolledSeq);
+        ActiveMission m = new ActiveMission(owner.getUUID(), null, null, p.mission, p.target, now + p.mission.timerTicks(), false, failed, responderId, seq, p.rolledSeq);
         ACTIVE.put(m.id, m);
         say(owner, "The Devil departs. It will report back in " + p.mission.timerLabel() + ".", 0x9932CC);
     }
@@ -729,7 +724,9 @@ public class DevilWorshipAbility extends SelectableAbility {
             level.addFreshEntity(devil);
             devil.setTarget(owner);
         }
-        ActiveMission m = new ActiveMission(owner.getUUID(), devil.getUUID(), level.dimension(), p.mission, p.target, server.getTickCount() + lifetime, p.escaped, responder, seq, p.rolledSeq);
+        int failurePercent = Math.max(0, p.mission.failurePercent() - successBonus(seq));
+        boolean failed = !p.escaped && owner.getRandom().nextInt(100) < failurePercent;
+        ActiveMission m = new ActiveMission(owner.getUUID(), devil.getUUID(), level.dimension(), p.mission, p.target, server.getTickCount() + lifetime, p.escaped, failed, responder, seq, p.rolledSeq);
         ACTIVE.put(m.id, m);
         if (!p.escaped) tellResponder(server, responder, "Your projection has arrived. Use Projection again to take it over.");
     }
@@ -754,7 +751,6 @@ public class DevilWorshipAbility extends SelectableAbility {
         ServerLevel level = server.getLevel(m.dimension);
         Entity found = level == null ? null : level.getEntity(m.devilId);
         if (found instanceof BeyonderNPCEntity npc && npc.isAlive()) {return npc;}
-        if (m.responderControlling) {return null;}
         return null;
     }
     private static void tickPending(MinecraftServer server, long now) {
@@ -778,9 +774,7 @@ public class DevilWorshipAbility extends SelectableAbility {
             Boolean outcome = null; // null = still running
             if (m.responderControlling && devil == null) {
                 ServerPlayer responder = m.responder == null ? null : server.getPlayerList().getPlayer(m.responder);
-                if (responder != null && ControllingUtils.isControlling(responder)) {
-                    continue;
-                }
+                if (responder != null && ControllingUtils.isControlling(responder)) continue;
                 devil = respawnControlledDevil(server, m);
                 m.responderControlling = false;
             }
@@ -792,13 +786,10 @@ public class DevilWorshipAbility extends SelectableAbility {
                     if (timeUp && owner != null && owner.isAlive()) outcome = true;
                 }
                 case KILL_PLAYER -> {
-                    if (!m.hunting) {
-                        if (timeUp && !startHunt(server, owner, m, now)) outcome = false;
-                    } else if (m.targetDied) {
-                        outcome = true;
-                    } else if (devil == null || timeUp) {
-                        outcome = false;
-                    } else if (!isControlledByResponder(server, m)) {
+                    if (!m.hunting) if (timeUp && !startHunt(server, owner, m, now)) outcome = false;
+                    else if (m.targetDied) outcome = true;
+                    else if (devil == null || timeUp) outcome = false;
+                    else if (!isControlledByResponder(server, m)) {
                         ServerPlayer target = server.getPlayerList().getPlayer(m.target);
                         if (target != null && target.isAlive()) devil.setTarget(target);
                     }
@@ -817,22 +808,17 @@ public class DevilWorshipAbility extends SelectableAbility {
     private static void finishMission(MinecraftServer server, ServerPlayer owner, ActiveMission m, BeyonderNPCEntity devil, boolean success) {
         if (m.responderControlling && m.responder != null) {
             ServerPlayer controller = server.getPlayerList().getPlayer(m.responder);
-            if (controller != null && ControllingUtils.isControlling(controller)) {
-                ControllingUtils.cancel(controller, 0, true, false);
-            }
+            if (controller != null && ControllingUtils.isControlling(controller)) ControllingUtils.cancel(controller, 0, true, false);
             m.responderControlling = false;
         }
         if (devil != null) devil.discard(); // its beyonder data is cleared in Events.onDevilLeave
         if (owner != null) {
-            if (m.escaped) {
-                say(owner, "The rogue Devil's projection fades.", 0x9932CC);
-            } else if (success && m.mission.kind() == Kind.LOOT) {
-                deliverLoot(owner, m.mission);
-            } else {
-                say(owner, success ? "The Devil completes its task and withdraws: " + m.mission.title() : "The Devil fails its task and withdraws: " + m.mission.title(), success ? 0xFFD700 : 0xFF124D);
-            }
+            if (m.escaped) say(owner, "The rogue Devil's projection fades.", 0x9932CC);
+            else if (m.failed || !success) say(owner, "The Devil fails its task and withdraws from " + m.mission.title(), 0xFF124D);
+            else if (m.mission.kind() == Kind.LOOT) deliverLoot(owner, m.mission);
+            else say(owner, "The Devil completes its task and withdraws from " + m.mission.title(), 0xFFD700);
         }
-        if (success && m.responder != null) {
+        if (success && !m.failed && !m.escaped && m.responder != null) {
             ServerPlayer responder = server.getPlayerList().getPlayer(m.responder);
             if (responder != null) {
                 float boost = digestBoostPercent(m.answerSeq, m.rolledSeq);
@@ -877,7 +863,6 @@ public class DevilWorshipAbility extends SelectableAbility {
         m.devilId = devil.getUUID();
         return devil;
     }
-
     //events
     @EventBusSubscriber(modid = LOTMCraft.MOD_ID)
     public static class Events {

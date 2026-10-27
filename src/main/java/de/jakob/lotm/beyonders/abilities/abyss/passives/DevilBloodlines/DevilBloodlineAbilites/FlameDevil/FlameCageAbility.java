@@ -38,7 +38,7 @@ public class FlameCageAbility extends Ability {
     private static final Map<UUID, Vec3> activeCages = new HashMap<>();
 
     public FlameCageAbility(String id) {
-        super(id, 20f, "burning");
+        super(id, 60f, "burning");
     }
 
     @Override

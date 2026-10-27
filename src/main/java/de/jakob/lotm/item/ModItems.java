@@ -2,6 +2,7 @@ package de.jakob.lotm.item;
 
 import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.beyonders.abilities.abyss.contract.ContractItem;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.FlameDevil.LavaSwordItem;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Shapeshifter.SkinMaskItem;
 import de.jakob.lotm.beyonders.artifacts.SealedArtifactItem;
 import de.jakob.lotm.block.ModBlocks;
@@ -42,7 +43,7 @@ public class ModItems {
     public static final DeferredItem<Item> STORY_BOOK = ITEMS.registerItem("story_book", StoryBookItem::new, new Item.Properties().stacksTo(1));
     public static final DeferredItem<Item> CONTRACT_ITEM = ITEMS.registerItem("contract", ContractItem::new, new Item.Properties().stacksTo(1));
     public static final DeferredItem<Item> SKIN_MASK = ITEMS.registerItem("skin_mask", SkinMaskItem::new, new Item.Properties().stacksTo(1));
-
+    public static final DeferredItem<Item> LAVA_SWORD = ITEMS.register("lava_sword", () -> new LavaSwordItem(new Item.Properties()));
 
     public static final DeferredItem<StructureMapItem> CITY_MAP =
             ITEMS.register("city_map", () -> new StructureMapItem(

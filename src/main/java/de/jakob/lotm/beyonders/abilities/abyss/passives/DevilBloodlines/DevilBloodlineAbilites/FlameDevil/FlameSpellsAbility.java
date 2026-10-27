@@ -7,10 +7,13 @@ import de.jakob.lotm.damage.ModDamageTypes;
 import de.jakob.lotm.entity.custom.AvatarEntity;
 import de.jakob.lotm.entity.custom.projectiles.FireballEntity;
 import de.jakob.lotm.util.BeyonderData;
+import de.jakob.lotm.util.data.Location;
+import de.jakob.lotm.util.data.PriestFlameVariants;
 import de.jakob.lotm.util.helper.AbilityUtil;
 import de.jakob.lotm.util.helper.DamageLookup;
 import de.jakob.lotm.util.helper.ParticleUtil;
 import de.jakob.lotm.util.helper.VectorUtil;
+import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -30,7 +33,7 @@ import java.util.Map;
 public class FlameSpellsAbility extends SelectableAbility {
 
     public FlameSpellsAbility(String id) {
-        super(id, 1.75f, "burning");
+        super(id, 20f, "burning");
     }
 
     @Override
@@ -80,7 +83,7 @@ public class FlameSpellsAbility extends SelectableAbility {
 
         AbilityUtil.getNearbyEntities(entity, (ServerLevel) level, startPos, 5).forEach(e -> {
             e.hurt(ModDamageTypes.source(level, ModDamageTypes.FIRE, entity), (float) (DamageLookup.lookupDamage(6, .875) *
-                    multiplier(entity)));
+                    multiplier(entity))* BloodlineFilthFlameSpiritAbility.getFireDamageMultiplier(entity));
             e.setRemainingFireTicks(20 * 3);
             Vec3 knockBack = new Vec3(e.position().subtract(startPos).normalize().x, .75, e.position().subtract(startPos).normalize().z).normalize().scale(.5);
             e.setDeltaMovement(knockBack);
@@ -89,12 +92,8 @@ public class FlameSpellsAbility extends SelectableAbility {
         ParticleUtil.spawnParticles((ServerLevel) level, ParticleTypes.FLAME, startPos.add(0, 1, 0), 600, .75, 1.25, .75, .025);
         ParticleUtil.spawnParticles((ServerLevel) level, ParticleTypes.EXPLOSION, startPos.add(0, 1, 0), 20, .75, 1.25, .75, .025);
 
-        AbilityUtil.getBlocksInCircleOutline((ServerLevel) level, startPos.subtract(0, 1, 0), 5).forEach(b -> {
-            spawnFallingBlocks(level, startPos, b, griefing);
-        });
-        AbilityUtil.getBlocksInCircleOutline((ServerLevel) level, startPos.subtract(0, 1, 0), 3).forEach(b -> {
-            spawnFallingBlocks(level, startPos, b, griefing);
-        });
+        AbilityUtil.getBlocksInCircleOutline((ServerLevel) level, startPos.subtract(0, 1, 0), 5).forEach(b -> spawnFallingBlocks(level, startPos, b, griefing));
+        AbilityUtil.getBlocksInCircleOutline((ServerLevel) level, startPos.subtract(0, 1, 0), 3).forEach(b -> spawnFallingBlocks(level, startPos, b, griefing));
 
         NeoForge.EVENT_BUS.post(new AbilityUsedEvent((ServerLevel) level, startPos, entity, this, new String[]{"explosion", "burning"}, 4, 20));
     }
@@ -105,36 +104,41 @@ public class FlameSpellsAbility extends SelectableAbility {
 
         BlockState state = level.getBlockState(b);
         BlockState above = level.getBlockState(b.above());
-        if(state.getCollisionShape(level, b).isEmpty() || !above.getCollisionShape(level, b.above()).isEmpty())
-            return;
+        if(state.getCollisionShape(level, b).isEmpty() || !above.getCollisionShape(level, b.above()).isEmpty()) return;
 
         Vec3 vectorFromCenter = new Vec3(b.getX() + 0.5 - startPos.x, 0, b.getZ() + 0.5 - startPos.z).normalize();
         Vec3 movement = (new Vec3(vectorFromCenter.x, 1, vectorFromCenter.z)).normalize().scale(.75);
-
         FallingBlockEntity block = FallingBlockEntity.fall(level, b.above(), state);
         block.setDeltaMovement(movement);
-        if(!griefing || state.getDestroySpeed(level, b) < 0)
-            block.disableDrop();
-        else {
-            level.setBlockAndUpdate(b, Blocks.AIR.defaultBlockState());
-        }
+        if(!griefing || state.getDestroySpeed(level, b) < 0) block.disableDrop();
+        else level.setBlockAndUpdate(b, Blocks.AIR.defaultBlockState());
         block.hurtMarked = true;
     }
 
     private void fireball(Level level, LivingEntity entity) {
-        if(level.isClientSide)
-            return;
+        if (level.isClientSide) return;
+        ServerLevel serverLevel = (ServerLevel) level;
+        Vec3 castPos = entity.getEyePosition();
+        boolean dealsFilth = BeyonderData.getSequence(entity) <= 5;
+        for (int i = 0; i < 3; i++) {
+            final int index = i;
+            ServerScheduler.scheduleDelayed(i * 5, () -> shootSulfurFireball(serverLevel, entity, index, dealsFilth), serverLevel, () -> AbilityUtil.getTimeInArea(entity, new Location(castPos, serverLevel)));
+        }
+    }
 
-        Vec3 startPos = VectorUtil.getRelativePosition(entity.getEyePosition().add(entity.getLookAngle().normalize()), entity.getLookAngle().normalize(), 0, random.nextDouble(1, 2.85f), random.nextDouble(-.1, .6));
-        Vec3 direction = AbilityUtil.getTargetLocation(entity, 50, 1.4f).subtract(startPos).normalize();
-
-        level.playSound(null, startPos.x, startPos.y, startPos.z, SoundEvents.BLAZE_SHOOT, entity.getSoundSource(), 1.0f, 1.0f);
-
-        float damage = (float) DamageLookup.lookupDamage(6, .75) *
-                multiplier(entity);
-
-        FireballEntity fireball = new FireballEntity(level, entity, damage, BeyonderData.isGriefingEnabled(entity));
-        fireball.setPos(startPos.x, startPos.y, startPos.z); // Set initial position
+    private void shootSulfurFireball(ServerLevel level, LivingEntity entity, int index, boolean dealsFilth) {
+        Vec3 eyePos = entity.getEyePosition();
+        Vec3 lookDir = entity.getLookAngle();
+        Vec3 targetPos = AbilityUtil.getTargetLocation(entity, 50, 1.4f);
+        float totalDamage = (float) DamageLookup.lookupDamage(6, .75) * multiplier(entity) * BloodlineFilthFlameSpiritAbility.getFireDamageMultiplier(entity);
+        double horizontalOffset = (index - 1) * 1.5;
+        Vec3 startPos = VectorUtil.getRelativePosition(eyePos.add(lookDir.normalize()), lookDir.normalize(), 0, horizontalOffset, 0.25);
+        Vec3 direction = targetPos.subtract(startPos).normalize();
+        level.playSound(null, startPos.x, startPos.y, startPos.z, SoundEvents.WITHER_SHOOT, entity.getSoundSource(), 1.0f, 1.0f);
+        FireballEntity fireball = new FireballEntity(level, entity, totalDamage, BeyonderData.isGriefingEnabled(entity));
+        fireball.setPos(startPos.x, startPos.y, startPos.z);
+        fireball.setVariant(dealsFilth ? PriestFlameVariants.DARK : PriestFlameVariants.AZURE);
+        fireball.setSecondaryDamageType(dealsFilth ? ModDamageTypes.FILTH : ModDamageTypes.FIRE);
         fireball.shoot(direction.x, direction.y, direction.z, 1.2f, 0);
         level.addFreshEntity(fireball);
     }

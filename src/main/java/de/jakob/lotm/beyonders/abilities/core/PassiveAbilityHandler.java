@@ -2,6 +2,7 @@ package de.jakob.lotm.beyonders.abilities.core;
 
 import de.jakob.lotm.beyonders.abilities.abyss.passives.*;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Corroder.BloodlineMindRotterAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.FlameDevil.BloodlineFilthFlameSpiritAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.ShadowShifter.BloodlineShadowShiftAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.CriminalProficiencyAbility;
@@ -92,6 +93,7 @@ public class PassiveAbilityHandler {
         passiveAbilities.add(new DevilBloodlineAbility("devil_bloodline_ability"));
         passiveAbilities.add(new BloodlineShadowShiftAbility("bloodline_shadowshift_ability"));
         passiveAbilities.add(new BloodlineMindRotterAbility("bloodline_mind_rotter_ability"));
+        passiveAbilities.add(new BloodlineFilthFlameSpiritAbility("bloodline_filth_flame_spirit_ability"));
         passiveAbilities.add(new MentalResistanceAbility("mental_resistance_ability"));
         passiveAbilities.add(new DemonOfTheBodyAbility("demon_of_the_body_ability"));
         passiveAbilities.add(new WordImmunityAbility("word_immunity_abyss_ability"));
