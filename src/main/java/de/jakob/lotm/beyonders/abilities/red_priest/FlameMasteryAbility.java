@@ -61,7 +61,7 @@ public class FlameMasteryAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.flame_mastery.fireball_barrage",
                 "ability.lotmcraft.flame_mastery.eruption",

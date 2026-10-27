@@ -45,7 +45,7 @@ public class PaperEquipmentAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.paper_equipment.sword",
                 "ability.lotmcraft.paper_equipment.pickaxe",

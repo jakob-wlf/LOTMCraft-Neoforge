@@ -62,7 +62,7 @@ public class ChainOfCommandAbility extends SelectableAbility {
     private final int ALLEVIATION_COST = 20;
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[] {
                 "ability.lotmcraft.chain_of_command.invite_soldier",
                 "ability.lotmcraft.chain_of_command.damage_focus",

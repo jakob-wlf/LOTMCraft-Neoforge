@@ -104,7 +104,7 @@ public class MythicalCreatureFormAbility extends ToggleAbility {
         }
         transformationComponent.setAdditionalDataAndSync(additionalData, entity);
 
-        if(additionalData.equals("visionary")) {
+        if(additionalData.equals("visionary") || additionalData.equals("sun") || additionalData.equals("death")) {
             if(entity instanceof Player player) {
                 player.getAbilities().mayfly = true;
                 player.getAbilities().flying = true;

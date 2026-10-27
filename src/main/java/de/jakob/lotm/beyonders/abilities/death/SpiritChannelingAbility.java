@@ -92,7 +92,7 @@ public class SpiritChannelingAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return BASE_MODES;
     }
 

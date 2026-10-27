@@ -41,7 +41,7 @@ public class SpiritualBaptismAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.spiritual_baptism.on_self",
                 "ability.lotmcraft.spiritual_baptism.on_target"

@@ -29,7 +29,7 @@ public class ChaosAuthorityAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{"ability.lotmcraft.chaos_authority.chaos_vortex"};
     }
 

@@ -48,7 +48,7 @@ public class WrathOfNatureAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.wrath_of_nature.lightning",
                 "ability.lotmcraft.wrath_of_nature.fire",

@@ -54,7 +54,7 @@ public class RestructionAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return MODES;
     }
 

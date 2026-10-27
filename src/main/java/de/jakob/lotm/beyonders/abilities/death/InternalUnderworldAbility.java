@@ -85,7 +85,7 @@ public class InternalUnderworldAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.internal_underworld.capture",
                 "ability.lotmcraft.internal_underworld.release",

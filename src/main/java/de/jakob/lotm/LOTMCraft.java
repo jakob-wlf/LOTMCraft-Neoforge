@@ -106,8 +106,13 @@ import de.jakob.lotm.gui.custom.flaming_jump.FlamingJumpScreen;
 import de.jakob.lotm.gui.custom.introspect.IntrospectScreen;
 import de.jakob.lotm.gui.custom.honorific_names.HonorificNamesScreen;
 import de.jakob.lotm.gui.custom.malice_seed.MaliceSeedScreen;
+import de.jakob.lotm.gui.custom.justice_selection.JusticePrincipleScreen;
 import de.jakob.lotm.gui.custom.marionettes.MarionetteControlScreen;
 import de.jakob.lotm.gui.custom.mass_puppeteering.MassPuppeteeringScreen;
+import de.jakob.lotm.gui.custom.notarization.ConfirmMenu;
+import de.jakob.lotm.gui.custom.notarization.ConfirmScreen;
+import de.jakob.lotm.gui.custom.notarization.ContractMenu;
+import de.jakob.lotm.gui.custom.notarization.ContractScreen;
 import de.jakob.lotm.gui.custom.pathway_selection.PathwaySelectionScreen;
 import de.jakob.lotm.gui.custom.recipe.RecipeScreen;
 import de.jakob.lotm.gui.custom.ritualistic_table.RitualScreen;
@@ -430,6 +435,9 @@ public class LOTMCraft
             event.register(ModMenuTypes.MALICE_SEED_MENU.get(), MaliceSeedScreen::new);
             event.register(ModMenuTypes.PATHWAY_SELECTION.get(), PathwaySelectionScreen::new);
             event.register(ModMenuTypes.INGREDIENT_ENCYCLOPEDIA.get(), IngredientEncyclopediaScreen::new);
+            event.register(ModMenuTypes.CONTRACT.get(), ContractScreen::new);
+            event.register(ModMenuTypes.CONFIRM_CONTRACT.get(), ConfirmScreen::new);
+            event.register(ModMenuTypes.JUSTICE_PRINCIPLES.get(), JusticePrincipleScreen::new);
         }
 
         @SubscribeEvent

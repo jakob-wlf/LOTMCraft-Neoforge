@@ -44,7 +44,7 @@ public class AbilityTheftAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.ability_theft_ability.theft",
                 "ability.lotmcraft.ability_theft_ability.use_stolen",

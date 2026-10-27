@@ -67,6 +67,8 @@ public class ModItems {
     public static final DeferredItem<Item> CONJURED_SWORD = ITEMS.registerItem("conjured_sword", props -> new SwordItem(CONJURED_TOOL_TIER, props.attributes(SwordItem.createAttributes(CONJURED_TOOL_TIER, 8, -2.4f))), new Item.Properties());
     public static final DeferredItem<Item> CONJURED_WHIP = ITEMS.registerItem("conjured_whip", props -> new SwordItem(CONJURED_TOOL_TIER, props.attributes(SwordItem.createAttributes(CONJURED_TOOL_TIER, 6, -1.6f))), new Item.Properties());
 
+    public static final DeferredItem<Item> NOTARY_SEAL = ITEMS.register("notary_seal",
+            () -> new NotarySealItem(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
 
     public static final Supplier<Item> SUBORDINATE_CONTROLLER = ITEMS.register("subordinate_controller",
             () -> new SubordinateControllerItem(new Item.Properties().stacksTo(1)));

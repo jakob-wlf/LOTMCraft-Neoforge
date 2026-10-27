@@ -72,7 +72,7 @@ public class BlinkAbility extends SelectableAbility {
     );
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.blink.blink",
                 "ability.lotmcraft.blink.barrage"

@@ -56,7 +56,7 @@ public class GiftAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.gift_ability.item",
                 "ability.lotmcraft.gift_ability.distance",
@@ -67,54 +67,24 @@ public class GiftAbility extends SelectableAbility {
     }
 
     @Override
-    public void nextAbility(LivingEntity entity){
-        if(getAbilityNames().length == 0)
-            return;
-
-        if(!selectedAbilities.containsKey(entity.getUUID())) {
-            selectedAbilities.put(entity.getUUID(), 0);
-        }
-
-        int selectedAbility = selectedAbilities.get(entity.getUUID());
-        int entitySeq = AbilityUtil.getSeqWithArt(entity, this);
-
-        selectedAbility++;
-        if(selectedAbility >= getAbilityNames().length) {
-            selectedAbility = 0;
-        }
-
-        if((entitySeq > 5 && selectedAbility >= 1)
-                || (entitySeq > 1 && selectedAbility >= 3)){
-            selectedAbility = 0;
-        }
-
-        selectedAbilities.put(entity.getUUID(), selectedAbility);
-        PacketHandler.sendToServer(new AbilitySelectionPacket(getId(), selectedAbility));
-    }
-
-    @Override
-    public void previousAbility(LivingEntity entity){
-        if(getAbilityNames().length == 0)
-            return;
-
-        if(!selectedAbilities.containsKey(entity.getUUID())) {
-            selectedAbilities.put(entity.getUUID(), 0);
-        }
-
-        int selectedAbility = selectedAbilities.get(entity.getUUID());
-        selectedAbility--;
-        if(selectedAbility <= -1) {
-            selectedAbility = getAbilityNames().length - 1;
-        }
-
-        int entitySeq = AbilityUtil.getSeqWithArt(entity, this);
-        if((entitySeq > 5 && selectedAbility >= 1)
-                || (entitySeq > 1 && selectedAbility >= 3)){
-            selectedAbility = 0;
-        }
-
-        selectedAbilities.put(entity.getUUID(), selectedAbility);
-        PacketHandler.sendToServer(new AbilitySelectionPacket(getId(), selectedAbility));
+    public String[] getSequenceDependantAbilityNames(int sequence) {
+        return switch (sequence) {
+            case 5,4,3,2 -> new String[]{
+                    "ability.lotmcraft.gift_ability.item",
+                    "ability.lotmcraft.gift_ability.distance",
+                    "ability.lotmcraft.gift_ability.health"
+            };
+            case 6,7,8,9,10 -> new String[]{
+                    "ability.lotmcraft.gift_ability.item"
+            };
+            default -> new String[]{
+                    "ability.lotmcraft.gift_ability.item",
+                    "ability.lotmcraft.gift_ability.distance",
+                    "ability.lotmcraft.gift_ability.health",
+                    "ability.lotmcraft.gift_ability.digestion",
+                    "ability.lotmcraft.gift_ability.luck"
+            };
+        };
     }
 
     @Override

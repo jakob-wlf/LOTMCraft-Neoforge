@@ -39,7 +39,7 @@ public class DeathSpellsAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.death_spells.withering_wind",
                 "ability.lotmcraft.death_spells.soul_siphon"

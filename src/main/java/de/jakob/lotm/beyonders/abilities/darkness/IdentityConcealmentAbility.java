@@ -44,7 +44,7 @@ public class IdentityConcealmentAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.identityconcealment.conceal_identity"
         };

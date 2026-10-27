@@ -83,7 +83,7 @@ public class LanguageOfFoulnessAbility extends SelectableAbility {
         return 100;
     }
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.language_of_foulness.slow",
                 "ability.lotmcraft.language_of_foulness.corruption",

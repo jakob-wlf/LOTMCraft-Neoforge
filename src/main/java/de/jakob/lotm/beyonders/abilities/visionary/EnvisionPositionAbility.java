@@ -36,7 +36,7 @@ public class EnvisionPositionAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.envision_position_ability.on_sight",
                 "ability.lotmcraft.envision_position_ability.coordinates"

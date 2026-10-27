@@ -56,7 +56,7 @@ public class FlameSpellsAbility extends SelectableAbility {
         return DevilBloodlineAbility.hasBloodline(entity, DevilBloodlineAbility.Bloodline.FLAME_DEVIL);
     }
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.flame_spells.sulfur_fireball",
                 "ability.lotmcraft.flame_spells.volcanic_eruption",

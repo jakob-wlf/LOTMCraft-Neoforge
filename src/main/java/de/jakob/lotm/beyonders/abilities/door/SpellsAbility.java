@@ -56,7 +56,7 @@ public class SpellsAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.spells.wind",
                 "ability.lotmcraft.spells.electric_shock",

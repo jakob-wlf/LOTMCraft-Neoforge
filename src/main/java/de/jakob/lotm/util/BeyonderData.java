@@ -11,6 +11,7 @@ import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.attachments.MultiplierModifierComponent;
 import de.jakob.lotm.attachments.SanityComponent;
 import de.jakob.lotm.attachments.*;
+import de.jakob.lotm.entity.ModEntities;
 import de.jakob.lotm.events.BeyonderDataTickHandler;
 import de.jakob.lotm.gamerule.ModGameRules;
 import de.jakob.lotm.network.PacketHandler;
@@ -392,11 +393,6 @@ public class BeyonderData {
         if(entity instanceof Player player && ControllingUtils.isControlling(player) && !ignoreControlling) {
             return ControllingUtils.getControlledSequence(player);
         }
-
-        if(SpiritHandler.isCapturableSpirit(entity) && !BeyonderData.isBeyonder(entity)) {
-            return SpiritHandler.getSequenceOfSpirit(entity);
-        }
-
         if(entity.level().isClientSide) {
             PacketHandler.requestBeyonderSync();
             return ClientBeyonderCache.getSequence(entity.getUUID());
@@ -422,7 +418,12 @@ public class BeyonderData {
 //        }
 
         BeyonderComponent component = entity.getData(ModAttachments.BEYONDER_COMPONENT);
-        return component.getSequence();
+        if(component.getSequence() != LOTMCraft.NON_BEYONDER_SEQ)
+            return component.getSequence();
+
+        if(ModEntities.isBeyonderMob(entity)) return ModEntities.getSequenceForBeyonderEntity(entity);
+
+        return LOTMCraft.NON_BEYONDER_SEQ;
     }
 
     public static float getSpirituality(LivingEntity entity) {
@@ -601,10 +602,13 @@ public class BeyonderData {
         String pathway = component.getPathway();
         int sequence = component.getSequence();
 
-        return pathway != null                                 &&
+        if (pathway != null                                 &&
                 !pathway.equalsIgnoreCase("none") &&
                 !pathway.isBlank()                             &&
-                sequence != LOTMCraft.NON_BEYONDER_SEQ;
+                sequence != LOTMCraft.NON_BEYONDER_SEQ)
+            return true;
+
+        return ModEntities.isBeyonderMob(entity);
     }
 
     public static void addModifier(LivingEntity entity, String id, double modifier) {

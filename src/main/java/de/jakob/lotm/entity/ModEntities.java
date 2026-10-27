@@ -1,6 +1,7 @@
 package de.jakob.lotm.entity;
 
 import de.jakob.lotm.LOTMCraft;
+import de.jakob.lotm.beyonders.abilities.death.handlers.SpiritHandler;
 import de.jakob.lotm.entity.custom.*;
 import de.jakob.lotm.entity.custom.ability_entities.*;
 import de.jakob.lotm.entity.custom.ability_entities.darkness_pathway.ConcealedDomainEntity;
@@ -26,6 +27,7 @@ import de.jakob.lotm.entity.custom.ability_entities.wheel_of_fortune_pathway.Mis
 import de.jakob.lotm.entity.custom.spirits.*;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.IEventBus;
@@ -540,6 +542,26 @@ public class ModEntities {
                             .updateInterval(1)
                             .build("uniqueness_entity")
             );
+
+    public static boolean isBeyonderMob(LivingEntity entity) {
+        return entity instanceof MurlocEntity
+                || entity instanceof StoneGolemEntity
+                || entity instanceof AsmannEntity
+                || SpiritHandler.isSpirit(entity);
+
+    }
+
+    public static int getSequenceForBeyonderEntity(LivingEntity entity) {
+        if (!isBeyonderMob(entity)) return LOTMCraft.NON_BEYONDER_SEQ;
+
+        if (SpiritHandler.isSpirit(entity)) return SpiritHandler.getSequenceOfSpirit(entity);
+
+        if (entity instanceof MurlocEntity) return 9;
+        else if (entity instanceof AsmannEntity) return 7;
+        else if (entity instanceof StoneGolemEntity) return 5;
+
+        return LOTMCraft.NON_BEYONDER_SEQ;
+    }
 
     public static void register(IEventBus eventBus) {
         ENTITY_TYPES.register(eventBus);

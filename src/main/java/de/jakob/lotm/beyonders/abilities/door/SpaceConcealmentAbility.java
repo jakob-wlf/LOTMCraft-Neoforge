@@ -1,5 +1,6 @@
 package de.jakob.lotm.beyonders.abilities.door;
 
+import de.jakob.lotm.attachments.BlockExpiryData;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.damage.ModDamageTypes;
 import de.jakob.lotm.entity.ModEntities;
@@ -59,7 +60,7 @@ public class SpaceConcealmentAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.space_concealment.other",
                 "ability.lotmcraft.space_concealment.self",
@@ -404,6 +405,7 @@ public class SpaceConcealmentAbility extends SelectableAbility {
                     }
                 }
             }
+            BlockExpiryData.get(level).scheduleAll(level, barrierPositions, 20 * 60);
         }
 
         public void repairBarriers() {
@@ -433,6 +435,7 @@ public class SpaceConcealmentAbility extends SelectableAbility {
                     }
                 }
             }
+            BlockExpiryData.get(level).scheduleAll(level, barrierPositions, 20 * 60);
         }
 
         public void removeBarriers() {

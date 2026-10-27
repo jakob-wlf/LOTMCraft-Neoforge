@@ -3,6 +3,7 @@ package de.jakob.lotm.network;
 import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.beyonders.abilities.abyss.DevilWorship.DevilWorshipNetwork;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.BloodSovereignClient;
+import de.jakob.lotm.network.packets.toServer.CreateContractPayload;
 import de.jakob.lotm.network.packets.toClient.*;
 import de.jakob.lotm.network.packets.toServer.*;
 import de.jakob.lotm.util.BeyonderData;
@@ -394,12 +395,6 @@ public class PacketHandler {
         );
 
         registrar.playToClient(
-                SyncAbilitySelectionPacket.TYPE,
-                SyncAbilitySelectionPacket.STREAM_CODEC,
-                SyncAbilitySelectionPacket::handle
-        );
-
-        registrar.playToClient(
                 SyncAllyDataPacket.TYPE,
                 SyncAllyDataPacket.STREAM_CODEC,
                 SyncAllyDataPacket::handle
@@ -632,6 +627,18 @@ public class PacketHandler {
                 WhipSlashPayload.TYPE,
                 WhipSlashPayload.STREAM_CODEC,
                 WhipSlashPayload::handle
+        );
+
+        registrar.playToServer(
+                CreateContractPayload.TYPE,
+                CreateContractPayload.CODEC,
+                CreateContractPayload::handle
+        );
+
+        registrar.playToServer(
+                ConfirmDecisionPayload.TYPE,
+                ConfirmDecisionPayload.CODEC,
+                ConfirmDecisionPayload::handle
         );
 
         registrar.playToServer(

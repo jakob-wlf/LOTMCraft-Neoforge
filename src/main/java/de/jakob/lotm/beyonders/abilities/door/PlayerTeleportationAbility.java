@@ -53,7 +53,7 @@ public class PlayerTeleportationAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         ArrayList<UUID> players = new ArrayList<>(onlinePlayers);
         return players.stream().map(uuid -> namesForPlayer.getOrDefault(uuid, "Unknown Player")).toArray(String[]::new).clone();
     }
@@ -103,7 +103,7 @@ public class PlayerTeleportationAbility extends SelectableAbility {
 
     @Override
     public String getSelectedAbility(LivingEntity entity) {
-        if(getAbilityNames().length == 0)
+        if(getAllAbilityNames().length == 0)
             return "";
 
         if(!selectedAbilities.containsKey(entity.getUUID())) {

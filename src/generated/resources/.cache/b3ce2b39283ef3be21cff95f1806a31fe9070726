@@ -1,4 +1,4 @@
-// 1.21.1	2026-10-09T21:16:16.1699034	Item Models: lotmcraft
+// 1.21.1	2026-10-24T20:51:37.9118703	Item Models: lotmcraft
 f73b18465ecc4c7209da8e28508db3e3a9a348de assets/lotmcraft/models/item/abyss_demonic_fish_blood.json
 d79ff3aedef37faf54603234b4a98f66afb8991f assets/lotmcraft/models/item/abyss_uniqueness.json
 13ab3bdbdd84c3422e8f32b240a0fc73e54fc57e assets/lotmcraft/models/item/aconite_juice.json
@@ -420,6 +420,7 @@ a5851523c9f6e597c054270b142883e9a1c91a94 assets/lotmcraft/models/item/nightwatch
 a5851523c9f6e597c054270b142883e9a1c91a94 assets/lotmcraft/models/item/notary.json
 df027ae55c442b809ae64805c5f4e9762e4a809b assets/lotmcraft/models/item/notary_characteristic.json
 2041fb0c252eef1802bcfb739698a98c080aaee3 assets/lotmcraft/models/item/notary_potion.json
+57110eb8b52d5f49b0c3215025b9116b1f777365 assets/lotmcraft/models/item/notary_seal.json
 a5851523c9f6e597c054270b142883e9a1c91a94 assets/lotmcraft/models/item/ocean_songster.json
 bc079732c1039919d5215e7ecd82da8fe0d557ac assets/lotmcraft/models/item/ocean_songster_characteristic.json
 35ed80c8aeaadfc3071db8557170f7cd90f0cfb0 assets/lotmcraft/models/item/ocean_songster_potion.json

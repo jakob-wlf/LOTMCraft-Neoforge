@@ -25,6 +25,7 @@ import de.jakob.lotm.beyonders.quest.QuestRegistry;
 import de.jakob.lotm.rendering.*;
 import de.jakob.lotm.rendering.effectRendering.EffectParams;
 import de.jakob.lotm.rendering.effectRendering.VFXRenderer;
+import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.ClientBeyonderCache;
 import de.jakob.lotm.util.data.ClientSacrificeCache;
 import de.jakob.lotm.util.data.ClientSpiritCache;
@@ -693,13 +694,6 @@ public class ClientHandler {
         }
 
         AnimationUtil.playAnimation(player, AnimationUtil.getResourceLocationById(packet.animId()));
-    }
-
-    public static void handleAbilitySelectionPacket(SyncAbilitySelectionPacket packet) {
-        if (!(LOTMCraft.abilityHandler.getById(packet.abilityId()) instanceof SelectableAbility selectable)) return;
-        var player = Minecraft.getInstance().player;
-        if (player == null) return;
-        selectable.setSelectedAbilityClient(player.getUUID(), packet.selectedIndex());
     }
 
     public static void handleSyncHistoricalVoidSummoningCountPacket(SyncHistoricalVoidSummoningCountPacket packet) {

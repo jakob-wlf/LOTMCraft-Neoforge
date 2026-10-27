@@ -43,7 +43,7 @@ public class LifeDeprivationAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.life_deprivation.target",
                 "ability.lotmcraft.life_deprivation.area",

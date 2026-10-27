@@ -65,8 +65,8 @@ public class DamageResistanceHandler {
                 int seqDifference = entitySeq - sourceSeq;
                 mult = 1.0f + (baseStep * seqDifference);
 
-                if (mult <= 0.0f) {
-                    mult = 0f;
+                if (mult <= 0.2f) {
+                    mult = 0.2f;
                 }
             } else {
                 if (sourceSeq <= 4) {

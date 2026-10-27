@@ -40,7 +40,7 @@ public class TimeManipulationAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.time_manipulation.stop_time",
                 "ability.lotmcraft.time_manipulation.accelerate_time",

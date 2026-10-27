@@ -41,7 +41,7 @@ public class CleansingAbility extends SelectableAbility {
     }
 
     @Override
-    public String[] getAbilityNames() {
+    public String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.cleansing.self",
                 "ability.lotmcraft.cleansing.others"

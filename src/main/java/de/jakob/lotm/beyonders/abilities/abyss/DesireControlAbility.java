@@ -42,7 +42,7 @@ public class DesireControlAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.desire_control.single_target",
                 "ability.lotmcraft.desire_control.aoe"

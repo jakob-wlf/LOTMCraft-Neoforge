@@ -54,7 +54,7 @@ public class DeceitAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.deceit.entities",
                 "ability.lotmcraft.deceit.world"

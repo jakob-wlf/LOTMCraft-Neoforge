@@ -42,7 +42,7 @@ public class DoorAuthorityAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.door_authority.malfunction",
                 "ability.lotmcraft.door_authority.strengthen"

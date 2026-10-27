@@ -51,7 +51,7 @@ public class ProphecyAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.prophecy.disaster",
                 "ability.lotmcraft.prophecy.fortune",

@@ -49,7 +49,7 @@ public class WindManipulationAbility extends SelectableAbility {
     }
 
     @Override
-    public String[] getAbilityNames() {
+    public String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.wind_manipulation.wind_blade",
                 "ability.lotmcraft.wind_manipulation.binding",

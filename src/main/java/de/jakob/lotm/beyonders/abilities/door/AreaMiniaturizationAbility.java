@@ -67,7 +67,7 @@ public class AreaMiniaturizationAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.area_miniaturization.area",
                 "ability.lotmcraft.area_miniaturization.creature",

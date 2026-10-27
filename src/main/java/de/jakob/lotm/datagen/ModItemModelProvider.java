@@ -38,6 +38,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         basicItem(ModItems.UNIQUENESS_MAP.get());
         basicItem(ModItems.CITY_MAP.get());
         basicItem(ModItems.CANE.get());
+        basicItem(ModItems.NOTARY_SEAL.get());
 
         handheldItem(ModItems.PAPER_SWORD.get());
         handheldItem(ModItems.PAPER_PICKAXE.get());

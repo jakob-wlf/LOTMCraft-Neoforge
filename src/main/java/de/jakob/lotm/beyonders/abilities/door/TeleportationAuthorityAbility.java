@@ -47,7 +47,7 @@ public class TeleportationAuthorityAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.teleportation_authority.self",
                 "ability.lotmcraft.teleportation_authority.self_and_nearby",

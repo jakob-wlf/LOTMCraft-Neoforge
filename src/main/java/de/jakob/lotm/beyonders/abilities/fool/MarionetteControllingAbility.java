@@ -55,7 +55,7 @@ public class MarionetteControllingAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.marionette_controlling.control",
                 "ability.lotmcraft.marionette_controlling.damage_auto_swap",
@@ -64,51 +64,16 @@ public class MarionetteControllingAbility extends SelectableAbility {
     }
 
     @Override
-    public void nextAbility(LivingEntity entity) {
-        if(getAbilityNames().length == 0)
-            return;
-
-        if(!selectedAbilities.containsKey(entity.getUUID())) {
-            selectedAbilities.put(entity.getUUID(), 0);
-        }
-
-        int selectedAbility = selectedAbilities.get(entity.getUUID());
-        selectedAbility++;
-        if(selectedAbility >= getAbilityNames().length) {
-            selectedAbility = 0;
-        }
-
-        int entitySeq = AbilityUtil.getSeqWithArt(entity, this);
-        if(entitySeq > 4 && selectedAbility >= 1) {
-            selectedAbility = 0;
-        }
-        selectedAbilities.put(entity.getUUID(), selectedAbility);
-        PacketHandler.sendToServer(new AbilitySelectionPacket(getId(), selectedAbility));
-    }
-
-    @Override
-    public void previousAbility(LivingEntity entity) {
-        if(getAbilityNames().length == 0)
-            return;
-
-        if(!selectedAbilities.containsKey(entity.getUUID())) {
-            selectedAbilities.put(entity.getUUID(), 0);
-        }
-
-        int selectedAbility = selectedAbilities.get(entity.getUUID());
-        int entitySeq = AbilityUtil.getSeqWithArt(entity, this);
-
-        selectedAbility--;
-        if(selectedAbility <= -1) {
-            selectedAbility = getAbilityNames().length - 1;
-        }
-
-        if(entitySeq > 4 && selectedAbility >= 1) {
-            selectedAbility = 0;
-        }
-
-        selectedAbilities.put(entity.getUUID(), selectedAbility);
-        PacketHandler.sendToServer(new AbilitySelectionPacket(getId(), selectedAbility));
+    public String[] getSequenceDependantAbilityNames(int sequence) {
+        return switch (sequence) {
+            default -> new String[]{
+                    "ability.lotmcraft.marionette_controlling.control",
+                    "ability.lotmcraft.marionette_controlling.damage_auto_swap",
+                    "ability.lotmcraft.marionette_controlling.swap",
+                    "ability.lotmcraft.marionette_controlling.add_worm"};
+            case 5,6,7,8,9,10 -> new String[]{
+                    "ability.lotmcraft.marionette_controlling.control"};
+        };
     }
 
     @Override

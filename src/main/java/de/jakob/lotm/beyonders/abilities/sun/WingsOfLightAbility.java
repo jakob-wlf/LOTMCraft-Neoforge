@@ -68,7 +68,7 @@ public class WingsOfLightAbility extends ToggleAbility {
         if(entity instanceof Player player) {
             player.getAbilities().mayfly = true;
             player.getAbilities().flying = true;
-            player.getAbilities().setFlyingSpeed(.45f);
+            player.getAbilities().setFlyingSpeed(.15f);
             player.onUpdateAbilities();
         }
 

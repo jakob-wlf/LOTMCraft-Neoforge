@@ -63,10 +63,23 @@ public class FlamingJumpAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.flaming_jump_ability.close_flaming_jump",
                 "ability.lotmcraft.flaming_jump_ability.far_flaming_jump"
+        };
+    }
+
+    @Override
+    public String[] getSequenceDependantAbilityNames(int sequence) {
+        return switch (sequence) {
+            default -> new String[]{
+                    "ability.lotmcraft.flaming_jump_ability.close_flaming_jump",
+                    "ability.lotmcraft.flaming_jump_ability.far_flaming_jump"
+            };
+            case 5,6,7,8,9,10 -> new String[]{
+                    "ability.lotmcraft.flaming_jump_ability.close_flaming_jump"
+            };
         };
     }
 
@@ -79,55 +92,6 @@ public class FlamingJumpAbility extends SelectableAbility {
             case 0 -> closeFlamingJump(level, entity);
             case 1 -> farFlamingJump(level, entity);
         }
-    }
-
-    @Override
-    public void nextAbility(LivingEntity entity){
-        if(getAbilityNames().length == 0)
-            return;
-
-        if(!selectedAbilities.containsKey(entity.getUUID())) {
-            selectedAbilities.put(entity.getUUID(), 0);
-        }
-
-        int selectedAbility = selectedAbilities.get(entity.getUUID());
-        int entitySeq = AbilityUtil.getSeqWithArt(entity, this);
-
-        selectedAbility++;
-        if(selectedAbility >= getAbilityNames().length) {
-            selectedAbility = 0;
-        }
-
-        if((entitySeq > 4 && selectedAbility >= 1)){
-            selectedAbility = 0;
-        }
-
-        selectedAbilities.put(entity.getUUID(), selectedAbility);
-        PacketHandler.sendToServer(new AbilitySelectionPacket(getId(), selectedAbility));
-    }
-
-    @Override
-    public void previousAbility(LivingEntity entity){
-        if(getAbilityNames().length == 0)
-            return;
-
-        if(!selectedAbilities.containsKey(entity.getUUID())) {
-            selectedAbilities.put(entity.getUUID(), 0);
-        }
-
-        int selectedAbility = selectedAbilities.get(entity.getUUID());
-        selectedAbility--;
-        if(selectedAbility <= -1) {
-            selectedAbility = getAbilityNames().length - 1;
-        }
-
-        int entitySeq = AbilityUtil.getSeqWithArt(entity, this);
-        if((entitySeq > 4 && selectedAbility >= 1)){
-            selectedAbility = 0;
-        }
-
-        selectedAbilities.put(entity.getUUID(), selectedAbility);
-        PacketHandler.sendToServer(new AbilitySelectionPacket(getId(), selectedAbility));
     }
 
     public void closeFlamingJump(Level level, LivingEntity entity) {

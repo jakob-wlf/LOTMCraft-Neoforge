@@ -38,7 +38,7 @@ public class DamageTransferAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.damage_transfer.self",
                 "ability.lotmcraft.damage_transfer.others"

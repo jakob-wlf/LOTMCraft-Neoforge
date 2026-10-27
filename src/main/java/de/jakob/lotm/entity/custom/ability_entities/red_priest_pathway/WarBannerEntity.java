@@ -101,7 +101,8 @@ public class WarBannerEntity extends Entity {
         Entity casterEntity = getCasterEntity();
 
         AbilityUtil.getNearbyEntities(null, (ServerLevel) level(), position(), getRadius()).forEach(e -> {
-            ParticleUtil.spawnParticles((ServerLevel) level(), PriestFlameParticle.byId(BeyonderData.getSequence(level().getPlayerByUUID(this.getCasterUUID()))).getType(), e.position().add(0, e.getBbHeight() / 2, 0), 1, .4, 1, .4, 0);
+            if(this.getCasterUUID() != null && this.getCasterEntity() != null)
+                ParticleUtil.spawnParticles((ServerLevel) level(), PriestFlameParticle.byId(BeyonderData.getSequence(level().getPlayerByUUID(this.getCasterUUID()))).getType(), e.position().add(0, e.getBbHeight() / 2, 0), 1, .4, 1, .4, 0);
             ParticleUtil.spawnParticles((ServerLevel) level(), dust, e.position().add(0, e.getBbHeight() / 2, 0), 7, .4, 1, .4, 0);
 
             boolean isCaster = e.getUUID().equals(getCasterUUID());
