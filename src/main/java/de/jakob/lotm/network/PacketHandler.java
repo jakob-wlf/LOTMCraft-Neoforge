@@ -1,6 +1,7 @@
 package de.jakob.lotm.network;
 
 import de.jakob.lotm.LOTMCraft;
+import de.jakob.lotm.network.packets.toServer.CreateContractPayload;
 import de.jakob.lotm.network.packets.toClient.*;
 import de.jakob.lotm.network.packets.toServer.*;
 import de.jakob.lotm.beyonders.abilities.twilight_giant.ProxyAbility;
@@ -634,6 +635,18 @@ public class PacketHandler {
                 WhipSlashPayload.TYPE,
                 WhipSlashPayload.STREAM_CODEC,
                 WhipSlashPayload::handle
+        );
+
+        registrar.playToServer(
+                CreateContractPayload.TYPE,
+                CreateContractPayload.CODEC,
+                CreateContractPayload::handle
+        );
+
+        registrar.playToServer(
+                ConfirmDecisionPayload.TYPE,
+                ConfirmDecisionPayload.CODEC,
+                ConfirmDecisionPayload::handle
         );
 
         registrar.playToServer(

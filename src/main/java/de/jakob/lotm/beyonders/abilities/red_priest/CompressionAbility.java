@@ -29,7 +29,7 @@ public class CompressionAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.pyrokinesis.compress",
                 "ability.lotmcraft.pyrokinesis.release",

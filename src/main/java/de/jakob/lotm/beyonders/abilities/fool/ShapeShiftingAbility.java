@@ -46,7 +46,7 @@ public class ShapeShiftingAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.shape_shifting_ability.change_shape",
                 "ability.lotmcraft.shape_shifting_ability.reset_shape"

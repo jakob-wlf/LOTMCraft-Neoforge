@@ -55,7 +55,7 @@ public class HolySongAbility extends SelectableAbility {
     );
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{"ability.lotmcraft.holy_song.courage", "ability.lotmcraft.holy_song.recover"};
     }
 

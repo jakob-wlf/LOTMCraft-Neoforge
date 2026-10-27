@@ -38,7 +38,7 @@ public class LanguageOfFoulnessAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{"ability.lotmcraft.language_of_foulness.slow", "ability.lotmcraft.language_of_foulness.corruption", "ability.lotmcraft.language_of_foulness.death"};
     }
 

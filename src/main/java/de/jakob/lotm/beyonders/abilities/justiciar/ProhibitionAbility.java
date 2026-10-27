@@ -58,7 +58,7 @@ public class ProhibitionAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.prohibition.beyonder_abilities",
                 "ability.lotmcraft.prohibition.combat",
@@ -69,6 +69,24 @@ public class ProhibitionAbility extends SelectableAbility {
                 "ability.lotmcraft.prohibition.stand_ins",
                 "ability.lotmcraft.prohibition.marionette_interchange",
                 "ability.lotmcraft.prohibition.theft"
+        };
+    }
+
+    @Override
+    public String[] getSequenceDependantAbilityNames(int sequence) {
+        return switch (sequence) {
+            case 4 -> new String[] {
+                    "ability.lotmcraft.prohibition.beyonder_abilities",
+                    "ability.lotmcraft.prohibition.combat",
+                    "ability.lotmcraft.prohibition.flying",
+                    "ability.lotmcraft.prohibition.item_use",
+            };
+            case 5,6,7,8,9,10 -> new String[] {
+                    "ability.lotmcraft.prohibition.beyonder_abilities",
+                    "ability.lotmcraft.prohibition.combat",
+                    "ability.lotmcraft.prohibition.flying",
+            };
+            default -> getAllAbilityNames();
         };
     }
 
@@ -204,40 +222,6 @@ public class ProhibitionAbility extends SelectableAbility {
         ParticleUtil.spawnSphereParticles(level, DUST_RED, center.add(0, 1, 0), 1.5, 24);
         ParticleUtil.spawnSphereParticles(level, DUST_RED, center.add(0, 1, 0), 0.8, 12);
         ParticleUtil.spawnParticles(level, ParticleTypes.SMOKE, center.add(0, 1, 0), 12, 0.6);
-    }
-
-    @Override
-    public void nextAbility(LivingEntity entity) {
-        if (getAbilityNames().length == 0) return;
-        if (!selectedAbilities.containsKey(entity.getUUID())) selectedAbilities.put(entity.getUUID(), 0);
-
-        int selected = selectedAbilities.get(entity.getUUID()) + 1;
-        if (selected >= getAbilityNames().length) selected = 0;
-        selected = clampToSequence(selected, entity);
-
-        selectedAbilities.put(entity.getUUID(), selected);
-        PacketHandler.sendToServer(new AbilitySelectionPacket(getId(), selected));
-    }
-
-    @Override
-    public void previousAbility(LivingEntity entity) {
-        if (getAbilityNames().length == 0) return;
-        if (!selectedAbilities.containsKey(entity.getUUID())) selectedAbilities.put(entity.getUUID(), 0);
-
-        int selected = selectedAbilities.get(entity.getUUID()) - 1;
-        if (selected <= -1) selected = getAbilityNames().length - 1;
-        selected = clampToSequence(selected, entity);
-
-        selectedAbilities.put(entity.getUUID(), selected);
-        PacketHandler.sendToServer(new AbilitySelectionPacket(getId(), selected));
-    }
-
-    private int clampToSequence(int selected, LivingEntity entity) {
-        int seq = AbilityUtil.getSeqWithArt(entity, this);
-        if (seq > 6 && selected >= 2) return 0;
-        if (seq > 4 && selected >= 3) return 0;
-        if (seq > 3 && selected >= 4) return 0;
-        return selected;
     }
 
     public enum ProhibitionType {

@@ -45,7 +45,7 @@ public class FlamesOfTheAbyssAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.flames_of_the_abyss.meteor_rain",
                 "ability.lotmcraft.flames_of_the_abyss.abyss_pillars",

@@ -28,10 +28,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.phys.Vec3;
 
-import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,7 +37,7 @@ public class AngelAuthorityAbility extends SelectableAbility {
     private AngelFlightAbility flightSkill;
 
     public AngelAuthorityAbility(String id) {
-        super(id, 7.0f);
+        super(id, 2.0f);
         this.canBeUsedByNPC = false;
         this.canBeCopied = false;
         this.cannotBeStolen = true;
@@ -63,10 +61,10 @@ public class AngelAuthorityAbility extends SelectableAbility {
         return reqs;
     }
 
-    protected String[] getAbilityNames() {
-        return new String[]{"ability.lotmcraft.angel_authority.flight",
+    protected String[] getAllAbilityNames() {
+        return new String[]{"ability.lotmcraft.angel_authority.spirit_world_passage",
                 "ability.lotmcraft.angel_authority.artifact_shattering",
-                "ability.lotmcraft.angel_authority.spirit_world_passage"
+                "ability.lotmcraft.angel_authority.flight"
         };
     }
 
@@ -74,7 +72,7 @@ public class AngelAuthorityAbility extends SelectableAbility {
         if (!level.isClientSide && entity instanceof ServerPlayer player) {
             switch (abilityIndex) {
                 case 0:
-                    flight(player, (ServerLevel) level);
+                    this.spiritWorldPassage(player);
                     break;
 
                 case 1:
@@ -82,7 +80,7 @@ public class AngelAuthorityAbility extends SelectableAbility {
                     break;
 
                 case 2:
-                    this.spiritWorldPassage(player);
+                    flight(player, (ServerLevel) level);
                     break;
 
             }
@@ -136,11 +134,6 @@ public class AngelAuthorityAbility extends SelectableAbility {
         ServerLevel targetLevel;
         Vec3 targetPos;
 
-        if (!player.level().dimension().equals(Level.OVERWORLD) &&
-                !player.level().dimension().equals(Level.NETHER) &&
-                !player.level().dimension().equals(Level.END) &&
-                !player.level().dimension().equals(ModDimensions.SPIRIT_WORLD_DIMENSION_KEY)) return;
-
         if (!player.level().dimension().equals(ModDimensions.SPIRIT_WORLD_DIMENSION_KEY)) {
             ResourceKey spiritWorld = ResourceKey.create((ResourceKey) Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath(LOTMCraft.MOD_ID, "spirit_world"));
             targetLevel = player.getServer().getLevel(spiritWorld);
@@ -167,6 +160,9 @@ public class AngelAuthorityAbility extends SelectableAbility {
                 pos = pos.above();
             }
             BlockPos below = pos.below();
+            if (targetLevel.getBlockState(below).isAir()) {
+                targetLevel.setBlockAndUpdate(below, Blocks.STONE.defaultBlockState());
+            }
             player.teleportTo(targetLevel, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, player.getYRot(), player.getXRot());
         }
         ParticleUtil.spawnParticles((ServerLevel)player.level(), ParticleTypes.END_ROD, player.position(), 200, 2.0, 0.001);

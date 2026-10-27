@@ -74,7 +74,7 @@ public class WaterMasteryAbility extends SelectableAbility {
     }
 
     @Override
-    public String[] getAbilityNames() {
+    public String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.water_mastery.water_wall",
                 "ability.lotmcraft.water_mastery.flooding",

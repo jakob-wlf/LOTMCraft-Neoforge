@@ -56,7 +56,7 @@ public class MirrorWorldTraversalAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.mirror_world_traversal.enter",
                 "ability.lotmcraft.mirror_world_traversal.scan"

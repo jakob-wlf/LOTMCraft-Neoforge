@@ -8,6 +8,7 @@ import de.jakob.lotm.item.ModItems;
 import de.jakob.lotm.util.data.PriestFlameParticle;
 import de.jakob.lotm.util.data.PriestFlameVariants;
 import de.jakob.lotm.util.helper.ParticleUtil;
+import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.particles.SimpleParticleType;
@@ -40,6 +41,7 @@ public class FlamingSpearProjectileEntity extends AbstractArrow {
     private final boolean griefing;
     private int ticks = 0;
     private int petrifiedTicks = 0;
+    private boolean isDiscarded = false;
     private static final EntityDataAccessor<Float> SIZE = SynchedEntityData.defineId(FlamingSpearProjectileEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Boolean> TRANSFORMED = SynchedEntityData.defineId(FlamingSpearProjectileEntity.class, EntityDataSerializers.BOOLEAN);
 
@@ -121,11 +123,12 @@ public class FlamingSpearProjectileEntity extends AbstractArrow {
 
     @Override
     public void tick() {
+        if(isDiscarded) return;
         // Petrification Logic -- run before super.tick() to stop movement completely
         if(getTags().contains("petrified")) {
             petrifiedTicks++;
             if(petrifiedTicks >= 20 * 5) {
-                this.discard();
+                remove();
             }
             return;
         }
@@ -158,14 +161,16 @@ public class FlamingSpearProjectileEntity extends AbstractArrow {
         if(level.getBlockState(BlockPos.containing(position())).is(Blocks.WATER) || level.getBlockState(BlockPos.containing(position())).is(Blocks.LAVA)) {
             onHitBlock(new BlockHitResult(this.position(), this.getDirection(), BlockPos.containing(this.position()), false));
         }
-        SimpleParticleType bigtype = PriestFlameParticle.byId(this.getVariant().getId()).getType();
-        int density = random.nextInt(1, 20);
-        if(bigtype == ParticleTypes.DRAGON_BREATH) density = 30;
-        ParticleUtil.spawnParticles((ServerLevel) level, bigtype, position(), density, .33, .045);
+    }
+
+    private void remove() {
+        this.isDiscarded = true;
+        ServerScheduler.scheduleDelayed(6, this::discard);
     }
 
     @Override
     protected boolean canHitEntity(@NotNull Entity target) {
+        if(isDiscarded) return false;
         if(target.level().isClientSide) return false;
         if (this.owner != null) {
             if(this.owner.getStringUUID().equals(target.getStringUUID())) return false;
@@ -175,9 +180,9 @@ public class FlamingSpearProjectileEntity extends AbstractArrow {
 
     @Override
     protected void onHitEntity(EntityHitResult result) {
+        if(isDiscarded) return;
 
-
-        this.discard();
+        this.remove();
         if(this.owner instanceof ServerPlayer player) {
             player.stopRiding();
 
@@ -196,8 +201,9 @@ public class FlamingSpearProjectileEntity extends AbstractArrow {
 
     @Override
     protected void onHitBlock(BlockHitResult result) {
+        if(isDiscarded) return;
         if(this.owner instanceof ServerPlayer player && this.isRide()) player.stopRiding();
-        this.discard();
+        this.remove();
 
         if(griefing) {
             level.explode(owner, result.getLocation().x, result.getLocation().y, result.getLocation().z, 4f, true, Level.ExplosionInteraction.MOB);

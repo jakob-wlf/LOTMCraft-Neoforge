@@ -56,7 +56,7 @@ public class IllusionaryTortureDevicesAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.interrogator.branding_iron",
                 "ability.lotmcraft.interrogator.psychic_lashing",

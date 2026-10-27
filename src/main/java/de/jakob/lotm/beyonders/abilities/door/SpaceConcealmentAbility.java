@@ -59,7 +59,7 @@ public class SpaceConcealmentAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.space_concealment.other",
                 "ability.lotmcraft.space_concealment.self",

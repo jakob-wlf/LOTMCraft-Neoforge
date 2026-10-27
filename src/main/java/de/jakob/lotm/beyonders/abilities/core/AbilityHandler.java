@@ -53,6 +53,7 @@ public class AbilityHandler {
         abilities.add(new SunHaloAbility("sun_halo_ability"));
         abilities.add(new HolyOathAbility("holy_oath_ability"));
         abilities.add(new HolyLightSummoningAbility("holy_light_summoning_ability"));
+        abilities.add(new NotarizationAbility("notarization_ability"));
         abilities.add(new GodSaysItsEffectiveAbility("notary_buff_ability"));
         abilities.add(new GodSaysItsNotEffectiveAbility("notary_debuff_ability"));
         abilities.add(new LightOfHolinessAbility("light_of_holiness_ability"));

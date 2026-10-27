@@ -46,7 +46,7 @@ public class WrathOfTheOceanAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{"ability.lotmcraft.wrath_of_the_ocean.boiling_water", "ability.lotmcraft.wrath_of_the_ocean.repel"};
     }
 

@@ -51,7 +51,7 @@ public class ConceptualTheftAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.conceptual_theft.day_night",
                 "ability.lotmcraft.conceptual_theft.area",

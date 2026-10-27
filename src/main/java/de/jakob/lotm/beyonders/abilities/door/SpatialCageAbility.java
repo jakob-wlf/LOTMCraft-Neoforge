@@ -52,7 +52,7 @@ public class SpatialCageAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.spatial_cage.surround",
                 "ability.lotmcraft.spatial_cage.open_front"

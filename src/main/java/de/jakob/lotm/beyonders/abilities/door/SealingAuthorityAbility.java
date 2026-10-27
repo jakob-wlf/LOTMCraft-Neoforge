@@ -77,7 +77,7 @@ public class SealingAuthorityAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.sealing_authority.seal_target",
                 //"ability.lotmcraft.sealing_authority.make_trap",

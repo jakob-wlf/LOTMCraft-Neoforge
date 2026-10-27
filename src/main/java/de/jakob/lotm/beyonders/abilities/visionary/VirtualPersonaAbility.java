@@ -60,13 +60,32 @@ public class VirtualPersonaAbility extends SelectableAbility {
     }
 
     @Override
-    public String[] getAbilityNames() {
+    public String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.virtual_persona.self",
                 "ability.lotmcraft.virtual_persona.move",
                 "ability.lotmcraft.virtual_persona.check",
                 "ability.lotmcraft.virtual_persona.clear_all",
                 "ability.lotmcraft.virtual_persona.create_avatar"
+        };
+    }
+
+    @Override
+    public String[] getSequenceDependantAbilityNames(int sequence) {
+        return switch (sequence) {
+            case 10,9,8,7,6,5,4 -> new String[]{
+                    "ability.lotmcraft.virtual_persona.self",
+                    "ability.lotmcraft.virtual_persona.move",
+                    "ability.lotmcraft.virtual_persona.check",
+                    "ability.lotmcraft.virtual_persona.clear_all"
+            };
+            default -> new String[]{
+                    "ability.lotmcraft.virtual_persona.self",
+                    "ability.lotmcraft.virtual_persona.move",
+                    "ability.lotmcraft.virtual_persona.check",
+                    "ability.lotmcraft.virtual_persona.clear_all",
+                    "ability.lotmcraft.virtual_persona.create_avatar"
+            };
         };
     }
 
@@ -278,55 +297,6 @@ public class VirtualPersonaAbility extends SelectableAbility {
         }
 
         component.create(seq);
-    }
-
-    @Override
-    public void nextAbility(LivingEntity entity){
-        if(getAbilityNames().length == 0)
-            return;
-
-        if(!selectedAbilities.containsKey(entity.getUUID())) {
-            selectedAbilities.put(entity.getUUID(), 0);
-        }
-
-        int selectedAbility = selectedAbilities.get(entity.getUUID());
-        int entitySeq = AbilityUtil.getSeqWithArt(entity, this);
-
-        selectedAbility++;
-        if(selectedAbility >= getAbilityNames().length) {
-            selectedAbility = 0;
-        }
-
-        if(entitySeq > 3 && selectedAbility >= 4){
-            selectedAbility = 0;
-        }
-
-        selectedAbilities.put(entity.getUUID(), selectedAbility);
-        PacketHandler.sendToServer(new AbilitySelectionPacket(getId(), selectedAbility));
-    }
-
-    @Override
-    public void previousAbility(LivingEntity entity){
-        if(getAbilityNames().length == 0)
-            return;
-
-        if(!selectedAbilities.containsKey(entity.getUUID())) {
-            selectedAbilities.put(entity.getUUID(), 0);
-        }
-
-        int selectedAbility = selectedAbilities.get(entity.getUUID());
-        selectedAbility--;
-        if(selectedAbility <= -1) {
-            selectedAbility = getAbilityNames().length - 1;
-        }
-
-        int entitySeq = AbilityUtil.getSeqWithArt(entity, this);
-        if(entitySeq > 3 && selectedAbility >= 4){
-            selectedAbility = 3;
-        }
-
-        selectedAbilities.put(entity.getUUID(), selectedAbility);
-        PacketHandler.sendToServer(new AbilitySelectionPacket(getId(), selectedAbility));
     }
 
     private void spawnAvatar(ServerLevel serverLevel, LivingEntity entity) {

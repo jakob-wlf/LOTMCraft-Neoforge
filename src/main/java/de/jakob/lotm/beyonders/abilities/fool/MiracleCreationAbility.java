@@ -58,7 +58,7 @@ public class MiracleCreationAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{"ability.lotmcraft.miracle_creation.summon_structure",
                 "ability.lotmcraft.miracle_creation.calamity_creation",
                 "ability.lotmcraft.miracle_creation.area_manipulation",

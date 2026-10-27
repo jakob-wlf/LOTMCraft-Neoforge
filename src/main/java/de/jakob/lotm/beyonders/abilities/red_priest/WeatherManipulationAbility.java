@@ -58,7 +58,7 @@ public class WeatherManipulationAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.calamity_creation.snow_storm",
                 "ability.lotmcraft.calamity_creation.drought",

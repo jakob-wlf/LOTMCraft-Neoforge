@@ -68,7 +68,7 @@ public class DreamTraversalAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.dream_traversal.jump",
                 "ability.lotmcraft.dream_traversal.jump_range",

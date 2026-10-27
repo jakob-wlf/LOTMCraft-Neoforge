@@ -12,6 +12,8 @@ import de.jakob.lotm.gui.custom.brewing_cauldron.BrewingCauldronMenu;
 import de.jakob.lotm.gui.custom.introspect.IntrospectMenu;
 import de.jakob.lotm.gui.custom.marionettes.MarionetteMenu;
 import de.jakob.lotm.gui.custom.mass_puppeteering.MassPuppeteeringMenu;
+import de.jakob.lotm.gui.custom.notarization.ConfirmMenu;
+import de.jakob.lotm.gui.custom.notarization.ContractMenu;
 import de.jakob.lotm.gui.custom.pathway_selection.PathwaySelectionMenu;
 import de.jakob.lotm.gui.custom.recipe.RecipeMenu;
 import de.jakob.lotm.gui.custom.ritualistic_table.RitualMenu;
@@ -57,6 +59,12 @@ public class ModMenuTypes {
             "copied_ability_wheel_menu",
             () -> new MenuType<>(CopiedAbilityWheelMenu::new, net.minecraft.world.flag.FeatureFlags.DEFAULT_FLAGS)
     );
+
+    public static final DeferredHolder<MenuType<?>, MenuType<ContractMenu>> CONTRACT =
+            MENU_TYPES.register("contract", () -> IMenuTypeExtension.create(ContractMenu::new));
+
+    public static final DeferredHolder<MenuType<?>, MenuType<ConfirmMenu>> CONFIRM_CONTRACT =
+            MENU_TYPES.register("confirm_contract", () -> IMenuTypeExtension.create(ConfirmMenu::new));
 
     public static final DeferredHolder<MenuType<?>, MenuType<RitualMenu>> RITUAL_MENU =
             MENU_TYPES.register("ritual_menu", () ->

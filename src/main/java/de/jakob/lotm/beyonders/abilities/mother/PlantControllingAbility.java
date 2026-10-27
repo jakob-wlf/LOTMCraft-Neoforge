@@ -58,7 +58,7 @@ public class PlantControllingAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{"ability.lotmcraft.plants.trap", "ability.lotmcraft.plants.attack"};
     }
 

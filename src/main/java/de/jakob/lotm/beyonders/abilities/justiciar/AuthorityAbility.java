@@ -60,7 +60,7 @@ public class AuthorityAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.authority.slow",
                 "ability.lotmcraft.authority.armor_remove"

@@ -53,7 +53,7 @@ public class ManipulationAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.manipulation.select_target",
                 "ability.lotmcraft.manipulation.group_incite",

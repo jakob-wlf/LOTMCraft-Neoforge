@@ -46,7 +46,7 @@ public class SirenSongAbility extends SelectableAbility {
     }
 
     @Override
-    public String[] getAbilityNames() {
+    public String[] getAllAbilityNames() {
         return new String[]{"ability.lotmcraft.siren_song.death_melody",
                 "ability.lotmcraft.siren_song.strengthening_melody",
                 "ability.lotmcraft.siren_song.dazing_song"};

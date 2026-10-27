@@ -52,7 +52,7 @@ public class DemonicSpellsAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.demonic_spells.acid_swamp",
                 "ability.lotmcraft.demonic_spells.filthy_illusion",

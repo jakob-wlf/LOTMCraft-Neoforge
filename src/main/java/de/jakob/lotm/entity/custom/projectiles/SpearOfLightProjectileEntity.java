@@ -35,6 +35,8 @@ public class SpearOfLightProjectileEntity extends AbstractArrow {
     private final boolean griefing;
     private final Ability ability;
     private final static int MAX_LIFETIME = 20 * 20;
+    private boolean isDiscarded = false;
+
 
     private int ticks = 0;
     private int petrifiedTicks = 0;
@@ -59,6 +61,11 @@ public class SpearOfLightProjectileEntity extends AbstractArrow {
         init();
     }
 
+    private void remove() {
+        this.isDiscarded = true;
+        ServerScheduler.scheduleDelayed(6, this::discard);
+    }
+
     private void init() {
         this.setNoGravity(true);
     }
@@ -77,11 +84,12 @@ public class SpearOfLightProjectileEntity extends AbstractArrow {
 
     @Override
     public void tick() {
+        if(isDiscarded) return;
         // Petrification Logic -- run before super.tick() to stop movement completely
         if(getTags().contains("petrified")) {
             petrifiedTicks++;
             if(petrifiedTicks >= 20 * 5) {
-                this.discard();
+                this.remove();
             }
             return;
         }
@@ -104,13 +112,14 @@ public class SpearOfLightProjectileEntity extends AbstractArrow {
         ParticleUtil.spawnParticles((ServerLevel) level, ParticleTypes.END_ROD, position(), 8, .3, .3, .3, 0);
 
         if(this.ticks >= MAX_LIFETIME){
-            this.discard();
+            this.remove();
         }
     }
 
     @Override
     protected void onHitEntity(EntityHitResult result) {
-        this.discard();
+        if(isDiscarded) return;
+        this.remove();
         if(!(result.getEntity() instanceof LivingEntity target)) {
             return;
         }
@@ -134,7 +143,8 @@ public class SpearOfLightProjectileEntity extends AbstractArrow {
 
     @Override
     protected void onHitBlock(BlockHitResult result) {
-        this.discard();
+        if(isDiscarded) return;
+        this.remove();
 
         if(!(level() instanceof ServerLevel serverLevel)) {
             return;

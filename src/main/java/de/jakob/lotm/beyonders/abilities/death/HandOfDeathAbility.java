@@ -47,7 +47,7 @@ public class HandOfDeathAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.hand_of_death.left",
                 "ability.lotmcraft.hand_of_death.right_self",

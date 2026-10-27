@@ -61,7 +61,7 @@ public class JusticeLanguageAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.justice_language.maintain_secrecy",
                 "ability.lotmcraft.justice_language.death",

@@ -61,7 +61,7 @@ public class ConcealmentAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.concealment.surroundings",
                 "ability.lotmcraft.concealment.enter_concealed_area",

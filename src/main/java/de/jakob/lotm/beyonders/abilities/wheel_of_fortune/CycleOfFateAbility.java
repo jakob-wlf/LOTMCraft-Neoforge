@@ -47,7 +47,7 @@ public class CycleOfFateAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.cycle_of_fate.create_cycle",
                 "ability.lotmcraft.cycle_of_fate.trigger_cycle"

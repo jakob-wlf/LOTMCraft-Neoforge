@@ -60,7 +60,7 @@ public class DisasterFantasiaAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.disaster_fantasia.earthquake",
                 "ability.lotmcraft.disaster_fantasia.meteor",

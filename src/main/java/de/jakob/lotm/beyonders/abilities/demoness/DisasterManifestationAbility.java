@@ -59,7 +59,7 @@ public class DisasterManifestationAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.disaster_manifestation.meteor",
                 "ability.lotmcraft.disaster_manifestation.ice_age",

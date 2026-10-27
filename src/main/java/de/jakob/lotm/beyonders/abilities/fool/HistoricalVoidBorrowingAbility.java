@@ -70,7 +70,7 @@ public class HistoricalVoidBorrowingAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.historical_void_borrowing.borrow_health",
                 "ability.lotmcraft.historical_void_borrowing.borrow_spirituality",

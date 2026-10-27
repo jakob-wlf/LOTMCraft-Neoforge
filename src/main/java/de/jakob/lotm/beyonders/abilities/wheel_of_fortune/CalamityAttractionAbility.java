@@ -48,7 +48,7 @@ public class CalamityAttractionAbility extends SelectableAbility {
     private final Calamity[] calamities = new Calamity[]{new Tornado(), new Earthquake(), new Meteor()};
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.calamity_attraction.calamity",
                 "ability.lotmcraft.calamity_attraction.unluck"
