@@ -19,8 +19,10 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
+import net.minecraft.network.protocol.game.ClientboundSetCarriedItemPacket;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -31,6 +33,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -664,7 +667,31 @@ public class NightmareAbility extends SelectableAbility {
         tag.putDouble("z", player.getZ());
         tag.putFloat("yrot", player.getYRot());
         tag.putFloat("xrot", player.getXRot());
+        ListTag items = new ListTag();
+        player.getInventory().save(items);
+        tag.put("items", items);
+        tag.putInt("selected", player.getInventory().selected);
+        ItemStack carried = player.containerMenu.getCarried();
+        if (!carried.isEmpty()) {
+            CompoundTag carriedTag = new CompoundTag();
+            carried.save(player.registryAccess(), carriedTag);
+            tag.put("carried", carriedTag);
+        }
         player.getPersistentData().put(RETURN_TAG, tag);
+    }
+
+    private static void restoreInventory(ServerPlayer player) {
+        CompoundTag tag = player.getPersistentData().getCompound(RETURN_TAG);
+        if (!tag.contains("items")) return;
+        player.getInventory().load(tag.getList("items", 10));
+        player.getInventory().selected = tag.getInt("selected");
+        ItemStack carried = tag.contains("carried")
+                ? ItemStack.parse(player.registryAccess(), tag.getCompound("carried")).orElse(ItemStack.EMPTY)
+                : ItemStack.EMPTY;
+        player.containerMenu.setCarried(carried);
+        player.connection.send(new ClientboundSetCarriedItemPacket(player.getInventory().selected));
+        player.inventoryMenu.broadcastChanges();
+        player.containerMenu.broadcastChanges();
     }
 
     private static UUID leaveBody(LivingEntity entity, UUID session) {
@@ -702,8 +729,11 @@ public class NightmareAbility extends SelectableAbility {
         ServerLevel level = server.getLevel(spot.dimension);
         if (level == null) return;
         place(entity, level, new Vec3(spot.x, spot.y, spot.z), spot.yRot, spot.xRot);
-        if (entity instanceof ServerPlayer player && !player.getUUID().equals(loggingOut) && player.level().dimension().equals(spot.dimension)) {
-            player.getPersistentData().remove(RETURN_TAG);
+        if (entity instanceof ServerPlayer player) {
+            restoreInventory(player);
+            if (!player.getUUID().equals(loggingOut) && player.level().dimension().equals(spot.dimension)) {
+                player.getPersistentData().remove(RETURN_TAG);
+            }
         }
         level.playSound(null, spot.x, spot.y, spot.z, SoundEvents.GLASS_BREAK, SoundSource.HOSTILE, 1.5f, 0.6f);
     }
@@ -767,6 +797,7 @@ public class NightmareAbility extends SelectableAbility {
         if (destination != null) {
             player.teleportTo(destination, tag.getDouble("x"), tag.getDouble("y"), tag.getDouble("z"), tag.getFloat("yrot"), tag.getFloat("xrot"));
         }
+        restoreInventory(player);
         data.remove(RETURN_TAG);
     }
 
