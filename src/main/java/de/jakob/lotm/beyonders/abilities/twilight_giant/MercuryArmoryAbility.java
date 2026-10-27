@@ -28,6 +28,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.ServerChatEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import org.joml.Vector3f;
 
@@ -43,9 +44,7 @@ public class MercuryArmoryAbility extends SelectableAbility {
 
 
     private static final int RANGE = 16;
-    private static final double ARMOR = 20.0D;
-    private static final double TOUGHNESS = 12.0D;
-    private static final double KNOCKBACK_RESISTANCE = 0.4D;
+    private static final float ARMOR_REDUCTION = 0.3f;
     private static final int SEVERE_DIFFERENCE = 2;
     private static final int BASE_STRUGGLE = 8;
     private static final int STRUGGLE_PER_SEQUENCE = 4;
@@ -56,9 +55,6 @@ public class MercuryArmoryAbility extends SelectableAbility {
             "SirenSongAbility", "HolySongAbility", "LanguageOfFoulnessAbility",
             "CorruptingVoiceAbility", "CommandingOrdersAbility", "MidnightPoemAbility");
     private static final DustParticleOptions MERCURY_DUST = new DustParticleOptions(new Vector3f(0.78f, 0.8f, 0.85f), 1.0f);
-    private static final ResourceLocation ARMOR_ID = id("armor");
-    private static final ResourceLocation TOUGHNESS_ID = id("toughness");
-    private static final ResourceLocation KNOCKBACK_ID = id("knockback");
     private static final ResourceLocation ROOT_ID = id("root");
     public static final ResourceLocation HIDDEN_ID = id("hidden");
 
@@ -115,9 +111,6 @@ public class MercuryArmoryAbility extends SelectableAbility {
                 AbilityUtil.sendActionBar(caster, Component.translatable("ability.lotmcraft.mercury_armory.not_ally").withColor(0xFFC8CCD9));
                 return;
             }
-            setModifier(target, Attributes.ARMOR, ARMOR_ID, ARMOR);
-            setModifier(target, Attributes.ARMOR_TOUGHNESS, TOUGHNESS_ID, TOUGHNESS);
-            setModifier(target, Attributes.KNOCKBACK_RESISTANCE, KNOCKBACK_ID, KNOCKBACK_RESISTANCE);
             coats.put(caster.getUUID(), new Coat(target, false, false, 0));
         } else {
             if (!AbilityUtil.mayDamage(caster, target)) return;
@@ -137,9 +130,6 @@ public class MercuryArmoryAbility extends SelectableAbility {
         Coat coat = coats.remove(caster.getUUID());
         if (coat == null) return;
         LivingEntity target = coat.target;
-        removeModifier(target, Attributes.ARMOR, ARMOR_ID);
-        removeModifier(target, Attributes.ARMOR_TOUGHNESS, TOUGHNESS_ID);
-        removeModifier(target, Attributes.KNOCKBACK_RESISTANCE, KNOCKBACK_ID);
         removeModifier(target, Attributes.MOVEMENT_SPEED, ROOT_ID);
         victims.remove(target.getUUID());
         removeModifier(caster, Attributes.MOVEMENT_SPEED, HIDDEN_ID);
@@ -162,6 +152,16 @@ public class MercuryArmoryAbility extends SelectableAbility {
         Vec3 direction = away.lengthSqr() < 1.0E-4 ? player.getLookAngle().multiply(1, 0, 1).normalize() : away.normalize();
         livingCaster.push(direction.x * 1.5, 0.5, direction.z * 1.5);
         livingCaster.hurtMarked = true;
+    }
+
+    @SubscribeEvent
+    public static void onIncomingDamage(LivingIncomingDamageEvent event) {
+        LivingEntity target = event.getEntity();
+        for (Coat coat : coats.values()) {
+            if (coat.suffocating || !coat.target.getUUID().equals(target.getUUID())) continue;
+            event.setAmount(event.getAmount() * (1f - ARMOR_REDUCTION));
+            return;
+        }
     }
 
     @SubscribeEvent
