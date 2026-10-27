@@ -5,6 +5,7 @@ import de.jakob.lotm.beyonders.abilities.abyss.DevilWorship.DevilWorshipAbility;
 import de.jakob.lotm.beyonders.abilities.core.PassiveAbility;
 import de.jakob.lotm.beyonders.abilities.core.PassiveAbilityHandler;
 import de.jakob.lotm.damage.ModDamageTypes;
+import de.jakob.lotm.network.packets.toClient.BloodSovereignClient;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.helper.AbilityUtil;
 import de.jakob.lotm.util.helper.ParticleUtil;

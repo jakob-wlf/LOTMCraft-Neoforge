@@ -1,4 +1,4 @@
-package de.jakob.lotm.beyonders.abilities.abyss.passives;
+package de.jakob.lotm.network.packets.toClient;
 
 import de.jakob.lotm.LOTMCraft;
 import net.minecraft.client.DeltaTracker;

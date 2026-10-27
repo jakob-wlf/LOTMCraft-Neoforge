@@ -1,8 +1,6 @@
 package de.jakob.lotm.network;
 
 import de.jakob.lotm.LOTMCraft;
-import de.jakob.lotm.beyonders.abilities.abyss.DevilWorship.DevilWorshipNetwork;
-import de.jakob.lotm.beyonders.abilities.abyss.passives.BloodSovereignClient;
 import de.jakob.lotm.network.packets.toServer.CreateContractPayload;
 import de.jakob.lotm.network.packets.toClient.*;
 import de.jakob.lotm.network.packets.toServer.*;

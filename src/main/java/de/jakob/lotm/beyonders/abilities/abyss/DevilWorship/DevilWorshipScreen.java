@@ -1,5 +1,6 @@
 package de.jakob.lotm.beyonders.abilities.abyss.DevilWorship;
 
+import de.jakob.lotm.network.packets.toClient.DevilWorshipNetwork;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;

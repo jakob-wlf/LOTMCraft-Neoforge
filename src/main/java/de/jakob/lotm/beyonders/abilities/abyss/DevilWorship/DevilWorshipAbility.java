@@ -8,6 +8,7 @@ import de.jakob.lotm.entity.ModEntities;
 import de.jakob.lotm.entity.custom.BeyonderNPCEntity;
 import de.jakob.lotm.item.ModIngredients;
 import de.jakob.lotm.item.PotionIngredient;
+import de.jakob.lotm.network.packets.toClient.DevilWorshipNetwork;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.helper.AbilityUtil;
 import de.jakob.lotm.util.helper.subordinates.SubordinateUtils;

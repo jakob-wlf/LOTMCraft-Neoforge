@@ -1,6 +1,8 @@
-package de.jakob.lotm.beyonders.abilities.abyss.DevilWorship;
+package de.jakob.lotm.network.packets.toClient;
 
 import de.jakob.lotm.LOTMCraft;
+import de.jakob.lotm.beyonders.abilities.abyss.DevilWorship.DevilWorshipAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.DevilWorship.DevilWorshipScreen;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -31,7 +33,8 @@ public class DevilWorshipNetwork {
                 OpenSummonScreen::new);
         @Override
         public @NotNull Type<? extends CustomPacketPayload> type() { return TYPE; }
-        public static void handle(OpenSummonScreen packet, IPayloadContext context) {context.enqueueWork(() -> {if (context.flow().getReceptionSide().isClient()) {DevilWorshipScreen.open(packet.pleasure(), packet.tribute(), packet.players(), packet.pathways());}});}
+        public static void handle(OpenSummonScreen packet, IPayloadContext context) {context.enqueueWork(() -> {if (context.flow().getReceptionSide().isClient()) {
+            DevilWorshipScreen.open(packet.pleasure(), packet.tribute(), packet.players(), packet.pathways());}});}
     }
     public record ChooseMission(int mission, String target, int seekReward, String seekPathway, int seekSequence)
             implements CustomPacketPayload {
@@ -46,7 +49,8 @@ public class DevilWorshipNetwork {
         @Override
         public @NotNull Type<? extends CustomPacketPayload> type() { return TYPE; }
         public static void handle(ChooseMission packet, IPayloadContext context) {
-            context.enqueueWork(() -> {if (context.player() instanceof ServerPlayer player) {DevilWorshipAbility.handleChoice(player, packet.mission(), packet.target(), packet.seekReward(), packet.seekPathway(), packet.seekSequence());}});
+            context.enqueueWork(() -> {if (context.player() instanceof ServerPlayer player) {
+                DevilWorshipAbility.handleChoice(player, packet.mission(), packet.target(), packet.seekReward(), packet.seekPathway(), packet.seekSequence());}});
         }
     }
 }
