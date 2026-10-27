@@ -184,7 +184,7 @@ public class LOTMCraft
     public static KeyMapping nextMarionetteKey;
     public static KeyMapping toggleAbilityHotbarKey;
     // One key per ability bar slot; index i casts slot i
-    public static final KeyMapping[] useAbilityBarKeys = new KeyMapping[18];
+    public static KeyMapping[] useAbilityBarKeys;
 
     public static AbilityHandler abilityHandler;
     public static PassiveAbilityHandler passiveAbilityHandler;
