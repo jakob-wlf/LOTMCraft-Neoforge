@@ -10,6 +10,7 @@ import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBlo
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Curseling.BloodlineDesireSymbiosisAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.FlameDevil.FlameCageAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.FlameDevil.FlameSpellsAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.FlameDevil.SwordOfLavaAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Phantom.BloodlinePhantomAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Shapeshifter.BloodlineSkinshifterAbility;
 import de.jakob.lotm.beyonders.abilities.common.*;
@@ -161,7 +162,7 @@ public class AbilityHandler {
         abilities.add(new TheCorroderAbility("corroder_ability"));
         abilities.add(new FlamesOfTheAbyssAbility("flames_of_the_abyss_ability"));
         abilities.add(new DegenerationAbility("degeneration_ability"));
-
+        abilities.add(new DivineKingdomAbyssAbility("divine_kingdom_abyss_ability"));
 
         // FOOL PATHWAY
         abilities.add(new AirBulletAbility("air_bullet_ability"));

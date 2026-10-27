@@ -9,6 +9,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredBlock;
@@ -105,6 +106,15 @@ public class ModBlocks {
                     .noLootTable()
                     .strength(-1.0f, 3600000.0F)
             ));
+    public static final DeferredBlock<Block> BLOCK_OF_FILTH = BLOCKS.register("block_of_filth",
+            () -> new FilthBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_BLACK)
+                    .strength(-1.0F, 3600000.0F)   // unbreakable, blast-proof
+                    .sound(SoundType.POWDER_SNOW)
+                    .noLootTable()
+                    .noOcclusion()
+                    .dynamicShape()
+                    .isRedstoneConductor((s, l, p) -> false)));
 
     private static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<T> block) {
         DeferredBlock<T> toReturn = BLOCKS.register(name, block);

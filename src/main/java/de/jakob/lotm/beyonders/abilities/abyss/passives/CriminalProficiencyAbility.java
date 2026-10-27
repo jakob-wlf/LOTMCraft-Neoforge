@@ -25,6 +25,7 @@ public class CriminalProficiencyAbility extends PassiveAbility {
         Item item = weapon.getItem();
         if (item instanceof SwordItem || item instanceof AxeItem || item instanceof TridentItem || item instanceof BowItem || item instanceof CrossbowItem || item instanceof MaceItem) {
             PhysicalEnhancementsAbility.addEnhancementBoost(entity, PhysicalEnhancementsAbility.EnhancementType.STRENGTH, "criminal_proficiency", 1);
+            PhysicalEnhancementsAbility.addEnhancementBoost(entity, PhysicalEnhancementsAbility.EnhancementType.ATTACK_SPEED, "criminal_proficiency", 1);
         }
     }
 }

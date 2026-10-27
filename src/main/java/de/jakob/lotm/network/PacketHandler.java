@@ -1038,7 +1038,11 @@ public class PacketHandler {
                 DevilWorshipNetwork.ChooseMission.TYPE,
                 DevilWorshipNetwork.ChooseMission.STREAM_CODEC,
                 DevilWorshipNetwork.ChooseMission::handle);
-
+        registrar.playToServer(
+                StruggleInFilthPacket.TYPE,
+                StruggleInFilthPacket.STREAM_CODEC,
+                StruggleInFilthPacket::handle
+        );
     }
 
     public static boolean sendToServer(CustomPacketPayload packet) {
