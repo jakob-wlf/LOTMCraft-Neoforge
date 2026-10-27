@@ -8,7 +8,6 @@ import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.beyonders.abilities.justiciar.LawAbility;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import de.jakob.lotm.util.BeyonderData;
-import de.jakob.lotm.util.ClientBeyonderCache;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerLevel;
@@ -67,17 +66,17 @@ public class LastStandAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
-        if (ClientBeyonderCache.localSequence() <= 0) return lastFightOnly();
-        return both();
+    protected String[] getAllAbilityNames() {
+        return new String[]{
+                "ability.lotmcraft.last_stand.kokoa",
+                "ability.lotmcraft.last_stand.last_fight"
+        };
     }
 
     @Override
-    public String getSelectedAbility(LivingEntity entity) {
-        String[] names = namesFor(entity);
-        int selected = getSelectedAbilityIndex(entity.getUUID());
-        if (selected < 0 || selected >= names.length) selected = 0;
-        return names[selected];
+    public String[] getSequenceDependantAbilityNames(int sequence) {
+        if (sequence <= 0) return new String[]{"ability.lotmcraft.last_stand.last_fight"};
+        return getAllAbilityNames();
     }
 
     @Override
@@ -160,22 +159,6 @@ public class LastStandAbility extends SelectableAbility {
 
     private static boolean onlyLastFight(LivingEntity entity) {
         return BeyonderData.getSequence(entity) <= 0;
-    }
-
-    private static String[] namesFor(LivingEntity entity) {
-        if (onlyLastFight(entity)) return lastFightOnly();
-        return both();
-    }
-
-    private static String[] lastFightOnly() {
-        return new String[]{"ability.lotmcraft.last_stand.last_fight"};
-    }
-
-    private static String[] both() {
-        return new String[]{
-                "ability.lotmcraft.last_stand.kokoa",
-                "ability.lotmcraft.last_stand.last_fight"
-        };
     }
 
     private static void die(ServerPlayer player) {

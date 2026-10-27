@@ -10,7 +10,6 @@ import de.jakob.lotm.item.ModItems;
 import de.jakob.lotm.network.PacketHandler;
 import de.jakob.lotm.network.packets.toClient.SyncDawnSpearThrowPacket;
 import de.jakob.lotm.util.BeyonderData;
-import de.jakob.lotm.util.ClientBeyonderCache;
 import de.jakob.lotm.util.helper.AbilityUtil;
 import de.jakob.lotm.util.helper.ParticleUtil;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
@@ -147,31 +146,18 @@ public class ArsenalOfDawnAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
-        return namesFor(ClientBeyonderCache.localSequence());
-    }
-
-    @Override
-    public String getSelectedAbility(LivingEntity entity) {
-        String[] names = namesFor(BeyonderData.getSequence(entity));
-        int selected = getSelectedAbilityIndex(entity.getUUID());
-        if (selected < 0 || selected >= names.length) selected = 0;
-        return names[selected];
-    }
-
-    @Override
-    public void setSelectedAbility(ServerPlayer player, int selectedAbility) {
-        if (selectedAbility < 0 || selectedAbility >= namesFor(BeyonderData.getSequence(player)).length) return;
-        selectedAbilities.put(player.getUUID(), selectedAbility);
-    }
-
-    private static String[] namesFor(int sequence) {
-        if (sequence <= 3) return new String[]{
+    protected String[] getAllAbilityNames() {
+        return new String[]{
                 "ability.lotmcraft.arsenal_of_dawn.axe",
                 "ability.lotmcraft.arsenal_of_dawn.spear",
                 "ability.lotmcraft.arsenal_of_dawn.sword",
                 "ability.lotmcraft.arsenal_of_dawn.bow",
         };
+    }
+
+    @Override
+    public String[] getSequenceDependantAbilityNames(int sequence) {
+        if (sequence <= 3) return getAllAbilityNames();
         return new String[]{
                 "ability.lotmcraft.arsenal_of_dawn.axe",
                 "ability.lotmcraft.arsenal_of_dawn.spear",

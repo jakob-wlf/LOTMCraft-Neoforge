@@ -104,7 +104,7 @@ public class TwilightAuthorityAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.twilight_authority.aura",
                 "ability.lotmcraft.twilight_authority.domain",

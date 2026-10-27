@@ -80,7 +80,7 @@ public class BasicTwilightAuthorityAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.basic_twilight_authority.reborn",
                 "ability.lotmcraft.basic_twilight_authority.grateful_dead",

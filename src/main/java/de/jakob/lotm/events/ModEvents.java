@@ -345,6 +345,7 @@ public class ModEvents {
         LuckCheckCommand.register(event.getDispatcher());
         EnablePlayerAbilitiesCommand.register(event.getDispatcher());
         SanityCommand.register(event.getDispatcher());
+        AgeCommand.register(event.getDispatcher());
         DigestionCommand.register(event.getDispatcher());
         SpawnBeyonderCommand.register(event.getDispatcher());
         QuestCommand.register(event.getDispatcher());

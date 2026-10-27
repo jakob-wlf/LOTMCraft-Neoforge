@@ -66,7 +66,7 @@ public class SpiritCommandingAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.spirit_commanding.capture",
                 "ability.lotmcraft.spirit_commanding.manage",

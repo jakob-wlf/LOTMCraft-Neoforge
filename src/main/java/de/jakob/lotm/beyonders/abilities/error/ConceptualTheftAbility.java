@@ -64,27 +64,6 @@ public class ConceptualTheftAbility extends SelectableAbility {
     }
 
     @Override
-    public void nextAbility(LivingEntity entity) {
-        select(entity, 1);
-    }
-
-    @Override
-    public void previousAbility(LivingEntity entity) {
-        select(entity, -1);
-    }
-
-    private void select(LivingEntity entity, int direction) {
-        if (getAbilityNames().length == 0) return;
-        int selected = selectedAbilities.getOrDefault(entity.getUUID(), 0) + direction;
-        int count = getAbilityNames().length;
-        if (selected >= count) selected = 0;
-        if (selected < 0) selected = count - 1;
-        if (BeyonderData.getSequence(entity) > 0 && selected == 5) selected = direction > 0 ? 0 : 5 - 1;
-        selectedAbilities.put(entity.getUUID(), selected);
-        PacketHandler.sendToServer(new AbilitySelectionPacket(getId(), selected));
-    }
-
-    @Override
     protected void castSelectedAbility(Level level, LivingEntity entity, int abilityIndex) {
         if(!(level instanceof ServerLevel serverLevel)) {
             return;

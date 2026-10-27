@@ -15,7 +15,6 @@ import de.jakob.lotm.entity.ModEntities;
 import de.jakob.lotm.entity.custom.ability_entities.twilight_giant.FightingArenaEntity;
 import de.jakob.lotm.entity.custom.ability_entities.twilight_giant.ProtectiveCageEntity;
 import de.jakob.lotm.util.BeyonderData;
-import de.jakob.lotm.util.ClientBeyonderCache;
 import de.jakob.lotm.util.helper.AbilityUtil;
 import de.jakob.lotm.util.helper.AllyUtil;
 import net.minecraft.core.BlockPos;
@@ -95,30 +94,17 @@ public class CombatAuthorityAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
-        return namesFor(ClientBeyonderCache.localSequence());
-    }
-
-    @Override
-    public String getSelectedAbility(LivingEntity entity) {
-        String[] names = namesFor(BeyonderData.getSequence(entity));
-        int selected = getSelectedAbilityIndex(entity.getUUID());
-        if (selected < 0 || selected >= names.length) selected = 0;
-        return names[selected];
-    }
-
-    @Override
-    public void setSelectedAbility(ServerPlayer player, int selectedAbility) {
-        if (selectedAbility < 0 || selectedAbility >= namesFor(BeyonderData.getSequence(player)).length) return;
-        selectedAbilities.put(player.getUUID(), selectedAbility);
-    }
-
-    private static String[] namesFor(int sequence) {
-        if (sequence <= 0) return new String[]{
+    protected String[] getAllAbilityNames() {
+        return new String[]{
                 "ability.lotmcraft.combat_authority.protection_seal",
                 "ability.lotmcraft.combat_authority.fighting_cage",
                 "ability.lotmcraft.combat_authority.pure_instinct",
         };
+    }
+
+    @Override
+    public String[] getSequenceDependantAbilityNames(int sequence) {
+        if (sequence <= 0) return getAllAbilityNames();
         return new String[]{
                 "ability.lotmcraft.combat_authority.protection_seal",
                 "ability.lotmcraft.combat_authority.fighting_cage",

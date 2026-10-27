@@ -59,7 +59,7 @@ public class DevastationAuthorityAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.devastation_authority.attacks",
                 "ability.lotmcraft.devastation_authority.dehumanization",

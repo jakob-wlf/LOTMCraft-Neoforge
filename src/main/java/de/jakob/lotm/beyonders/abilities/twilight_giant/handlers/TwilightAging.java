@@ -16,6 +16,10 @@ import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -56,6 +60,8 @@ public final class TwilightAging {
     private static final String PASSIVE_YEARS = "lotmcraft_twilight_passive_years";
     private static final String PASSIVE_TICKS = "lotmcraft_twilight_passive_ticks";
     private static final String AGING_MODIFIER = "twilight_aging";
+    private static final ResourceLocation AGING_HEALTH = ResourceLocation.fromNamespaceAndPath(LOTMCraft.MOD_ID, "twilight_aging_health");
+    private static final double MIN_AGING_HEALTH = 2.0;
     private static final String RECOVER_AT = "lotmcraft_twilight_recover_at";
     private static final String CLEAR_AT = "lotmcraft_twilight_clear_at";
     private static final String FADING = "lotmcraft_twilight_fading";
@@ -148,6 +154,37 @@ public final class TwilightAging {
 
     public static void clear(LivingEntity entity) {
         finish(entity);
+    }
+
+    public static void setAge(LivingEntity entity, float years) {
+        if (years <= 0f) {
+            resetAge(entity);
+            return;
+        }
+        if (!(entity.level() instanceof ServerLevel level)) return;
+        CompoundTag tag = entity.getPersistentData();
+        tag.remove(RECOVER_AT);
+        tag.remove(CLEAR_AT);
+        tag.putLong(PASSIVE_TICKS, 0L);
+        tag.putFloat(PASSIVE_YEARS, years);
+        tag.putFloat(YEARS, years);
+        aged.add(entity.getUUID());
+        syncAgingModifier(entity, years);
+        applyDebuffs(entity, years, true);
+        if (years >= yearLimit(entity) && BeyonderData.getSequence(entity) > 0) dieOfOldAge(level, entity, null);
+    }
+
+    private static void resetAge(LivingEntity entity) {
+        if (entity.level() instanceof ServerLevel level && level.getServer() != null) cancelSunset(entity.getUUID(), level.getServer());
+        CompoundTag tag = entity.getPersistentData();
+        tag.remove(YEARS);
+        tag.remove(PASSIVE_YEARS);
+        tag.remove(PASSIVE_TICKS);
+        tag.remove(RECOVER_AT);
+        tag.remove(CLEAR_AT);
+        aged.remove(entity.getUUID());
+        syncAgingModifier(entity, 0f);
+        applyDebuffs(entity, 0f, false);
     }
 
     public static void fade(ServerLevel level, LivingEntity target, LivingEntity source) {
@@ -367,11 +404,26 @@ public final class TwilightAging {
     }
 
     private static void syncAgingModifier(LivingEntity target, float years) {
+        syncAgingHealth(target, years);
         MultiplierModifierComponent component = target.getData(ModAttachments.MULTIPLIER_MODIFIER_COMPONENT);
         while (component.modifiers.containsKey(AGING_MODIFIER)) BeyonderData.removeModifier(target, AGING_MODIFIER);
         if (years <= 0f) return;
         float fraction = Math.min(1f, years / yearLimit(target));
         BeyonderData.addModifier(target, AGING_MODIFIER, Math.max(0.2f, 1f - fraction));
+    }
+
+    private static void syncAgingHealth(LivingEntity target, float years) {
+        AttributeInstance health = target.getAttribute(Attributes.MAX_HEALTH);
+        if (health == null) return;
+        health.removeModifier(AGING_HEALTH);
+        if (years <= 0f || BeyonderData.getSequence(target) <= 2) return;
+        float fraction = Math.min(1f, years / yearLimit(target));
+        int steps = (int) (fraction / 0.25f);
+        if (steps <= 0) return;
+        double current = health.getValue();
+        if (current <= MIN_AGING_HEALTH) return;
+        double desired = Math.max(MIN_AGING_HEALTH, current * (1.0 - 0.25 * steps));
+        health.addTransientModifier(new AttributeModifier(AGING_HEALTH, desired / current - 1.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
     }
 
     private static void finish(LivingEntity target) {
@@ -428,6 +480,17 @@ public final class TwilightAging {
 
     @SubscribeEvent
     public static void onClone(PlayerEvent.Clone event) {
+        if (event.isWasDeath()) {
+            CompoundTag to = event.getEntity().getPersistentData();
+            to.remove(YEARS);
+            to.remove(PASSIVE_YEARS);
+            to.remove(PASSIVE_TICKS);
+            to.remove(RECOVER_AT);
+            to.remove(CLEAR_AT);
+            aged.remove(event.getEntity().getUUID());
+            syncAgingModifier(event.getEntity(), 0f);
+            return;
+        }
         CompoundTag from = event.getOriginal().getPersistentData();
         CompoundTag to = event.getEntity().getPersistentData();
         if (from.contains(PASSIVE_YEARS)) to.putFloat(PASSIVE_YEARS, from.getFloat(PASSIVE_YEARS));
@@ -438,13 +501,13 @@ public final class TwilightAging {
 
     @SubscribeEvent
     public static void onDeath(LivingDeathEvent event) {
-        if (!event.getEntity().level().isClientSide()) finish(event.getEntity());
+        if (!event.getEntity().level().isClientSide()) resetAge(event.getEntity());
     }
 
     @SubscribeEvent
     public static void onHeal(LivingHealEvent event) {
         LivingEntity entity = event.getEntity();
-        if (entity.level().isClientSide() || !isAged(entity)) return;
+        if (entity.level().isClientSide() || !isAged(entity) || BeyonderData.getSequence(entity) > 2) return;
         float room = recoverableHealth(entity) - entity.getHealth();
         if (room <= 0f) event.setCanceled(true);
         else if (event.getAmount() > room) event.setAmount(room);

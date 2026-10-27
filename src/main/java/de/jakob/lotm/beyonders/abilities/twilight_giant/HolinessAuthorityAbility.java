@@ -82,7 +82,7 @@ public class HolinessAuthorityAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.holiness_authority.radiance",
                 "ability.lotmcraft.holiness_authority.beam",

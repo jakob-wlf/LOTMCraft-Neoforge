@@ -78,7 +78,7 @@ public class SilverRapierAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.silver_rapier.condense",
                 "ability.lotmcraft.silver_rapier.attack",
