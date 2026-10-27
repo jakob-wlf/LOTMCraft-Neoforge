@@ -2,6 +2,7 @@ package de.jakob.lotm.beyonders.abilities.twilight_giant;
 
 import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.beyonders.abilities.core.ToggleAbility;
+import de.jakob.lotm.item.ModItems;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.helper.ParticleUtil;
 import net.minecraft.core.component.DataComponents;
@@ -17,7 +18,6 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.level.Level;
@@ -71,10 +71,10 @@ public class SilverArmorAbility extends ToggleAbility {
         if (!(entity instanceof Player player)) return;
         charges.put(player.getUUID(), HIGH_TIER_CHARGES);
         float reduction = reduction(BeyonderData.getSequence(player));
-        equip(player, EquipmentSlot.HEAD, piece(level, Items.IRON_HELMET, ArsenalOfDawnAbility.SILVER_HELMET, reduction, EquipmentSlotGroup.HEAD));
-        equip(player, EquipmentSlot.CHEST, piece(level, Items.IRON_CHESTPLATE, ArsenalOfDawnAbility.SILVER_CHESTPLATE, reduction, EquipmentSlotGroup.CHEST));
-        equip(player, EquipmentSlot.LEGS, piece(level, Items.IRON_LEGGINGS, ArsenalOfDawnAbility.SILVER_LEGGINGS, reduction, EquipmentSlotGroup.LEGS));
-        equip(player, EquipmentSlot.FEET, piece(level, Items.IRON_BOOTS, ArsenalOfDawnAbility.SILVER_BOOTS, reduction, EquipmentSlotGroup.FEET));
+        equip(player, EquipmentSlot.HEAD, piece(level, ModItems.SILVER_HELMET.get(), ArsenalOfDawnAbility.SILVER_HELMET, reduction, EquipmentSlotGroup.HEAD));
+        equip(player, EquipmentSlot.CHEST, piece(level, ModItems.SILVER_CHESTPLATE.get(), ArsenalOfDawnAbility.SILVER_CHESTPLATE, reduction, EquipmentSlotGroup.CHEST));
+        equip(player, EquipmentSlot.LEGS, piece(level, ModItems.SILVER_LEGGINGS.get(), ArsenalOfDawnAbility.SILVER_LEGGINGS, reduction, EquipmentSlotGroup.LEGS));
+        equip(player, EquipmentSlot.FEET, piece(level, ModItems.SILVER_BOOTS.get(), ArsenalOfDawnAbility.SILVER_BOOTS, reduction, EquipmentSlotGroup.FEET));
         if (level instanceof ServerLevel serverLevel) {
             ParticleUtil.spawnParticles(serverLevel, ParticleTypes.WHITE_ASH, player.position().add(0, 1, 0), 60, 0.5, 0.9, 0.5, 0.05);
         }

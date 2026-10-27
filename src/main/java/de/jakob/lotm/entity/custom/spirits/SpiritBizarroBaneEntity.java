@@ -49,7 +49,7 @@ public class SpiritBizarroBaneEntity extends Animal {
 
     private int invisibilityCooldown = 20 * 15 + random.nextInt(20 * 10);
 
-    private final DustParticleOptions threadParticle = new DustParticleOptions(new Vector3f(0.62f, 0.48f, 0.82f), 0.85f);
+    private static final DustParticleOptions THREAD_PARTICLE = new DustParticleOptions(new Vector3f(0.62f, 0.48f, 0.82f), 0.85f);
 
     public SpiritBizarroBaneEntity(EntityType<? extends Animal> entityType, Level level) {
         super(entityType, level);
@@ -79,7 +79,7 @@ public class SpiritBizarroBaneEntity extends Animal {
                 .add(Attributes.FOLLOW_RANGE, 32.0);
     }
 
-    int getMarionettizeDuration(LivingEntity target) {
+    public static int getMarionettizeDuration(LivingEntity target) {
         if (!BeyonderData.isBeyonder(target)) return 20 * 10;
         return switch (BeyonderData.getSequence(target)) {
             case 3 -> 20 * 210;
@@ -89,7 +89,7 @@ public class SpiritBizarroBaneEntity extends Animal {
         };
     }
 
-    boolean canBeMarionettized(LivingEntity target) {
+    public static boolean canBeMarionettized(LivingEntity target) {
         if (!BeyonderData.isBeyonder(target)) return true;
         return BeyonderData.getSequence(target) >= 3;
     }
@@ -128,7 +128,7 @@ public class SpiritBizarroBaneEntity extends Animal {
         }
     }
 
-    private class MarionettizeGoal extends Goal {
+    public class MarionettizeGoal extends Goal {
 
         private LivingEntity target;
         private int ticksRemaining;
@@ -196,40 +196,34 @@ public class SpiritBizarroBaneEntity extends Animal {
                 getNavigation().stop();
             }
 
-            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 30, 4, false, false, false));
-            target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 60, 0, false, false, false));
-
             if (level() instanceof ServerLevel serverLevel) {
-                spawnThreadParticles(serverLevel);
+                marionette(serverLevel, SpiritBizarroBaneEntity.this, target);
             }
         }
 
-        private void spawnThreadParticles(ServerLevel serverLevel) {
-            Vec3 start = getEyePosition();
+        public static void marionette(ServerLevel level, LivingEntity caster, LivingEntity target) {
+            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 30, 4, false, false, false));
+            target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 60, 0, false, false, false));
+            Vec3 start = caster.getEyePosition();
             Vec3 end = target.getEyePosition();
             Vec3 axis = end.subtract(start);
-
             Vec3 perp1 = VectorUtil.getRandomPerpendicular(axis);
             Vec3 perp2 = VectorUtil.getRandomPerpendicular(axis);
-
             for (int i = 0; i < 2; i++) {
                 Vec3 perp = i == 0 ? perp1 : perp2;
                 Vec3 threadStart = start.add(perp.scale(i == 0 ? -0.25 : 0.25));
-
                 float distance = (float) end.distanceTo(threadStart);
                 int maxPoints = Math.max(2, Math.min(8, (int) Math.ceil(distance * 1.2)));
-
                 List<Vec3> points = VectorUtil.createBezierCurve(
-                        threadStart, end, perp, 0.03f, random.nextInt(1, maxPoints + 1));
-
+                        threadStart, end, perp, 0.03f, caster.getRandom().nextInt(1, maxPoints + 1));
                 for (Vec3 point : points) {
-                    ParticleUtil.spawnParticles(serverLevel, threadParticle, point, 1, 0, 0, 0, 0);
+                    ParticleUtil.spawnParticles(level, THREAD_PARTICLE, point, 1, 0, 0, 0, 0);
                 }
             }
         }
     }
 
-    private class ChargeGoal extends Goal {
+    public class ChargeGoal extends Goal {
 
         private int windupTicks;
         private int activeTicks;

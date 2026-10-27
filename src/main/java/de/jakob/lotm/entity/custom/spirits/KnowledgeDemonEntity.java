@@ -181,11 +181,16 @@ public class KnowledgeDemonEntity extends Monster {
         return startY - GROUND_SCAN_DEPTH;
     }
 
+    private static void enchant(ServerLevel level, double x, double y, double z, int count) {
+        level.sendParticles(ParticleTypes.ENCHANT, x, y, z, count, 0.4, 0.4, 0.4, 0.1);
+    }
+
     private void spawnKnowledgeParticles(double x, double y, double z, int count) {
         if (this.level() instanceof ServerLevel serverLevel) {
-            serverLevel.sendParticles(ParticleTypes.ENCHANT, x, y, z, count, 0.4, 0.4, 0.4, 0.1);
+            enchant(serverLevel, x, y, z, count);
         }
     }
+
 
     @Nullable
     @Override
@@ -232,7 +237,13 @@ public class KnowledgeDemonEntity extends Monster {
         }
     }
 
-    private static class DashAttackGoal extends Goal {
+    public static class DashAttackGoal extends Goal {
+
+        public static void attack(LivingEntity caster, LivingEntity target, float damage) {
+            target.hurt(caster.damageSources().mobAttack(caster), damage);
+            target.knockback(DASH_KNOCKBACK_STRENGTH, caster.getX() - target.getX(), caster.getZ() - target.getZ());
+        }
+
 
         private final KnowledgeDemonEntity demon;
         private final Set<LivingEntity> hitThisDash = new HashSet<>();
@@ -295,8 +306,7 @@ public class KnowledgeDemonEntity extends Monster {
 
             for (LivingEntity entity : nearby) {
                 float damage = (float) demon.getAttributeValue(Attributes.ATTACK_DAMAGE) * DASH_DAMAGE_MULTIPLIER;
-                entity.hurt(demon.damageSources().mobAttack(demon), damage);
-                entity.knockback(DASH_KNOCKBACK_STRENGTH, demon.getX() - entity.getX(), demon.getZ() - entity.getZ());
+                attack(demon, entity, damage);
                 hitThisDash.add(entity);
             }
         }
@@ -341,19 +351,17 @@ public class KnowledgeDemonEntity extends Monster {
             LivingEntity target = demon.getTarget();
             if (target == null) return;
 
-            demon.playSound(SoundEvents.EVOKER_CAST_SPELL, 1.0F, 0.9F);
-            demon.spawnKnowledgeParticles(demon.getX(), demon.getY(0.7), demon.getZ(), 14);
-
-            DamageSource source = ModDamageTypes.source(demon.level(), ModDamageTypes.MIND_BASED, demon);
-
-            target.hurt(source, INJECTION_DAMAGE);
-            target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, INJECTION_CONFUSION_DURATION, INJECTION_CONFUSION_AMPLIFIER, false, true));
-            target.addEffect(new MobEffectInstance(MobEffects.DARKNESS, INJECTION_DARKNESS_DURATION, 0, false, true));
-            target.addEffect(new MobEffectInstance(MobEffects.HUNGER, INJECTION_HUNGER_DURATION, INJECTION_HUNGER_AMPLIFIER, false, true));
-            target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, INJECTION_WEAKNESS_DURATION, 0, false, true));
-            target.getData(ModAttachments.SANITY_COMPONENT).decreaseSanityWithSequenceDifference(.2f, target, 2, BeyonderData.getSequence(target));
-
-            demon.spawnKnowledgeParticles(target.getX(), target.getY(1.0), target.getZ(), 20);
+            if (demon.level() instanceof ServerLevel serverLevel) {
+                serverLevel.playSound(null, demon.blockPosition(), SoundEvents.EVOKER_CAST_SPELL, demon.getSoundSource(), 1.0F, 0.9F);
+                enchant(serverLevel, demon.getX(), demon.getY(0.7), demon.getZ(), 14);
+                target.hurt(ModDamageTypes.source(serverLevel, ModDamageTypes.MIND_BASED, demon), INJECTION_DAMAGE);
+                target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, INJECTION_CONFUSION_DURATION, INJECTION_CONFUSION_AMPLIFIER, false, true));
+                target.addEffect(new MobEffectInstance(MobEffects.DARKNESS, INJECTION_DARKNESS_DURATION, 0, false, true));
+                target.addEffect(new MobEffectInstance(MobEffects.HUNGER, INJECTION_HUNGER_DURATION, INJECTION_HUNGER_AMPLIFIER, false, true));
+                target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, INJECTION_WEAKNESS_DURATION, 0, false, true));
+                target.getData(ModAttachments.SANITY_COMPONENT).decreaseSanityWithSequenceDifference(.2f, target, 2, BeyonderData.getSequence(target));
+                enchant(serverLevel, target.getX(), target.getY(1.0), target.getZ(), 20);
+            }
             demon.injectionCooldown = INJECTION_COOLDOWN;
         }
     }

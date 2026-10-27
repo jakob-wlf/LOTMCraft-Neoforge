@@ -66,6 +66,10 @@ public class ModItems {
     public static final DeferredItem<Item> DAWN_CHESTPLATE = ITEMS.registerItem("dawn_chestplate", props -> new DawnArmorItem(EquipmentSlot.CHEST, props), new Item.Properties().stacksTo(1));
     public static final DeferredItem<Item> DAWN_LEGGINGS = ITEMS.registerItem("dawn_leggings", props -> new DawnArmorItem(EquipmentSlot.LEGS, props), new Item.Properties().stacksTo(1));
     public static final DeferredItem<Item> DAWN_BOOTS = ITEMS.registerItem("dawn_boots", props -> new DawnArmorItem(EquipmentSlot.FEET, props), new Item.Properties().stacksTo(1));
+    public static final DeferredItem<Item> SILVER_HELMET = ITEMS.registerItem("silver_helmet", props -> new DawnArmorItem(EquipmentSlot.HEAD, props), new Item.Properties().stacksTo(1));
+    public static final DeferredItem<Item> SILVER_CHESTPLATE = ITEMS.registerItem("silver_chestplate", props -> new DawnArmorItem(EquipmentSlot.CHEST, props), new Item.Properties().stacksTo(1));
+    public static final DeferredItem<Item> SILVER_LEGGINGS = ITEMS.registerItem("silver_leggings", props -> new DawnArmorItem(EquipmentSlot.LEGS, props), new Item.Properties().stacksTo(1));
+    public static final DeferredItem<Item> SILVER_BOOTS = ITEMS.registerItem("silver_boots", props -> new DawnArmorItem(EquipmentSlot.FEET, props), new Item.Properties().stacksTo(1));
 
     public static final DeferredItem<Item> CONJURED_SWORD = ITEMS.registerItem("conjured_sword", props -> new SwordItem(CONJURED_TOOL_TIER, props.attributes(SwordItem.createAttributes(CONJURED_TOOL_TIER, 8, -2.4f))), new Item.Properties());
     public static final DeferredItem<Item> CONJURED_WHIP = ITEMS.registerItem("conjured_whip", props -> new SwordItem(CONJURED_TOOL_TIER, props.attributes(SwordItem.createAttributes(CONJURED_TOOL_TIER, 6, -1.6f))), new Item.Properties());

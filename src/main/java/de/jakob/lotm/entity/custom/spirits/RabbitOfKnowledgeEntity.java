@@ -101,7 +101,21 @@ public class RabbitOfKnowledgeEntity extends Rabbit {
         return MYSTIC_DUST_SMALL;
     }
 
-    static class RabbitAttackGoal extends Goal {
+    public static class RabbitAttackGoal extends Goal {
+
+        public static void attack(ServerLevel level, LivingEntity caster, LivingEntity target) {
+            float damage = caster instanceof RabbitOfKnowledgeEntity rabbit
+                    ? (float) rabbit.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.5f
+                    : 12f * 1.5f;
+            Vec3 origin = caster.position().add(0, 0.7, 0);
+            ParticleUtil.spawnParticles(level, MYSTIC_DUST, origin, 25, 0.35);
+            ParticleUtil.spawnParticles(level, ParticleTypes.ENCHANT, origin, 20, 0.4);
+            Vec3 dir = target.getEyePosition().subtract(origin).normalize();
+            SpiritBallEntity mysticBolt = new SpiritBallEntity(level, caster, damage, dir, 8);
+            mysticBolt.setPos(origin);
+            level.addFreshEntity(mysticBolt);
+        }
+
 
         private static final float MELEE_RANGE = 2.2f;
 
@@ -183,11 +197,8 @@ public class RabbitOfKnowledgeEntity extends Rabbit {
 
             float damage = (float) rabbit.getAttributeValue(Attributes.ATTACK_DAMAGE);
             rabbit.swing(InteractionHand.MAIN_HAND);
-
-            DamageSource source = ModDamageTypes.source(rabbit.level(), ModDamageTypes.IMPACT, rabbit);
-            target.hurt(source, damage);
+            target.hurt(ModDamageTypes.source(serverLevel, ModDamageTypes.IMPACT, rabbit), damage);
             target.knockback(0.3, rabbit.getX() - target.getX(), rabbit.getZ() - target.getZ());
-
             ParticleUtil.spawnParticles(serverLevel, rabbit.getSecondaryDust(), target.position().add(0, 1, 0), 15, 0.3);
             ParticleUtil.spawnParticles(serverLevel, ParticleTypes.CRIT, target.position().add(0, 1, 0), 10, 0.25);
 
@@ -197,16 +208,7 @@ public class RabbitOfKnowledgeEntity extends Rabbit {
         private void performMysticAttack(LivingEntity target) {
             if (!(rabbit.level() instanceof ServerLevel serverLevel)) return;
 
-            float damage = (float) rabbit.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.5f;
-
-            ParticleUtil.spawnParticles(serverLevel, rabbit.getPrimaryDust(), rabbit.position().add(0, 0.7, 0), 25, 0.35);
-            ParticleUtil.spawnParticles(serverLevel, ParticleTypes.ENCHANT, rabbit.position().add(0, 0.7, 0), 20, 0.4);
-
-            Vec3 projectilePos = rabbit.position().add(0, 0.7, 0);
-            Vec3 projectileDir = target.getEyePosition().subtract(projectilePos).normalize();
-            SpiritBallEntity mysticBolt = new SpiritBallEntity(rabbit.level(), rabbit, damage, projectileDir, 8);
-            mysticBolt.setPos(projectilePos);
-            rabbit.level().addFreshEntity(mysticBolt);
+            attack(serverLevel, rabbit, target);
 
             mysticCooldown = 45;
         }

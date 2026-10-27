@@ -18,21 +18,25 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public final class DawnArmorModels {
     public static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(LOTMCraft.MOD_ID, "textures/models/armor/dawn_armor.png");
-    private static final ResourceLocation WORN = ResourceLocation.fromNamespaceAndPath(LOTMCraft.MOD_ID, "models/armor/dawn_armor.json");
-    private static volatile Map<String, List<Quad>> bones;
-    private static volatile boolean failed;
+    public static final ResourceLocation MODEL = ResourceLocation.fromNamespaceAndPath(LOTMCraft.MOD_ID, "models/armor/dawn_armor.json");
+    public static final ResourceLocation SILVER_TEXTURE = ResourceLocation.fromNamespaceAndPath(LOTMCraft.MOD_ID, "textures/models/armor/silver_armor.png");
+    public static final ResourceLocation SILVER_MODEL = ResourceLocation.fromNamespaceAndPath(LOTMCraft.MOD_ID, "models/armor/silver_armor.json");
+    private static final Map<ResourceLocation, Map<String, List<Quad>>> models = new HashMap<>();
+    private static final Set<ResourceLocation> failed = new HashSet<>();
 
     private DawnArmorModels() {
     }
 
-    public static void render(PoseStack pose, VertexConsumer consumer, int light, int overlay, ModelPart part, String bone) {
+    public static void render(PoseStack pose, VertexConsumer consumer, int light, int overlay, ModelPart part, ResourceLocation model, String bone) {
         if (!part.visible) return;
-        List<Quad> quads = bone(bone);
+        List<Quad> quads = bone(model, bone);
         if (quads.isEmpty()) return;
         pose.pushPose();
         part.translateAndRotate(pose);
@@ -56,24 +60,24 @@ public final class DawnArmorModels {
         pose.popPose();
     }
 
-    private static List<Quad> bone(String name) {
-        Map<String, List<Quad>> loaded = bones;
+    private static List<Quad> bone(ResourceLocation model, String name) {
+        Map<String, List<Quad>> loaded = models.get(model);
         if (loaded == null) {
-            if (failed) return List.of();
+            if (failed.contains(model)) return List.of();
             try {
-                loaded = load();
+                loaded = load(model);
             } catch (Exception exception) {
-                failed = true;
-                LOTMCraft.LOGGER.error("Failed to load dawn armor", exception);
+                failed.add(model);
+                LOTMCraft.LOGGER.error("Failed to load armor model {}", model, exception);
                 return List.of();
             }
-            bones = loaded;
+            models.put(model, loaded);
         }
         return loaded.getOrDefault(name, List.of());
     }
 
-    private static Map<String, List<Quad>> load() throws IOException {
-        var resource = Minecraft.getInstance().getResourceManager().getResource(WORN).orElseThrow();
+    private static Map<String, List<Quad>> load(ResourceLocation location) throws IOException {
+        var resource = Minecraft.getInstance().getResourceManager().getResource(location).orElseThrow();
         try (Reader reader = resource.openAsReader()) {
             JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
             float width = 64;

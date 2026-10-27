@@ -136,7 +136,37 @@ public class SpiritMalmouthEntity extends Animal {
         super.tick();
     }
 
-    static class SoulBreathAttackGoal extends Goal {
+    public static class SoulBreathAttackGoal extends Goal {
+
+        public static void breathe(ServerLevel level, LivingEntity caster, Vec3 mouth, Vec3 breath, float damage) {
+            for (int i = 0; i < 8; i++) {
+                double distance = caster.getRandom().nextDouble() * SOUL_BREATH_RANGE;
+                double spreadAngle = (caster.getRandom().nextDouble() - 0.5) * Math.toRadians(SOUL_BREATH_ANGLE * 2);
+                double verticalSpread = (caster.getRandom().nextDouble() - 0.5) * 0.5;
+                double cos = Math.cos(spreadAngle);
+                double sin = Math.sin(spreadAngle);
+                double rotatedX = breath.x * cos - breath.z * sin;
+                double rotatedZ = breath.x * sin + breath.z * cos;
+                Vec3 particlePos = mouth.add(rotatedX * distance, breath.y * distance + verticalSpread, rotatedZ * distance);
+                if (i % 2 == 0) level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, particlePos.x, particlePos.y, particlePos.z, 1, 0.1, 0.1, 0.1, 0.02);
+                else level.sendParticles(ParticleTypes.SOUL, particlePos.x, particlePos.y, particlePos.z, 1, 0.1, 0.1, 0.1, 0.02);
+            }
+            ParticleUtil.spawnParticles(level, SOUL_DUST, mouth.add(breath.scale(SOUL_BREATH_RANGE * 0.5)), 3, 1.5);
+            ParticleUtil.spawnParticles(level, SOUL_DUST_DARK, mouth.add(breath.scale(2)), 2, 0.5);
+            AABB box = new AABB(
+                    mouth.x - SOUL_BREATH_RANGE, mouth.y - 2, mouth.z - SOUL_BREATH_RANGE,
+                    mouth.x + SOUL_BREATH_RANGE, mouth.y + 2, mouth.z + SOUL_BREATH_RANGE
+            );
+            for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, box)) {
+                if (entity == caster || !AbilityUtil.mayTarget(caster, entity)) continue;
+                Vec3 toEntity = entity.position().add(0, entity.getBbHeight() / 2, 0).subtract(mouth);
+                double dist = toEntity.length();
+                if (dist > SOUL_BREATH_RANGE || dist < 0.5) continue;
+                if (toEntity.normalize().dot(breath) < SOUL_BREATH_COS_THRESHOLD) continue;
+                entity.hurt(ModDamageTypes.source(level, ModDamageTypes.SOUL_BASED, caster), damage);
+                entity.invulnerableTime = 0;
+            }
+        }
 
         private final SpiritMalmouthEntity malmouth;
         private int attackCooldown;
@@ -222,61 +252,8 @@ public class SpiritMalmouthEntity extends Animal {
             breathDirection = breathDirection.scale(0.7).add(toTarget.scale(0.3)).normalize();
 
             Vec3 mouthPos = malmouth.position().add(0, 1.2, 0);
-            float damage = (float) malmouth.getAttributeValue(Attributes.ATTACK_DAMAGE) * 0.15f; // per-tick damage
-
-            // Spawn soul flame particles in a cone
-            for (int i = 0; i < 8; i++) {
-                double distance = malmouth.getRandom().nextDouble() * SOUL_BREATH_RANGE;
-                double spreadAngle = (malmouth.getRandom().nextDouble() - 0.5) * Math.toRadians(SOUL_BREATH_ANGLE * 2);
-                double verticalSpread = (malmouth.getRandom().nextDouble() - 0.5) * 0.5;
-
-                // Rotate breath direction by spread angle
-                double cos = Math.cos(spreadAngle);
-                double sin = Math.sin(spreadAngle);
-                double rotatedX = breathDirection.x * cos - breathDirection.z * sin;
-                double rotatedZ = breathDirection.x * sin + breathDirection.z * cos;
-
-                Vec3 particlePos = mouthPos.add(rotatedX * distance, breathDirection.y * distance + verticalSpread, rotatedZ * distance);
-
-                // Alternate between soul flame and soul particles
-                if (i % 2 == 0) {
-                    serverLevel.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, particlePos.x, particlePos.y, particlePos.z, 1, 0.1, 0.1, 0.1, 0.02);
-                } else {
-                    serverLevel.sendParticles(ParticleTypes.SOUL, particlePos.x, particlePos.y, particlePos.z, 1, 0.1, 0.1, 0.1, 0.02);
-                }
-            }
-
-            // Additional soul dust particles for the "flame" look
-            ParticleUtil.spawnParticles(serverLevel, SOUL_DUST, mouthPos.add(breathDirection.scale(SOUL_BREATH_RANGE * 0.5)), 3, 1.5);
-            ParticleUtil.spawnParticles(serverLevel, SOUL_DUST_DARK, mouthPos.add(breathDirection.scale(2)), 2, 0.5);
-
-            // Damage entities in the cone
-            AABB detectionBox = new AABB(
-                    mouthPos.x - SOUL_BREATH_RANGE, mouthPos.y - 2, mouthPos.z - SOUL_BREATH_RANGE,
-                    mouthPos.x + SOUL_BREATH_RANGE, mouthPos.y + 2, mouthPos.z + SOUL_BREATH_RANGE
-            );
-            List<LivingEntity> entities = serverLevel.getEntitiesOfClass(LivingEntity.class, detectionBox);
-
-            double cosThreshold = SOUL_BREATH_COS_THRESHOLD;
-
-            for (LivingEntity entity : entities) {
-                if (entity == malmouth) continue;
-                if (!AbilityUtil.mayTarget(malmouth, entity)) continue;
-
-                Vec3 toEntity = entity.position().add(0, entity.getBbHeight() / 2, 0).subtract(mouthPos);
-                double dist = toEntity.length();
-
-                if (dist > SOUL_BREATH_RANGE || dist < 0.5) continue;
-
-                Vec3 toEntityNorm = toEntity.normalize();
-                double dot = toEntityNorm.dot(breathDirection);
-
-                if (dot >= cosThreshold) {
-                    DamageSource damageSource = ModDamageTypes.source(malmouth.level(), ModDamageTypes.SOUL_BASED, malmouth);
-                    entity.hurt(damageSource, damage);
-                    entity.invulnerableTime = 0; // Allow continuous breath damage
-                }
-            }
+            float damage = (float) malmouth.getAttributeValue(Attributes.ATTACK_DAMAGE) * 0.15f;
+            breathe(serverLevel, malmouth, mouthPos, breathDirection, damage);
 
             if (breathTimer <= 0) {
                 breathing = false;

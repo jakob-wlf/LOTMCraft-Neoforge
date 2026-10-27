@@ -6,6 +6,19 @@ import de.jakob.lotm.attachments.SpiritHousingComponent;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.beyonders.abilities.common.AngelFlightAbility;
 import de.jakob.lotm.beyonders.abilities.death.handlers.SpiritHandler;
+import de.jakob.lotm.entity.custom.spirits.AbscessedHandEntity;
+import de.jakob.lotm.entity.custom.spirits.AsmannEntity;
+import de.jakob.lotm.entity.custom.spirits.HeadlessBrideEntity;
+import de.jakob.lotm.entity.custom.spirits.KnowledgeDemonEntity;
+import de.jakob.lotm.entity.custom.spirits.RabbitOfKnowledgeEntity;
+import de.jakob.lotm.entity.custom.spirits.SpiritBaneEntity;
+import de.jakob.lotm.entity.custom.spirits.SpiritBizarroBaneEntity;
+import de.jakob.lotm.entity.custom.spirits.SpiritBlueWizardEntity;
+import de.jakob.lotm.entity.custom.spirits.SpiritDervishEntity;
+import de.jakob.lotm.entity.custom.spirits.SpiritGhostEntity;
+import de.jakob.lotm.entity.custom.spirits.SpiritGrimReaperEntity;
+import de.jakob.lotm.entity.custom.spirits.SpiritMalmouthEntity;
+import de.jakob.lotm.entity.custom.spirits.SpiritTranslucentWizardEntity;
 import de.jakob.lotm.damage.ModDamageTypes;
 import de.jakob.lotm.gui.custom.spirit_command.SpiritCommandMenu;
 import de.jakob.lotm.gui.custom.spirit_housing.SpiritManageMenu;
@@ -13,6 +26,8 @@ import de.jakob.lotm.item.ModItems;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.helper.AbilityUtil;
 import de.jakob.lotm.util.helper.AllyUtil;
+import de.jakob.lotm.util.helper.ParticleUtil;
+import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -20,6 +35,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -30,6 +47,7 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent;
@@ -146,18 +164,75 @@ public class SpiritCommandingAbility extends SelectableAbility {
         LivingEntity target = AbilityUtil.getTargetEntity(player, 16, 1.5f, true);
         boolean arms = slot == 2 || slot == 3;
         boolean legs = slot == 4 || slot == 5;
-        if (slot == 0 && target != null) {
-            target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 20 * 8, 0, false, false, true));
-            target.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 20 * 8, 0, false, false, false));
-            target.hurt(ModDamageTypes.source(level, ModDamageTypes.MIND_BASED, player), 6);
+        if (slot == 0) {
+            wail(level, player);
         } else if (slot == 1) {
             CompoundTag data = player.getPersistentData();
             boolean active = !data.getBoolean(WARD);
             data.putBoolean(WARD, active);
         } else if (arms && target != null) {
-            target.hurt(ModDamageTypes.source(level, ModDamageTypes.DARKNESS, player), 10);
+            strike(level, player, target, type);
         } else if (legs) {
             fly(level, player);
+        }
+    }
+
+    private static void wail(ServerLevel level, ServerPlayer player) {
+        int seq = Math.max(0, 5 - BeyonderData.getSequence(player));
+        double radius = 30 + 15.0 * seq;
+        Vec3 center = player.position().add(0, 1, 0);
+        level.playSound(null, player.blockPosition(), SoundEvents.GHAST_SCREAM, SoundSource.PLAYERS, 2f, 0.55f);
+        ParticleUtil.spawnSphereParticles(level, ParticleTypes.SOUL, center, radius, 120);
+        ParticleUtil.spawnSphereParticles(level, ParticleTypes.SCULK_SOUL, center, Math.max(4, radius * 0.35), 40);
+        ParticleUtil.spawnParticles(level, ParticleTypes.SONIC_BOOM, center, 6, 0.4);
+        for (LivingEntity entity : AbilityUtil.getNearbyEntities(player, level, player.position(), radius)) {
+            entity.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 20 * 8, 0, false, false, true));
+            entity.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 20 * 8, 0, false, false, false));
+            entity.hurt(ModDamageTypes.source(level, ModDamageTypes.MIND_BASED, player), 6);
+        }
+    }
+
+    private static void strike(ServerLevel level, ServerPlayer player, LivingEntity target, String typeId) {
+        switch (ResourceLocation.parse(typeId).getPath()) {
+            case "spirit_dervish" -> SpiritDervishEntity.DervishAttackGoal.attack(level, player, target, 12f);
+            case "spirit_ghost" -> SpiritGhostEntity.RamAndFleeGoal.attack(player, target, 30f);
+            case "grim_reaper" -> SpiritGrimReaperEntity.DeathTouchGoal.attack(level, player, target, 25f);
+            case "spirit_malmouth" -> {
+                Vec3[] direction = {target.position().subtract(player.position()).normalize()};
+                ServerScheduler.scheduleRepeating(0, 1, 30, () -> {
+                    if (!player.isAlive() || !target.isAlive()) return;
+                    Vec3 mouth = player.getEyePosition();
+                    Vec3 toTarget = target.position().subtract(mouth).normalize();
+                    direction[0] = direction[0].scale(0.7).add(toTarget.scale(0.3)).normalize();
+                    SpiritMalmouthEntity.SoulBreathAttackGoal.breathe(level, player, mouth, direction[0], 35f * 0.15f);
+                }, level, () -> player.isAlive() && target.isAlive());
+            }
+            case "spirit_bane" -> SpiritBaneEntity.BaneAttackGoal.attack(level, player, target);
+            case "spirit_blue_wizard" -> SpiritBlueWizardEntity.WizardAttackGoal.attack(level, player, target);
+            case "spirit_translucent_wizard" -> SpiritTranslucentWizardEntity.TranslucentWizardAttackGoal.attack(level, player, target);
+            case "abscessed_hand" -> AbscessedHandEntity.HandAttackGoal.attack(level, player, target);
+            case "rabbit_of_knowledge" -> RabbitOfKnowledgeEntity.RabbitAttackGoal.attack(level, player, target);
+            case "asmann" -> AsmannEntity.MindSpikeGoal.attack(level, player, target);
+            case "knowledge_demon" -> KnowledgeDemonEntity.DashAttackGoal.attack(player, target, 110f * 1.3f);
+            case "headless_bride" -> {
+                HeadlessBrideEntity.BrideCurseAttackGoal.beginCurse(level, player, target);
+                ServerScheduler.scheduleDelayed(14, () -> {
+                    if (!target.isAlive()) return;
+                    HeadlessBrideEntity.BrideCurseAttackGoal.curse(level, player, target);
+                }, level);
+            }
+            case "spirit_bizarro_bane" -> {
+                if (!SpiritBizarroBaneEntity.canBeMarionettized(target)) break;
+                float health = target.getHealth();
+                ServerScheduler.scheduleForDuration(0, 1, SpiritBizarroBaneEntity.getMarionettizeDuration(target), () -> {
+                    if (!target.isAlive() || target.getHealth() < health) return;
+                    SpiritBizarroBaneEntity.MarionettizeGoal.marionette(level, player, target);
+                }, () -> {
+                    if (!target.isAlive() || target.getHealth() < health) return;
+                    target.hurt(target.damageSources().generic(), Float.MAX_VALUE);
+                }, level);
+            }
+            default -> target.hurt(ModDamageTypes.source(level, ModDamageTypes.DARKNESS, player), 10);
         }
     }
 
@@ -168,7 +243,7 @@ public class SpiritCommandingAbility extends SelectableAbility {
 
     private void capture(ServerLevel level, ServerPlayer player) {
         LivingEntity target = AbilityUtil.getTargetEntity(player, 8, 1.5f, true);
-        if (target == null || !SpiritHandler.isCapturableSpirit(target)) {
+        if (!SpiritHandler.isSpirit(target)) {
             refund(player);
             AbilityUtil.sendActionBar(player, Component.translatable("ability.lotmcraft.spirit_commanding.not_spirit").withColor(0xff124d));
             return;

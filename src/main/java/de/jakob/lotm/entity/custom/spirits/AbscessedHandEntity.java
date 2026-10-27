@@ -114,7 +114,29 @@ public class AbscessedHandEntity extends Animal {
         return HAND_DUST_SMALL;
     }
 
-    static class HandAttackGoal extends Goal {
+    public static class HandAttackGoal extends Goal {
+
+        public static void strike(ServerLevel level, LivingEntity caster, LivingEntity target, float damage) {
+            caster.swing(InteractionHand.MAIN_HAND);
+            target.hurt(ModDamageTypes.source(level, ModDamageTypes.SOUL_BASED, caster), damage);
+            target.knockback(0.4, caster.getX() - target.getX(), caster.getZ() - target.getZ());
+            ParticleUtil.spawnParticles(level, HAND_DUST, target.position().add(0, 1, 0), 25, 0.4);
+            ParticleUtil.spawnParticles(level, ParticleTypes.CRIT, target.position().add(0, 1, 0), 15, 0.3);
+        }
+
+        public static void attack(ServerLevel level, LivingEntity caster, LivingEntity target) {
+            float damage = caster instanceof AbscessedHandEntity hand
+                    ? (float) hand.getAttributeValue(Attributes.ATTACK_DAMAGE) * 0.6f
+                    : 38.5f * 0.6f;
+            Vec3 origin = caster.position().add(0, 1.5, 0);
+            ParticleUtil.spawnParticles(level, HAND_DUST_SMALL, origin, 30, 0.4);
+            ParticleUtil.spawnParticles(level, ParticleTypes.SOUL_FIRE_FLAME, origin, 15, 0.3);
+            Vec3 dir = target.getEyePosition().subtract(origin).normalize();
+            SpiritBallEntity ball = new SpiritBallEntity(level, caster, damage, dir, 8);
+            ball.setPos(origin);
+            level.addFreshEntity(ball);
+        }
+
 
         private enum AttackType { MELEE, RANGED, TELEPORT_STRIKE }
 
@@ -208,18 +230,7 @@ public class AbscessedHandEntity extends Animal {
 
         private void performRangedAttack(LivingEntity target) {
             if (!(hand.level() instanceof ServerLevel serverLevel)) return;
-
-            float damage = (float) hand.getAttributeValue(Attributes.ATTACK_DAMAGE) * 0.6f;
-
-            ParticleUtil.spawnParticles(serverLevel, hand.getSecondaryDust(), hand.position().add(0, 1.5, 0), 30, 0.4);
-            ParticleUtil.spawnParticles(serverLevel, ParticleTypes.SOUL_FIRE_FLAME, hand.position().add(0, 1.5, 0), 15, 0.3);
-
-            Vec3 projectilePos = hand.position().add(0, 1.5, 0);
-            Vec3 projectileDir = target.getEyePosition().subtract(projectilePos).normalize();
-            SpiritBallEntity spiritBall = new SpiritBallEntity(hand.level(), hand, damage, projectileDir, 8);
-            spiritBall.setPos(projectilePos);
-            hand.level().addFreshEntity(spiritBall);
-
+            attack(serverLevel, hand, target);
             attackCooldown = 35;
         }
 
@@ -246,7 +257,7 @@ public class AbscessedHandEntity extends Animal {
             hand.getLookControl().setLookAt(target, 30.0F, 30.0F);
 
             if (hand.distanceToSqr(target) <= (MELEE_RANGE + 1.5f) * (MELEE_RANGE + 1.5f)) {
-                strikeMelee(target, 1.3f);
+                strike(serverLevel, hand, target, (float) hand.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.3f);
             }
 
             attackCooldown = 70;
@@ -254,16 +265,7 @@ public class AbscessedHandEntity extends Animal {
 
         private void strikeMelee(LivingEntity target, float damageMultiplier) {
             if (!(hand.level() instanceof ServerLevel serverLevel)) return;
-
-            float damage = (float) hand.getAttributeValue(Attributes.ATTACK_DAMAGE) * damageMultiplier;
-            hand.swing(InteractionHand.MAIN_HAND);
-
-            DamageSource source = ModDamageTypes.source(hand.level(), ModDamageTypes.SOUL_BASED, hand);
-            target.hurt(source, damage);
-            target.knockback(0.4, hand.getX() - target.getX(), hand.getZ() - target.getZ());
-
-            ParticleUtil.spawnParticles(serverLevel, hand.getPrimaryDust(), target.position().add(0, 1, 0), 25, 0.4);
-            ParticleUtil.spawnParticles(serverLevel, ParticleTypes.CRIT, target.position().add(0, 1, 0), 15, 0.3);
+            strike(serverLevel, hand, target, (float) hand.getAttributeValue(Attributes.ATTACK_DAMAGE) * damageMultiplier);
         }
 
         @Nullable
