@@ -1,13 +1,12 @@
 package de.jakob.lotm.beyonders.abilities.abyss;
 
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.FlameDevil.BloodlineFilthFlameSpiritAbility;
 import de.jakob.lotm.beyonders.abilities.core.AbilityUsedEvent;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.damage.ModDamageTypes;
 import de.jakob.lotm.entity.custom.ability_entities.MeteorEntity;
 import de.jakob.lotm.network.PacketHandler;
 import de.jakob.lotm.network.packets.toClient.PlayPhotonBlockEffectPacket;
-import de.jakob.lotm.rendering.effectRendering.EffectIds;
-import de.jakob.lotm.rendering.effectRendering.EffectManager;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.helper.AbilityUtil;
@@ -68,14 +67,13 @@ public class FlamesOfTheAbyssAbility extends SelectableAbility {
 
         Vec3 targetPos = AbilityUtil.getTargetLocation(entity, 80, 1.5f);
         boolean griefing = BeyonderData.isGriefingEnabled(entity);
-        float damage = (float) (DamageLookup.lookupDamage(1, 0.85) * multiplier(entity));
+        float damage = (float) (DamageLookup.lookupDamage(1, 0.85) * multiplier(entity) * BloodlineFilthFlameSpiritAbility.getFireDamageMultiplier(entity));
 
         level.playSound(null, BlockPos.containing(entity.position()),
                 SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 3f, 0.6f);
 
         // Stagger 5 meteors every 15 ticks
         for (int i = 0; i < 8; i++) {
-            final int idx = i;
             ServerScheduler.scheduleDelayed(i * 15, () -> {
                 // Slight random scatter around the target
                 double ox = (random.nextDouble() - 0.5) * 14;
@@ -108,7 +106,7 @@ public class FlamesOfTheAbyssAbility extends SelectableAbility {
         level.playSound(null, BlockPos.containing(entity.position()),
                 SoundEvents.BLAZE_SHOOT, SoundSource.BLOCKS, 3f, 0.5f);
 
-        float damage = (float) (DamageLookup.lookupDamage(1, 0.4) * multiplier(entity));
+        float damage = (float) (DamageLookup.lookupDamage(1, 0.4) * multiplier(entity) * BloodlineFilthFlameSpiritAbility.getFireDamageMultiplier(entity));
 
         List<Vec3> pillarPositions = new ArrayList<>();
 
