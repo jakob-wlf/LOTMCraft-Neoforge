@@ -55,6 +55,7 @@ public class ClientEvents {
         LOTMCraft.openWheelHoldKey = new KeyMapping("key.beyonders.open_wheel_hold", GLFW.GLFW_KEY_Y, "key.categories.beyonders");
         LOTMCraft.useSelectedAbilityKey = new KeyMapping("key.beyonders.use_ability", GLFW.GLFW_KEY_M, "key.categories.beyonders");
         // Slots 1-9 default to the number keys, slots 10-18 to Ctrl + number keys
+        LOTMCraft.useAbilityBarKeys = new KeyMapping[18];
         for (int i = 0; i < LOTMCraft.useAbilityBarKeys.length; i++) {
             int key = GLFW.GLFW_KEY_1 + (i % 9);
             KeyModifier modifier = i < 9 ? KeyModifier.NONE : KeyModifier.CONTROL;

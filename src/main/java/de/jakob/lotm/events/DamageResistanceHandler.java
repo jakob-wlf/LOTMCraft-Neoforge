@@ -97,7 +97,8 @@ public class DamageResistanceHandler {
                 mult = 0.4f;
             }
 
-            if (!ModDamageTypes.isModDamage(source) && !(damage >= Float.MAX_VALUE / 2) && (!(sourceEntity instanceof LivingEntity livingSource) || !BeyonderData.isBeyonder(livingSource) || BeyonderData.getSequence(livingSource) > seq)) {
+            int angelThreshold = seq <= 2 ? 2 : seq;
+            if (!ModDamageTypes.isModDamage(source) && !(damage >= Float.MAX_VALUE / 2) && (!(sourceEntity instanceof LivingEntity livingSource) || !BeyonderData.isBeyonder(livingSource) || BeyonderData.getSequence(livingSource) > angelThreshold)) {
                 damage *= mult;
             }
 
