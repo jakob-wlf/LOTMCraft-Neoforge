@@ -72,6 +72,7 @@ public class AbilityIconRenderer {
 
         ItemStack offhandItem = mc.player.getItemInHand(InteractionHand.OFF_HAND);
         int x = offhandItem.isEmpty() ? hotbarStartX - WIDTH - 5 : hotbarStartX - WIDTH - 5 - 30;
+        x -= AbilityHotBarRenderer.getSideOffset();
         int y = mc.getWindow().getGuiScaledHeight() - (hotbarheight / 2) - (HEIGHT / 2);
 
         guiGraphics.blit(backgroundTexture, x, y, 0, 0, WIDTH, HEIGHT, WIDTH, HEIGHT);

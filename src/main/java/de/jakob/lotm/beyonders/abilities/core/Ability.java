@@ -159,6 +159,7 @@ public abstract class Ability {
 
         int inflatedCooldown = getCooldown(seq);
         component.setCooldown(id, inflatedCooldown);
+        AbilityCooldownComponent.syncToClient(newUser);
 
         // Use ability client and server sided
         final float damageBackup = baseDamage;
