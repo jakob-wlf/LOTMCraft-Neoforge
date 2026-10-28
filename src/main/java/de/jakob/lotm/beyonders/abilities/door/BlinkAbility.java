@@ -116,14 +116,22 @@ public class BlinkAbility extends SelectableAbility {
             level.playSound(null, targetPos.x, targetPos.y, targetPos.z, SoundEvents.ENDERMAN_TELEPORT, SoundSource.BLOCKS, .5f, 1);
 
             entity.teleportTo(targetPos.x, targetPos.y, targetPos.z);
+            BlockPos blockPos = BlockPos.containing(targetPos);
+
+            double offsetX = targetPos.x - (blockPos.getX() + 0.5);
+            double offsetY = targetPos.y - (blockPos.getY() + 0.5);
+            double offsetZ = targetPos.z - (blockPos.getZ() + 0.5);
+
+            PlayPhotonBlockEffectPacket packet = new PlayPhotonBlockEffectPacket("blink_particles", blockPos, offsetX, offsetY, offsetZ, 1.5, null, -1, false, true, null);
+            PacketHandler.sendToNearbyPlayers(packet, (ServerLevel) level, targetPos, 128);
 
             if (BeyonderData.getSequence(entity) <= 5) {
                 CharmAbility.removeCharm(entity.getUUID());
             }
 
-            ParticleUtil.spawnParticles((ServerLevel) level, dust, targetPos.add(0, .5, 0), 30, .4, 1, .4, 0);
-            ParticleUtil.spawnParticles((ServerLevel) level, dust2, targetPos.add(0, .5, 0), 30, .4, 1, .4, 0);
-            ParticleUtil.spawnParticles((ServerLevel) level, ParticleTypes.END_ROD, targetPos.add(0, .5, 0), 30, .4, 1, .4, 0);
+            //ParticleUtil.spawnParticles((ServerLevel) level, dust, targetPos.add(0, .5, 0), 30, .4, 1, .4, 0);
+            //ParticleUtil.spawnParticles((ServerLevel) level, dust2, targetPos.add(0, .5, 0), 30, .4, 1, .4, 0);
+            //ParticleUtil.spawnParticles((ServerLevel) level, ParticleTypes.END_ROD, targetPos.add(0, .5, 0), 30, .4, 1, .4, 0);
         }, () -> {
             entity.teleportTo(originalPos.x, originalPos.y, originalPos.z);
             performingBlinkBarrage.remove(entity.getUUID());
@@ -137,8 +145,9 @@ public class BlinkAbility extends SelectableAbility {
         Vec3 targetLocBuff = AbilityUtil.getTargetBlock(entity, 14, true).getCenter().add(0, 1, 0);
         Vec3 originalPos = entity.position();
         var targetLoc = TeleportationUtil.clampToBorder((ServerLevel) level, targetLocBuff);
-        if(entity instanceof ServerPlayer serverPlayer)
+        if(entity instanceof ServerPlayer serverPlayer) {
             PacketHandler.sendToPlayer(serverPlayer, new PlayPhotonBlockEffectPacket("blink", BlockPos.containing(originalPos), 0, 0, 0, 1, null, -1, true, false, null));
+        }
 
         level.playSound(null, targetLoc.x, targetLoc.y, targetLoc.z, SoundEvents.ENDERMAN_TELEPORT, SoundSource.BLOCKS, .5f, 1);
 
@@ -148,9 +157,16 @@ public class BlinkAbility extends SelectableAbility {
             CharmAbility.removeCharm(entity.getUUID());
         }
 
-        ParticleUtil.spawnParticles((ServerLevel) level, dust, targetLoc.add(0, .5, 0), 30, .4, 1, .4, 0);
-        ParticleUtil.spawnParticles((ServerLevel) level, dust2, targetLoc.add(0, .5, 0), 30, .4, 1, .4, 0);
-        ParticleUtil.spawnParticles((ServerLevel) level, ParticleTypes.END_ROD, targetLoc.add(0, .5, 0), 30, .4, 1, .4, 0);
+        Vec3 pos = entity.position().add(0, entity.getEyeHeight() / 2f, 0);
+        BlockPos blockPos = BlockPos.containing(pos);
+
+        double offsetX = pos.x - (blockPos.getX() + 0.5);
+        double offsetY = pos.y - (blockPos.getY() + 0.5);
+        double offsetZ = pos.z - (blockPos.getZ() + 0.5);
+
+        PlayPhotonBlockEffectPacket packet = new PlayPhotonBlockEffectPacket("blink_particles", blockPos, offsetX, offsetY, offsetZ, 1.5, null, -1, false, true, null);
+        PacketHandler.sendToNearbyPlayers(packet, (ServerLevel) level, pos, 128);
+        PacketHandler.sendToNearbyPlayers(packet, (ServerLevel) level, pos, 128);
 
         // Spawn Afterimage if Afterimage ability is active
         if(!((BlinkAfterimageAbility) LOTMCraft.abilityHandler.getById("blink_afterimage_ability")).isActiveForEntity(entity))
@@ -161,7 +177,7 @@ public class BlinkAbility extends SelectableAbility {
 
         BeyonderData.incrementWormAmount(entity, -1);
 
-        BlinkAfterimageEntity blinkAfterimage = new BlinkAfterimageEntity(level, originalPos, entity, null);
+        BlinkAfterimageEntity blinkAfterimage = new BlinkAfterimageEntity(level, originalPos, entity, getAbilityToUse(entity));
         blinkAfterimage.setTarget(getTargetEntity(entity));
         level.addFreshEntity(blinkAfterimage);
         BeyonderData.setBeyonder(blinkAfterimage, BeyonderData.getPathway(entity), BeyonderData.getSequence(entity), true, true, false, true, true, false);

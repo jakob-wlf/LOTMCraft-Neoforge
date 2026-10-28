@@ -250,7 +250,8 @@ public class ControllingUtils {
                     event.getDimension().equals(ModDimensions.SPIRIT_WORLD_DIMENSION_KEY)) return;
         }
         if (event.getDimension().equals(Level.OVERWORLD) ||
-                event.getDimension().equals(ModDimensions.HISTORICAL_VOID_DIMENSION_KEY)) return;
+                event.getDimension().equals(ModDimensions.HISTORICAL_VOID_DIMENSION_KEY) ||
+                event.getDimension().equals(ModDimensions.DREAM_MAZE_DIMENSION_KEY)) return;
         event.setCanceled(true);
     }
 

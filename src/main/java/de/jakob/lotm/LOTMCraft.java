@@ -128,6 +128,7 @@ import de.jakob.lotm.gui.custom.ritualistic_table.RitualScreen;
 import de.jakob.lotm.gui.custom.sefirah.SefirahScreen;
 import de.jakob.lotm.gui.custom.trades.BeyonderTradeScreen;
 import de.jakob.lotm.gui.custom.historical_void.HistoricalVoidScreen;
+import de.jakob.lotm.item.ModArmorMaterials;
 import de.jakob.lotm.item.ModCreativeModTabs;
 import de.jakob.lotm.item.ModIngredients;
 import de.jakob.lotm.item.ModItems;
@@ -245,6 +246,7 @@ public class LOTMCraft
         ModAttachments.register(modEventBus);
         ModDimensions.register(modEventBus);
         ModGameRules.register();
+        ModArmorMaterials.register(modEventBus);
 
         SpiritPatchSetup.init(modEventBus);
 

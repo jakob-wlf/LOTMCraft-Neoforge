@@ -91,7 +91,11 @@ public class IllusionaryTortureDevicesAbility extends SelectableAbility {
 
         ItemStack brandingIron = new ItemStack(Items.IRON_SWORD);
         brandingIron.set(DataComponents.CUSTOM_NAME, Component.literal("Branding Iron").withColor(0xFFAFA3));
-        player.setItemInHand(player.getUsedItemHand(), brandingIron);
+        if(player.getMainHandItem().isEmpty()) {
+            player.setItemInHand(player.getUsedItemHand(), brandingIron);
+        } else if(!player.addItem(brandingIron)) {
+            player.drop(brandingIron, false);
+        }
 
         int seq = BeyonderData.getSequence(entity);
         int durationTicks = (seq >= 5 ? (8 - seq) : (5 + (5 - seq) * 2)) * 20;

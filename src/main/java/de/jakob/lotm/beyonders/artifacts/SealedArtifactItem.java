@@ -4,6 +4,7 @@ import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.attachments.DoorAuthorityData;
 import de.jakob.lotm.data.ModDataComponents;
+import de.jakob.lotm.events.custom.ArtifactUsedEvent;
 import de.jakob.lotm.gamerule.ModGameRules;
 import de.jakob.lotm.beyonders.potions.BeyonderCharacteristicItemHandler;
 import de.jakob.lotm.rendering.effectRendering.EffectIds;
@@ -29,6 +30,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.NeoForge;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -74,6 +76,7 @@ public class SealedArtifactItem extends Item {
 
         // Use the ability
         ability.useAbility((ServerLevel) level, player, true, false, true, false);
+        NeoForge.EVENT_BUS.post(new ArtifactUsedEvent(player, stack, ability.getId()));
 
         // Apply Use-Only Negative Effects
         for (NegativeEffect effect : data.negativeEffect()) {

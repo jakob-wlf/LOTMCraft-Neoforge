@@ -4,6 +4,8 @@ import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.attachments.SanityComponent;
 import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.beyonders.abilities.sun.SetOfPrinciplesAbility;
+import de.jakob.lotm.effect.ModEffects;
+import de.jakob.lotm.util.AuthorityResistanceManager;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.helper.AbilityUtil;
 import de.jakob.lotm.util.helper.AllyUtil;
@@ -28,8 +30,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.core.particles.ParticleTypes;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,12 +45,14 @@ public final class JusticeManager {
     public static final long FAIL_COOLDOWN_TICKS = 600L;
     public static final long ONGOING_REFAIL_TICKS = 12000L;
     public static final float SANITY_LOSS = 0.1f;
+    public static final int FAIL_RECOVERY_TICKS = 20 * 60 * 30;
     public static final int EVIL_KILL_COUNT = 100;
 
     private static final String CLEARANCE_MOD = "justice_clearance";
+    private static final String JUSTICE_MOD = "justice_justice";
+    private static final String HOLINESS_MOD = "justice_holiness";
     private static final String LOYALTY_MOD = "justice_loyalty";
     private static final Set<UUID> modifierHolders = ConcurrentHashMap.newKeySet();
-    private static final Set<UUID> artifactActive = ConcurrentHashMap.newKeySet();
     private static final Map<String, Long> lastOngoingFail = new ConcurrentHashMap<>();
 
     private JusticeManager() {}
@@ -111,26 +117,8 @@ public final class JusticeManager {
         return true;
     }
 
-    public static boolean mayUseAbility(LivingEntity entity, Ability ability) {
-        if (!(entity instanceof ServerPlayer player) || !isMentor(player)) return true;
-        if (ability instanceof SetOfPrinciplesAbility) return true;
-        if (!JusticeData.isSworn(player)) {
-            AbilityUtil.sendActionBar(player, Component.translatable("justice.lotmcraft.unsworn").withStyle(ChatFormatting.GOLD));
-            return false;
-        }
-        int fails = JusticeData.fails(player);
-        if (fails >= 2 && player.getRandom().nextFloat() < 0.2f + 0.1f * (fails - 2)) {
-            player.hurt(player.damageSources().magic(), 3f + 2f * (fails - 1));
-            ParticleUtil.spawnParticles((ServerLevel) player.level(), ParticleTypes.SMOKE, player.getEyePosition(), 25, .4, .5, .4, .03);
-            AbilityUtil.sendActionBar(player, Component.translatable("justice.lotmcraft.misfire").withStyle(ChatFormatting.DARK_RED));
-            return false;
-        }
-        return true;
-    }
-
     public static void tick(ServerPlayer player) {
-        boolean rising = artifactRising(player);
-        JusticeEnforcement.tickSubject(player, rising);
+        JusticeEnforcement.tickSubject(player);
 
         boolean active = isMentor(player) && JusticeData.isSworn(player);
         if (!active) {
@@ -139,15 +127,9 @@ public final class JusticeManager {
         }
 
         var data = JusticeData.of(player);
-        int seq = BeyonderData.getSequence(player);
-        if (data.getInt(JusticeData.SEQUENCE) != seq) {
-            data.putInt(JusticeData.SEQUENCE, seq);
-            data.putInt(JusticeData.FAILS, 0);
-        }
-
-        if (rising && JusticeData.has(player, JusticePrinciple.CLEARANCE)) fail(player, JusticePrinciple.CLEARANCE, true);
 
         if (player.tickCount % 20 != 0) return;
+        recoverFails(data);
         ServerLevel level = (ServerLevel) player.level();
         boolean enhanced = isEnhanced(player);
         Set<JusticePrinciple> chosen = JusticeData.chosen(player);
@@ -172,20 +154,26 @@ public final class JusticeManager {
             boolean threatened = AbilityUtil.getNearbyEntities(player, level, player.position(), 40).stream()
                     .anyMatch(e -> BeyonderData.isBeyonder(e) && BeyonderData.getSequence(e) < mySeq);
             if (threatened) {
-                effect(player, MobEffects.DAMAGE_RESISTANCE, amp, 60);
+                AuthorityResistanceManager.addModifier(player, JUSTICE_MOD, 1.4f);
                 effect(player, MobEffects.DAMAGE_BOOST, amp, 60);
                 if (enhanced) effect(player, MobEffects.REGENERATION, 0, 60);
+            } else {
+                AuthorityResistanceManager.removeModifier(player, JUSTICE_MOD);
             }
         }
 
         if (chosen.contains(JusticePrinciple.HOLINESS)) {
             for (LivingEntity ally : AbilityUtil.getNearbyEntities(player, level, player.position(), 32, false, true)) {
-                if (AllyUtil.areAllies(player, ally)) effect(ally, MobEffects.DAMAGE_RESISTANCE, amp, 60);
+                if (AllyUtil.areAllies(player, ally)) {
+                    AuthorityResistanceManager.addModifierWithTimeLimit(ally, HOLINESS_MOD, 1.2f, 60);
+                };
             }
         }
 
         if (chosen.contains(JusticePrinciple.PEACE)) {
             player.removeEffect(MobEffects.HUNGER);
+            player.getFoodData().setFoodLevel(20);
+            player.getFoodData().setSaturation(20);
         }
 
         if (chosen.contains(JusticePrinciple.LOYALTY)) {
@@ -195,12 +183,14 @@ public final class JusticeManager {
             if (near) {
                 BeyonderData.addModifier(player, LOYALTY_MOD, enhanced ? 1.5 : 1.25);
                 effect(player, MobEffects.DAMAGE_BOOST, amp, 60);
-                effect(player, MobEffects.DAMAGE_RESISTANCE, amp, 60);
+                AuthorityResistanceManager.addModifier(player, LOYALTY_MOD, 1.4f);
             } else {
                 BeyonderData.removeModifier(player, LOYALTY_MOD);
+                AuthorityResistanceManager.removeModifier(player, LOYALTY_MOD);
             }
         } else {
             BeyonderData.removeModifier(player, LOYALTY_MOD);
+            AuthorityResistanceManager.removeModifier(player, LOYALTY_MOD);
         }
 
         if (chosen.contains(JusticePrinciple.SANCTUARY)) {
@@ -223,7 +213,7 @@ public final class JusticeManager {
         long now = level.getGameTime();
 
         for (JusticePrinciple principle : chosen) {
-            if (principle == JusticePrinciple.HOLINESS && principle.brokenByState(player, false)) fail(player, principle, true);
+            if (principle == JusticePrinciple.HOLINESS && principle.brokenByState(player)) fail(player, principle, true);
         }
 
         if (chosen.contains(JusticePrinciple.PURIFICATION) && now > data.getLong(JusticeData.DEADLINE)) {
@@ -264,13 +254,46 @@ public final class JusticeManager {
             List<Holder<MobEffect>> debuffs = List.of(MobEffects.CONFUSION, MobEffects.MOVEMENT_SLOWDOWN, MobEffects.BLINDNESS, MobEffects.WEAKNESS);
             effect(player, debuffs.get(player.getRandom().nextInt(debuffs.size())), 0, 100);
         }
-        if (player.tickCount % 600 == 0 && player.getRandom().nextFloat() < 0.1f) {
-            data.putInt(JusticeData.FAILS, 0);
-            data.putInt(JusticeData.SEQUENCE, 4);
+        if (player.tickCount % 200 == 0 && player.getRandom().nextFloat() < 0.1f) {
             player.sendSystemMessage(Component.translatable("justice.lotmcraft.regress").withStyle(ChatFormatting.DARK_RED));
-            BeyonderData.setBeyonder(player, BeyonderData.getPathway(player), 4, true, false, false, false, false, true);
-            BeyonderData.incrementSpirituality(player, 0);
+            AbilityUtil.sealAllTargetAbilities(player, player, "vows_broken", 20 * 60);
+            player.addEffect(new MobEffectInstance(ModEffects.LOOSING_CONTROL, 20 * 6, 1, false, false, false));
         }
+    }
+
+    /** Called from ChangeBeyonderDataEvent (fires before the change is applied). A new sequence or pathway wipes all fails. */
+    public static void onBeyonderDataChange(ServerPlayer player, String oldPathway, String newPathway, int oldSequence, int newSequence) {
+        if (!player.getPersistentData().contains(JusticeData.ROOT)) return;
+        if (oldSequence != newSequence || !Objects.equals(oldPathway, newPathway)) {
+            resetFails(JusticeData.of(player));
+        }
+    }
+
+    private static void resetFails(net.minecraft.nbt.CompoundTag data) {
+        data.putInt(JusticeData.FAILS, 0);
+        data.putIntArray(JusticeData.FAIL_TIMERS, new int[0]);
+    }
+
+    private static int[] failTimers(net.minecraft.nbt.CompoundTag data, int fails) {
+        int[] stored = data.getIntArray(JusticeData.FAIL_TIMERS);
+        int[] timers = new int[fails];
+        for (int i = 0; i < fails; i++) timers[i] = i < stored.length ? stored[i] : FAIL_RECOVERY_TICKS;
+        return timers;
+    }
+
+
+    private static void recoverFails(net.minecraft.nbt.CompoundTag data) {
+        int fails = data.getInt(JusticeData.FAILS);
+        if (fails <= 0) return;
+        int[] timers = failTimers(data, fails);
+        int[] remaining = new int[timers.length];
+        int kept = 0;
+        for (int timer : timers) {
+            timer -= 20;
+            if (timer > 0) remaining[kept++] = timer;
+        }
+        data.putIntArray(JusticeData.FAIL_TIMERS, Arrays.copyOf(remaining, kept));
+        if (kept < fails) data.putInt(JusticeData.FAILS, kept);
     }
 
     public static void fail(ServerPlayer player, JusticePrinciple principle, boolean ongoing) {
@@ -287,7 +310,10 @@ public final class JusticeManager {
         }
 
         int fails = data.getInt(JusticeData.FAILS) + 1;
+        int[] timers = failTimers(data, fails);
+        timers[fails - 1] = FAIL_RECOVERY_TICKS;
         data.putInt(JusticeData.FAILS, fails);
+        data.putIntArray(JusticeData.FAIL_TIMERS, timers);
         data.putLong(JusticeData.LAST_FAIL, now);
 
         ServerLevel level = (ServerLevel) player.level();
@@ -301,7 +327,7 @@ public final class JusticeManager {
         if (fails == 1) addSanity(player, -SANITY_LOSS);
         if (fails == 3) addSanity(player, -SANITY_LOSS);
         if (fails >= 4) {
-            data.putInt(JusticeData.FAILS, 0);
+            resetFails(data);
             player.kill();
         }
     }
@@ -324,6 +350,11 @@ public final class JusticeManager {
         for (JusticePrinciple principle : JusticeData.chosen(attacker)) {
             if (principle.brokenByHarm(attacker, victim)) fail(attacker, principle, false);
         }
+    }
+
+    public static void onArtifactUsed(ServerPlayer player) {
+        if (!isMentor(player) || !JusticeData.isSworn(player)) return;
+        fail(player, JusticePrinciple.CLEARANCE, true);
     }
 
     public static float purificationMultiplier(ServerPlayer attacker, LivingEntity victim) {
@@ -363,12 +394,6 @@ public final class JusticeManager {
         return player.getServer().getPlayerList().getPlayer(UUID.fromString(stored));
     }
 
-    private static boolean artifactRising(ServerPlayer player) {
-        if (AbilityUtil.hasArtifactScaling(player)) return artifactActive.add(player.getUUID());
-        artifactActive.remove(player.getUUID());
-        return false;
-    }
-
     private static void clearModifiers(ServerPlayer player) {
         BeyonderData.removeModifier(player, CLEARANCE_MOD);
         BeyonderData.removeModifier(player, LOYALTY_MOD);
@@ -380,6 +405,6 @@ public final class JusticeManager {
     }
 
     private static void effect(LivingEntity entity, Holder<MobEffect> effect, int amplifier, int duration) {
-        entity.addEffect(new MobEffectInstance(effect, duration, amplifier, false, false, true));
+        entity.addEffect(new MobEffectInstance(effect, duration, amplifier, false, false, false));
     }
 }

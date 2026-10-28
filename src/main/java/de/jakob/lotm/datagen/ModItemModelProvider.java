@@ -39,6 +39,10 @@ public class ModItemModelProvider extends ItemModelProvider {
         basicItem(ModItems.CITY_MAP.get());
         basicItem(ModItems.CANE.get());
         basicItem(ModItems.NOTARY_SEAL.get());
+        basicItem(ModItems.HOLY_BOOTS.get());
+        basicItem(ModItems.HOLY_CHESTPLATE.get());
+        basicItem(ModItems.HOLY_LEGGINGS.get());
+        basicItem(ModItems.HOLY_HELMET.get());
 
         handheldItem(ModItems.PAPER_SWORD.get());
         handheldItem(ModItems.PAPER_PICKAXE.get());

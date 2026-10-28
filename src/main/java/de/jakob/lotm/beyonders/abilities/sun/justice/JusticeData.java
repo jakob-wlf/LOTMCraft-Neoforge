@@ -12,7 +12,7 @@ public final class JusticeData {
     public static final String FAILS = "fails";
     public static final String LOCK = "lock";
     public static final String LAST_FAIL = "last_fail";
-    public static final String SEQUENCE = "sequence";
+    public static final String FAIL_TIMERS = "fail_timers";
     public static final String DEADLINE = "purify_deadline";
     public static final String ALLY = "loyal_ally";
     public static final String DARK = "dark";

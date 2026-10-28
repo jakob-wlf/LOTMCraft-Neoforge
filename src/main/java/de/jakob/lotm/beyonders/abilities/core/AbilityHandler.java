@@ -63,6 +63,7 @@ public class AbilityHandler {
         abilities.add(new HolyEyeAbility("holy_eye_ability"));
         abilities.add(new UnshadowedSpearAbility("unshadowed_spear_ability"));
         abilities.add(new UnshadowedDomainAbility("unshadowed_domain_ability"));
+        abilities.add(new HolyEquipmentAbility("holy_equipment_ability"));
         abilities.add(new WallOfLightAbility("wall_of_light_ability"));
         abilities.add(new SwordOfJusticeAbility("sword_of_justice_ability"));
         abilities.add(new SetOfPrinciplesAbility("set_of_principles_ability"));

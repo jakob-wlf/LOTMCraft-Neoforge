@@ -1,11 +1,13 @@
 package de.jakob.lotm.beyonders.abilities.darkness;
 
 import de.jakob.lotm.LOTMCraft;
+import de.jakob.lotm.attachments.SealedDimensionData;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.damage.ModDamageTypes;
 import de.jakob.lotm.dimension.ModDimensions;
 import de.jakob.lotm.effect.ModEffects;
 import de.jakob.lotm.entity.ModEntities;
+import de.jakob.lotm.entity.custom.ability_entities.ControlBodyDouble;
 import de.jakob.lotm.entity.custom.ability_entities.darkness_pathway.NightmareBodyEntity;
 import de.jakob.lotm.network.PacketHandler;
 import de.jakob.lotm.network.packets.toClient.SyncNightmareAbilityPacket;
@@ -30,6 +32,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -298,13 +301,28 @@ public class NightmareAbility extends SelectableAbility {
     }
 
     public static void stopNightmare(UUID uuid) {
-        if (!ending.add(uuid)) return;
+        stopNightmare(uuid, null, null, 0f);
+    }
+
+    private static boolean stopNightmare(UUID uuid, UUID owner, DamageSource source, float amount) {
+        if (!ending.add(uuid)) return false;
         try {
             Dream dream = dreams.remove(uuid);
             activeNightmaresServer.remove(uuid);
             storedRegions.remove(uuid);
-            if (dream == null) return;
+            if (dream == null) return false;
             MinecraftServer server = dream.maze.getServer();
+            boolean hit = false;
+            if (server != null && owner != null && source != null && amount > 0) {
+                LivingEntity entity = find(server, owner);
+                if (entity != null && entity.isAlive()) {
+                    entity.invulnerableTime = 0;
+                    hit = entity.hurt(source, amount);
+                }
+            }
+            SealedDimensionData sealed = SealedDimensionData.get(dream.maze);
+            String mazeId = dream.maze.dimension().location().toString();
+            if (sealed.isActive() && mazeId.equalsIgnoreCase(sealed.getDimensionLocation())) sealed.setTicksRemaining(0);
             sendBack(server, uuid, dream.casterSpot);
             discard(server, dream.casterBody);
             for (Target target : dream.targets) {
@@ -318,6 +336,7 @@ public class NightmareAbility extends SelectableAbility {
                 marked.removeIf(pos -> pos.getCenter().distanceToSqr(center) <= (dream.radius * dream.radius));
             }
             syncFog(server, uuid, dream.targets, false, Vec3.ZERO, 0);
+            return hit;
         } finally {
             ending.remove(uuid);
         }
@@ -385,7 +404,7 @@ public class NightmareAbility extends SelectableAbility {
             LivingEntity looked = AbilityUtil.getTargetEntity(caster, reach, 2);
             if (looked != null && looked != caster) pool.add(looked);
         }
-        pool.removeIf(candidate -> candidate instanceof NightmareBodyEntity);
+        pool.removeIf(candidate -> candidate instanceof NightmareBodyEntity || candidate instanceof ControlBodyDouble);
         if (pool.isEmpty()) {
             bar(caster, "No target in sight.");
             return;
@@ -452,7 +471,10 @@ public class NightmareAbility extends SelectableAbility {
         for (int i = 0; i < pulled.size(); i++) {
             LivingEntity target = pulled.get(i);
             Spot at = targets.get(i).spot();
-            place(target, maze, new Vec3(at.x(), at.y() + yShift, at.z()), at.yRot(), at.xRot());
+            LivingEntity moved = place(target, maze, new Vec3(at.x(), at.y() + yShift, at.z()), at.yRot(), at.xRot());
+            if (!moved.getUUID().equals(targets.get(i).id())) {
+                targets.set(i, new Target(moved.getUUID(), at, targets.get(i).body()));
+            }
         }
 
         dreams.put(caster.getUUID(), new Dream(maze, casterSpot, plot, casterBody, targets, seq, reach, yShift));
@@ -468,13 +490,13 @@ public class NightmareAbility extends SelectableAbility {
                 shouldStop.set(true);
                 return;
             }
-            if (escaped(maze, dream, casterId, centerPos)) {
+            if (escaped(maze, dream, casterId, centerPos, true)) {
                 shouldStop.set(true);
                 stopNightmare(casterId);
                 return;
             }
             for (Target target : dream.targets) {
-                if (escaped(maze, dream, target.id, centerPos)) {
+                if (escaped(maze, dream, target.id, centerPos, false)) {
                     shouldStop.set(true);
                     stopNightmare(casterId);
                     return;
@@ -626,10 +648,22 @@ public class NightmareAbility extends SelectableAbility {
         }
     }
 
-    private static boolean escaped(ServerLevel maze, Dream dream, UUID id, Vec3 center) {
+    public static boolean occupies(ServerLevel level) {
+        for (Dream dream : dreams.values()) {
+            if (dream.maze == level) return true;
+        }
+        return false;
+    }
+
+    public static boolean strikeBody(UUID session, UUID owner, DamageSource source, float amount) {
+        if (owner == null || amount <= 0 || !dreams.containsKey(session)) return false;
+        return stopNightmare(session, owner, source, amount);
+    }
+
+    private static boolean escaped(ServerLevel maze, Dream dream, UUID id, Vec3 center, boolean caster) {
         LivingEntity entity = find(maze.getServer(), id);
         if (entity == null) return false;
-        if (!entity.isAlive()) return true;
+        if (!entity.isAlive() || entity.isRemoved()) return caster;
         if (entity.level() != maze) {
             Spot back = dream.casterSpot;
             for (Target target : dream.targets) {
@@ -643,7 +677,7 @@ public class NightmareAbility extends SelectableAbility {
         }
         boolean outside = entity.position().distanceToSqr(center) > (dream.radius * (double) dream.radius);
         if (!outside) return false;
-        if (BeyonderData.getSequence(entity) <= dream.casterSeq - 1) return true;
+        if (entity instanceof ServerPlayer && BeyonderData.getSequence(entity) <= dream.casterSeq - 1) return true;
         Vec3 back = center;
         Vec3 offset = entity.position().subtract(center);
         if (offset.lengthSqr() > 1.0E-4) back = center.add(offset.normalize().scale(dream.radius - 1));
@@ -700,6 +734,7 @@ public class NightmareAbility extends SelectableAbility {
         body.yBodyRot = entity.yBodyRot;
         body.yHeadRot = entity.yHeadRot;
         body.setSession(session);
+        body.setOwner(entity.getUUID());
         if (entity instanceof ServerPlayer player) body.setSkin(player.getUUID());
         entity.level().addFreshEntity(body);
         body.holdChunk();
@@ -718,9 +753,13 @@ public class NightmareAbility extends SelectableAbility {
         return preferred;
     }
 
-    private static void place(LivingEntity entity, ServerLevel level, Vec3 pos, float yRot, float xRot) {
-        if (entity instanceof ServerPlayer player) player.teleportTo(level, pos.x, pos.y, pos.z, yRot, xRot);
-        else entity.teleportTo(level, pos.x, pos.y, pos.z, Set.of(), yRot, xRot);
+    private static LivingEntity place(LivingEntity entity, ServerLevel level, Vec3 pos, float yRot, float xRot) {
+        if (entity instanceof ServerPlayer player) {
+            player.teleportTo(level, pos.x, pos.y, pos.z, yRot, xRot);
+            return player;
+        }
+        entity.teleportTo(level, pos.x, pos.y, pos.z, Set.of(), yRot, xRot);
+        return entity;
     }
 
     private static void sendBack(MinecraftServer server, UUID id, Spot spot) {
@@ -745,11 +784,14 @@ public class NightmareAbility extends SelectableAbility {
 
     private static LivingEntity find(MinecraftServer server, UUID id) {
         if (server == null) return null;
+        LivingEntity gone = null;
         for (ServerLevel level : server.getAllLevels()) {
             Entity entity = level.getEntity(id);
-            if (entity instanceof LivingEntity living) return living;
+            if (!(entity instanceof LivingEntity living)) continue;
+            if (!living.isRemoved() && living.isAlive()) return living;
+            if (gone == null) gone = living;
         }
-        return null;
+        return gone;
     }
 
     private static void fill(ServerLevel from, BlockPos anchor, ServerLevel to, BlockPos plot, int radius, boolean clear) {
@@ -804,9 +846,10 @@ public class NightmareAbility extends SelectableAbility {
     @SubscribeEvent
     public static void onDreamDeath(LivingIncomingDamageEvent event) {
         LivingEntity entity = event.getEntity();
-        if (hasActiveNightmare(entity)) return;
+        if (!(entity instanceof ServerPlayer) || hasActiveNightmare(entity)) return;
         UUID caster = dreamOf(entity.getUUID());
         if (caster == null || event.getAmount() < entity.getHealth()) return;
+        if (event.getSource().getEntity() instanceof LivingEntity attacker && attacker.getUUID().equals(caster)) return;
         event.setCanceled(true);
         stopNightmare(caster);
     }

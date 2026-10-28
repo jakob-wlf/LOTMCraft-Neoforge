@@ -25,6 +25,8 @@ public class NightmareBodyEntity extends Mob {
             SynchedEntityData.defineId(NightmareBodyEntity.class, EntityDataSerializers.OPTIONAL_UUID);
     private static final EntityDataAccessor<Optional<UUID>> SKIN =
             SynchedEntityData.defineId(NightmareBodyEntity.class, EntityDataSerializers.OPTIONAL_UUID);
+    private static final EntityDataAccessor<Optional<UUID>> OWNER =
+            SynchedEntityData.defineId(NightmareBodyEntity.class, EntityDataSerializers.OPTIONAL_UUID);
     private static final Map<String, Integer> HELD = new HashMap<>();
 
     private ChunkPos ticket;
@@ -46,6 +48,11 @@ public class NightmareBodyEntity extends Mob {
         super.defineSynchedData(builder);
         builder.define(SESSION, Optional.empty());
         builder.define(SKIN, Optional.empty());
+        builder.define(OWNER, Optional.empty());
+    }
+
+    public void setOwner(@Nullable UUID uuid) {
+        entityData.set(OWNER, Optional.ofNullable(uuid));
     }
 
     public void setSession(UUID uuid) {
@@ -101,11 +108,15 @@ public class NightmareBodyEntity extends Mob {
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
-        if (!level().isClientSide && amount > 0 && source.getEntity() != null) {
-            UUID session = entityData.get(SESSION).orElse(null);
-            if (session != null) NightmareAbility.stopNightmare(session);
-        }
-        return false;
+        if (level().isClientSide || amount <= 0 || source.getEntity() == null) return false;
+        float before = getHealth() + getAbsorptionAmount();
+        super.hurt(source, amount);
+        float dealt = before - getHealth() - getAbsorptionAmount();
+        if (dealt <= 0) return false;
+        UUID session = entityData.get(SESSION).orElse(null);
+        UUID owner = entityData.get(OWNER).orElse(null);
+        if (session == null || owner == null) return false;
+        return NightmareAbility.strikeBody(session, owner, source, dealt);
     }
 
     @Override

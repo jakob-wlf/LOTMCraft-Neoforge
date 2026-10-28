@@ -1,4 +1,4 @@
-// 1.21.1	2026-10-24T20:51:37.9118703	Item Models: lotmcraft
+// 1.21.1	2026-10-28T16:29:21.9652302	Item Models: lotmcraft
 f73b18465ecc4c7209da8e28508db3e3a9a348de assets/lotmcraft/models/item/abyss_demonic_fish_blood.json
 d79ff3aedef37faf54603234b4a98f66afb8991f assets/lotmcraft/models/item/abyss_uniqueness.json
 13ab3bdbdd84c3422e8f32b240a0fc73e54fc57e assets/lotmcraft/models/item/aconite_juice.json
@@ -106,6 +106,8 @@ a5851523c9f6e597c054270b142883e9a1c91a94 assets/lotmcraft/models/item/clown.json
 f5f82cd2d74d4f90d50a94802a8b7ebfbb039142 assets/lotmcraft/models/item/clown_characteristic.json
 470d6510e866fcca1dfbd095552893bf70f89abc assets/lotmcraft/models/item/clown_potion.json
 3aaaf62fdaa65a2deafeb60d002e06b26c66f646 assets/lotmcraft/models/item/compass_linked_to_the_astral_world.json
+a95a3b34e2f04c60ee8f238ef992979bab8d1d22 assets/lotmcraft/models/item/conjured_sword.json
+7f47bac198bdcf052e67fcf510db66e74603e9d0 assets/lotmcraft/models/item/conjured_whip.json
 a5851523c9f6e597c054270b142883e9a1c91a94 assets/lotmcraft/models/item/conqueror.json
 4709f35145c0fd5bd82d2087eced1cef575706da assets/lotmcraft/models/item/conqueror_characteristic.json
 13317b697ccf52bf87aef97d8f0f0a130be6c383 assets/lotmcraft/models/item/conqueror_potion.json
@@ -279,7 +281,12 @@ a5851523c9f6e597c054270b142883e9a1c91a94 assets/lotmcraft/models/item/harvest_pr
 21b9eaa21a54ecc4e368a58c6d64b5d23e99c5e4 assets/lotmcraft/models/item/harvest_priest_potion.json
 42ca34cc744cf1f5bb64ace4ea824327f87b840a assets/lotmcraft/models/item/heart_of_a_blue_spotted_firebird.json
 8c35a9eaa4f5a5a393bc8045bca9eaff424689ed assets/lotmcraft/models/item/heart_of_a_magma_titan.json
+946650d724f8168a457681649809983ba517ef1f assets/lotmcraft/models/item/holy_boots.json
 73d69a7f24c0f99243813dd6bb5e03617e0318f0 assets/lotmcraft/models/item/holy_brilliance_rock_liquid.json
+a3429a820387d5b9c1dd3d30c2f6a57ef48c1182 assets/lotmcraft/models/item/holy_chestplate.json
+9669eb035bea0a4732ed3fd499be2564a4be1dc7 assets/lotmcraft/models/item/holy_helmet.json
+468554269869824e80e3c2c3ed0eb7adf3b7ee54 assets/lotmcraft/models/item/holy_leggings.json
+4ff22de9b148812f77449b03a016288f69c952d1 assets/lotmcraft/models/item/holy_sword.json
 4f1ed2f1a61bccee4df5f22b57e224c9e6813ed2 assets/lotmcraft/models/item/honeysuckle_essential_oil.json
 f94250d90a4f0ed59d3baaa813f9d72dee5cf4c4 assets/lotmcraft/models/item/honeysuckle_extract.json
 6711764771e2f80d3ea9db4ffa352260018d217b assets/lotmcraft/models/item/hornacis_gray_mountain_goat_horn.json
