@@ -13,6 +13,7 @@ import de.jakob.lotm.attachments.SanityComponent;
 import de.jakob.lotm.attachments.*;
 import de.jakob.lotm.entity.ModEntities;
 import de.jakob.lotm.events.BeyonderDataTickHandler;
+import de.jakob.lotm.events.custom.ChangeBeyonderDataEvent;
 import de.jakob.lotm.gamerule.ModGameRules;
 import de.jakob.lotm.network.PacketHandler;
 import de.jakob.lotm.network.packets.toClient.SyncBeyonderDataPacket;
@@ -30,6 +31,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.neoforged.neoforge.common.NeoForge;
 
 import java.util.*;
 
@@ -210,6 +212,10 @@ public class BeyonderData {
             if(clearCharStack) playerMap.clearStack(player);
         }
 
+        BeyonderComponent component = entity.getData(ModAttachments.BEYONDER_COMPONENT);
+
+        NeoForge.EVENT_BUS.post(new ChangeBeyonderDataEvent(entity, component.getPathway(), pathway, component.getSequence(), sequence));
+
         if(Objects.equals(sequence, LOTMCraft.NON_BEYONDER_SEQ)
                 || pathway.equals("none")) {
             clearBeyonderData(entity);
@@ -223,8 +229,6 @@ public class BeyonderData {
         }
 
         boolean griefing = !BeyonderData.isBeyonder(entity) || BeyonderData.isGriefingEnabled(entity);
-
-        BeyonderComponent component = entity.getData(ModAttachments.BEYONDER_COMPONENT);
 
         // Detect sequence-up before data changes so we can record missed acting and update cap
         String oldPathway = getPathway(entity);

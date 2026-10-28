@@ -112,14 +112,21 @@ public final class JusticeEnforcement {
         }
     }
 
-    public static void tickSubject(ServerPlayer player, boolean artifactRising) {
+    public static void tickSubject(ServerPlayer player) {
+        if (player.tickCount % 20 != 0) return;
         if (halos.isEmpty() && edicts.isEmpty()) return;
         MinecraftServer server = player.getServer();
         if (server == null) return;
         for (Charge charge : charges(server, player)) {
-            boolean slowCheck = charge.principle() == JusticePrinciple.HOLINESS;
-            if (slowCheck && player.tickCount % 20 != 0) continue;
-            if (charge.principle().brokenByState(player, artifactRising)) penalize(server, charge, player);
+            if (charge.principle().brokenByState(player)) penalize(server, charge, player);
+        }
+    }
+
+    public static void onArtifactUsed(LivingEntity user) {
+        MinecraftServer server = user.getServer();
+        if (server == null) return;
+        for (Charge charge : charges(server, user)) {
+            if (charge.principle().brokenByArtifact()) penalize(server, charge, user);
         }
     }
 

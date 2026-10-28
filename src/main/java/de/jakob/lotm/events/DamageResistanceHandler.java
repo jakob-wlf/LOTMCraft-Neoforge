@@ -28,98 +28,72 @@ public class DamageResistanceHandler {
 
     @SubscribeEvent
     public static void onDamage(LivingIncomingDamageEvent event) {
-        if (!(event.getEntity().level() instanceof ServerLevel level)) return;
-
         var entity = event.getEntity();
+        if (!(entity.level() instanceof ServerLevel)) return;
+
         var source = event.getSource();
+        var livingSource = source.getEntity() instanceof LivingEntity living ? living : null;
+        boolean sourceIsBeyonder = livingSource != null && BeyonderData.isBeyonder(livingSource);
+        boolean entityIsBeyonder = BeyonderData.isBeyonder(entity);
         float damage = event.getAmount();
 
-        var sourceEntity = source.getEntity();
-
-        if (sourceEntity != null && (sourceEntity instanceof LivingEntity livingSource
-                && BeyonderData.isBeyonder(livingSource))) {
-
-            float mult = 1f;
+        // Attacker bonus/penalty based on sequence difference
+        if (sourceIsBeyonder) {
             int sourceSeq = AuthorityResistanceManager.getFromBuffer(livingSource);
 
-            if (BeyonderData.isBeyonder(entity) || entity instanceof ServerPlayer) {
-
+            if (entityIsBeyonder || entity instanceof ServerPlayer) {
                 int entitySeq = BeyonderData.getSequence(entity);
 
                 float baseStep;
+                if (entitySeq >= 5 && sourceSeq >= 5) baseStep = 0.1f;
+                else if (entitySeq >= 3 && sourceSeq >= 3) baseStep = 0.4f;
+                else if (entitySeq >= 1 && sourceSeq >= 1) baseStep = 0.5f;
+                else baseStep = 0.8f;
 
-                if (entitySeq >= 5 && sourceSeq >= 5)
-                    baseStep = 0.1f;
-                else if (entitySeq >= 3 && sourceSeq >= 3)
-                    baseStep = 0.4f;
-                else if(entitySeq >= 1 && sourceSeq >= 1)
-                    baseStep = 0.5f;
-                else
-                    baseStep = 0.8f;
-
-
-                if(CullAbility.active.contains(livingSource.getUUID()) && sourceSeq > entitySeq){
+                if (sourceSeq > entitySeq && CullAbility.active.contains(livingSource.getUUID())) {
                     baseStep /= 2;
                 }
 
-                int seqDifference = entitySeq - sourceSeq;
-                mult = 1.0f + (baseStep * seqDifference);
-
-                if (mult <= 0.2f) {
-                    mult = 0.2f;
-                }
-            } else {
-                if (sourceSeq <= 4) {
-                    mult = 10f;
-                }
+                damage *= Math.max(0.2f, 1.0f + baseStep * (entitySeq - sourceSeq));
+            } else if (sourceSeq <= 4) {
+                damage *= 10f;
             }
-
-            damage *= mult;
         }
 
-        if (BeyonderData.isBeyonder(entity)) {
-
+        // Defender reductions
+        if (entityIsBeyonder) {
             int seq = BeyonderData.getSequence(entity);
+            boolean angelImmunity = entity.level().getGameRules().getBoolean(ModGameRules.ANGEL_DAMAGE_IMMUNITY);
 
-            float mult = 1.0f;
-            switch (seq) {
-                case 4 -> mult = 0.75f;
-                case 3 -> mult = 0.5f;
-                case 0, 1, 2 -> mult = 0f;
-            }
+            float mult = switch (seq) {
+                case 4 -> 0.75f;
+                case 3 -> 0.5f;
+                case 0, 1, 2 -> angelImmunity ? 0f : 0.4f;
+                default -> 1.0f;
+            };
 
-            if(mult == 0f && !entity.level().getGameRules().getBoolean(ModGameRules.ANGEL_DAMAGE_IMMUNITY)) {
-                mult = 0.4f;
-            }
-
-            if (!ModDamageTypes.isModDamage(source) && !(damage >= Float.MAX_VALUE / 2) && (!(sourceEntity instanceof LivingEntity livingSource) || !BeyonderData.isBeyonder(livingSource) || BeyonderData.getSequence(livingSource) > seq)) {
+            boolean sequenceReductionApplies = !sourceIsBeyonder || BeyonderData.getSequence(livingSource) > seq;
+            if (!ModDamageTypes.isModDamage(source) && damage < Float.MAX_VALUE / 2 && sequenceReductionApplies) {
                 damage *= mult;
             }
 
-            float resistance = AuthorityResistanceManager.getResistance(source,
-                    BeyonderData.getPathway(entity), BeyonderData.getSequence(entity));
-
-            float result = damage * resistance;
-
-            damage = result;
+            damage *= AuthorityResistanceManager.getResistance(entity, source, BeyonderData.getPathway(entity), seq);
         }
 
         event.setAmount(damage);
 
+        // Reset i-frames when different mod damage types hit in succession
         var storedDamageType = damageMap.get(entity.getUUID());
-
-        if (storedDamageType != null) {
-            if (ModDamageTypes.isModDamage(source)
-                    && ModDamageTypes.isModDamage(storedDamageType)
-                    && !storedDamageType.is(Objects.requireNonNull(source.typeHolder().getKey()))) {
-                entity.invulnerableTime = 0;
-                entity.hurtTime = 0;
-            }
+        if (storedDamageType != null
+                && ModDamageTypes.isModDamage(source)
+                && ModDamageTypes.isModDamage(storedDamageType)
+                && !storedDamageType.is(Objects.requireNonNull(source.typeHolder().getKey()))) {
+            entity.invulnerableTime = 0;
+            entity.hurtTime = 0;
         }
-
         damageMap.put(entity.getUUID(), source.typeHolder());
 
-        if(sourceEntity != null && sourceEntity instanceof LivingEntity livingSource){
+        if (livingSource != null) {
             livingSource.setLastHurtMob(entity);
         }
 

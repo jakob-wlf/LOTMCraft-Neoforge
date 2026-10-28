@@ -4,6 +4,9 @@ import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.beyonders.abilities.sun.justice.JusticeData;
 import de.jakob.lotm.beyonders.abilities.sun.justice.JusticeEnforcement;
 import de.jakob.lotm.beyonders.abilities.sun.justice.JusticeManager;
+import de.jakob.lotm.beyonders.abilities.sun.justice.JusticeProvocation;
+import de.jakob.lotm.events.custom.ArtifactUsedEvent;
+import de.jakob.lotm.events.custom.ChangeBeyonderDataEvent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.bus.api.EventPriority;
@@ -32,6 +35,7 @@ public class JusticeEvents {
         if (!(event.getSource().getEntity() instanceof LivingEntity attacker)) return;
         LivingEntity victim = event.getEntity();
         if (attacker == victim || event.getNewDamage() <= 0f) return;
+        if (JusticeProvocation.registerHit(attacker, victim)) return;
         if (attacker instanceof ServerPlayer player) JusticeManager.onHarm(player, victim);
         JusticeEnforcement.onHarm(attacker, victim);
     }
@@ -48,6 +52,21 @@ public class JusticeEvents {
     @SubscribeEvent
     public static void onPlayerTick(PlayerTickEvent.Post event) {
         if (event.getEntity() instanceof ServerPlayer player) JusticeManager.tick(player);
+    }
+
+    @SubscribeEvent
+    public static void onArtifactUsed(ArtifactUsedEvent event) {
+        LivingEntity user = event.getSourceEntity();
+        if (user == null || user.level().isClientSide()) return;
+        if (user instanceof ServerPlayer player) JusticeManager.onArtifactUsed(player);
+        JusticeEnforcement.onArtifactUsed(user);
+    }
+
+    @SubscribeEvent
+    public static void onBeyonderDataChange(ChangeBeyonderDataEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        JusticeManager.onBeyonderDataChange(player, event.getOldPathway(), event.getNewPathway(),
+                event.getOldSequence(), event.getNewSequence());
     }
 
     @SubscribeEvent

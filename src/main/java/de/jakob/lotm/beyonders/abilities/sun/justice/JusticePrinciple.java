@@ -58,12 +58,12 @@ public enum JusticePrinciple {
         return this == PEACE && (victim instanceof Animal || victim instanceof AbstractFish || victim instanceof AbstractVillager);
     }
 
-    public boolean brokenByState(LivingEntity entity, boolean artifactRising) {
-        return switch (this) {
-            case HOLINESS -> JusticeManager.hasEvilAlly(entity);
-            case CLEARANCE -> artifactRising;
-            default -> false;
-        };
+    public boolean brokenByState(LivingEntity entity) {
+        return this == HOLINESS && JusticeManager.hasEvilAlly(entity);
+    }
+
+    public boolean brokenByArtifact() {
+        return this == CLEARANCE;
     }
 
     private static boolean isPerson(LivingEntity entity) {
