@@ -102,54 +102,52 @@ public class FlamesOfTheAbyssAbility extends SelectableAbility {
     private void abyssPillars(Level level, LivingEntity entity) {
         if (level.isClientSide) return;
         ServerLevel serverLevel = (ServerLevel) level;
-
-        level.playSound(null, BlockPos.containing(entity.position()),
-                SoundEvents.BLAZE_SHOOT, SoundSource.BLOCKS, 3f, 0.5f);
-
+        level.playSound(null, BlockPos.containing(entity.position()), SoundEvents.BLAZE_SHOOT, SoundSource.BLOCKS, 3f, 0.5f);
         float damage = (float) (DamageLookup.lookupDamage(1, 0.4) * multiplier(entity) * BloodlineFilthFlameSpiritAbility.getFireDamageMultiplier(entity));
-
         List<Vec3> pillarPositions = new ArrayList<>();
-
-        double angleOffset = random.nextDouble() * Math.PI * 2; // optional: random rotation of the ring
+        double angleOffset = random.nextDouble() * Math.PI * 2;
         for (int i = 0; i < RING_PILLAR_COUNT; i++) {
             double angle = angleOffset + (i / (double) RING_PILLAR_COUNT) * Math.PI * 2;
-            pillarPositions.add(getPillarPosition(level, entity, angle, RING_RADIUS, false));
+            Vec3 pos = getPillarPosition(level, entity, angle, RING_RADIUS, false);
+            if (pos != null) pillarPositions.add(pos);
         }
-
+        // Skip random pillars if no valid ground position is found.
         for (int i = 0; i < RANDOM_PILLAR_COUNT; i++) {
             double angle = random.nextDouble() * Math.PI * 2;
             double dist = 10 + random.nextDouble() * 64;
-            pillarPositions.add(getPillarPosition(level, entity, angle, dist, true));
+            Vec3 pos = getPillarPosition(level, entity, angle, dist, true);
+            if (pos != null) pillarPositions.add(pos);
         }
-
         for (int i = 0; i < pillarPositions.size(); i++) {
             Vec3 pos = pillarPositions.get(i);
+            if (pos == null) continue;
             int delay = i * 2;
-
             ServerScheduler.scheduleDelayed(delay, () -> {
                 BlockPos blockPos = BlockPos.containing(pos);
-
                 double offsetX = pos.x - (blockPos.getX() + 0.5);
                 double offsetY = pos.y - (blockPos.getY() + 0.5) - 1;
                 double offsetZ = pos.z - (blockPos.getZ() + 0.5);
-
                 PacketHandler.sendToNearbyPlayers(
-                        new PlayPhotonBlockEffectPacket("abyss_pillars", blockPos, offsetX, offsetY, offsetZ, 1.5, null, -1, false, true, new Vec3(1.75, 2, 1.75)),
+                        new PlayPhotonBlockEffectPacket(
+                                "abyss_pillars", blockPos,
+                                offsetX, offsetY, offsetZ,
+                                1.5, null, -1, false, true,
+                                new Vec3(1.75, 2, 1.75)),
                         serverLevel, pos, 128
                 );
             }, serverLevel);
-
             ServerScheduler.scheduleForDuration(delay, 4, 20 * 7, () -> {
-                AbilityUtil.damageNearbyEntities(serverLevel, entity, 9, damage, pos, true, false, ModDamageTypes.source(level, ModDamageTypes.ABYSS, entity));
-                AbilityUtil.getNearbyEntities(entity, serverLevel, entity.position(), 1.5).forEach(e -> {
-                    e.addEffect(new MobEffectInstance(MobEffects.POISON, 20 * 20, 4));
-                    e.addEffect(new MobEffectInstance(MobEffects.WITHER, 20 * 6, 1));
-                    e.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20 * 10, 3));
-                    e.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 20 * 5, 0));
-                });
-            }, null, serverLevel, () -> AbilityUtil.getTimeInArea(entity, new Location(pos, serverLevel)));
+                        AbilityUtil.damageNearbyEntities(serverLevel, entity, 9, damage, pos, true, false, ModDamageTypes.source(level, ModDamageTypes.ABYSS, entity));
+                        AbilityUtil.getNearbyEntities(entity, serverLevel, pos, 1.5)
+                                .forEach(e -> {
+                                    e.addEffect(new MobEffectInstance(MobEffects.POISON, 20 * 20, 4));
+                                    e.addEffect(new MobEffectInstance(MobEffects.WITHER, 20 * 6, 1));
+                                    e.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20 * 10, 3));
+                                    e.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 20 * 5, 0));
+                                });
+                    }, null, serverLevel,
+                    () -> AbilityUtil.getTimeInArea(entity, new Location(pos, serverLevel)));
         }
-
         NeoForge.EVENT_BUS.post(new AbilityUsedEvent(serverLevel, entity.position(), entity, this,
                 new String[]{"corruption", "burning"}, 7, 20 * 3));
     }
