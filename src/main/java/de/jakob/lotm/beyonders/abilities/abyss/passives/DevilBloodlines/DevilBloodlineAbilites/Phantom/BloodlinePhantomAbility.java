@@ -31,7 +31,7 @@ import java.util.Map;
 
 @EventBusSubscriber(modid = LOTMCraft.MOD_ID)
 public class BloodlinePhantomAbility extends ToggleAbility {
-    private static final int TOGGLE_COOLDOWN_TICKS = 20 * 10;
+    private static final int TOGGLE_COOLDOWN_TICKS = 20 * 60;
     private static BloodlinePhantomAbility instance;
     public BloodlinePhantomAbility(String id) {
         super(id);

@@ -24,6 +24,9 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.TamableAnimal;
+import net.minecraft.world.entity.monster.Pillager;
+import net.minecraft.world.entity.monster.piglin.AbstractPiglin;
+import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -56,9 +59,11 @@ public class DevilWorshipAbility extends SelectableAbility {
     public static final int TARGET_RANGE = 30;
     // Swap cooldown for Select Mob
     public static final long COOLDOWN_TICKS = 20L * 60 * 30;
-    public static final int DEFAULT_KILLS_FOR_FULL = 50;//normal 50
-    public static final int PLAYER_KILLS_FOR_FULL = 10;
+    public static final int VILLAGER_KILLS_FOR_FULL = 100;
+    public static final int PILLAGER_KILLS_FOR_FULL = 100;
+    public static final int PIGLIN_KILLS_FOR_FULL = 50;
     public static final int NPC_KILLS_FOR_FULL = 25;
+    public static final int PLAYER_KILLS_FOR_FULL = 10;
     //Devil seq, chance it answers, chance it escapes control
     public static final int[] DEVIL_SEQUENCE = { 6, 5, 4 };
     public static final int[] SUMMON_CHANCE  = { 60, 25, 15 };
@@ -139,6 +144,10 @@ public class DevilWorshipAbility extends SelectableAbility {
         LivingEntity target = AbilityUtil.getTargetEntity(player, TARGET_RANGE, 1.5f);
         if (target == null) {
             sendStatus(player);
+            return;
+        }
+        if (!isValidTribute(target)) {
+            say(player, "The Devils are not interested this offering They wish for the blood  of Villagers, Pillagers, Piglins, Beyonder's.", 0xFF124D);
             return;
         }
         long now = player.level().getGameTime();
@@ -864,6 +873,9 @@ public class DevilWorshipAbility extends SelectableAbility {
         m.devilId = devil.getUUID();
         return devil;
     }
+    private static boolean isValidTribute(LivingEntity entity) {
+        return entity instanceof Villager || entity instanceof Pillager || entity instanceof AbstractPiglin || entity instanceof BeyonderNPCEntity || entity instanceof Player;
+    }
     //events
     @EventBusSubscriber(modid = LOTMCraft.MOD_ID)
     public static class Events {
@@ -907,7 +919,10 @@ public class DevilWorshipAbility extends SelectableAbility {
         private static int getKillsForFull(LivingEntity entity) {
             if (entity instanceof Player) return PLAYER_KILLS_FOR_FULL;
             if (entity instanceof BeyonderNPCEntity) return NPC_KILLS_FOR_FULL;
-            return DEFAULT_KILLS_FOR_FULL;
+            if (entity instanceof AbstractPiglin) return PIGLIN_KILLS_FOR_FULL;
+            if (entity instanceof Pillager) return PILLAGER_KILLS_FOR_FULL;
+            if (entity instanceof Villager) return VILLAGER_KILLS_FOR_FULL;
+            return 0;
         }
         @SubscribeEvent
         public static void onKill(LivingDeathEvent event) {
