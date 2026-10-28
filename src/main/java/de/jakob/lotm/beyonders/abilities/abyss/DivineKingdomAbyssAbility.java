@@ -1,6 +1,6 @@
 package de.jakob.lotm.beyonders.abilities.abyss;
 
-import de.jakob.lotm.LOTMCraft;
+import de.jakob.lotm.attachments.BlockExpiryData;
 import de.jakob.lotm.attachments.DisabledFlightComponent;
 import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.beyonders.abilities.core.Ability;
@@ -25,15 +25,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import org.joml.Vector3f;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-@EventBusSubscriber(modid = LOTMCraft.MOD_ID)
 public class DivineKingdomAbyssAbility extends Ability {
 
     private static final int RADIUS = 60;
@@ -69,7 +65,6 @@ public class DivineKingdomAbyssAbility extends Ability {
         Kingdom(UUID casterId, ServerLevel level, Vec3 center) {this.casterId = casterId;this.level = level;this.center = center;}
     }
     private static final List<Kingdom> ACTIVE = new CopyOnWriteArrayList<>();
-
     public DivineKingdomAbyssAbility(String id) {
         super(id, 120);
         canBeCopied = false;
@@ -82,7 +77,6 @@ public class DivineKingdomAbyssAbility extends Ability {
     public Map<String, Integer> getRequirements() {return new HashMap<>(Map.of("abyss", 0));}
     @Override
     protected float getSpiritualityCost() {return 15000;}
-
     @Override
     public void onAbilityUse(Level level, LivingEntity entity) {
         if (level.isClientSide || !(level instanceof ServerLevel serverLevel)) return;
@@ -122,11 +116,18 @@ public class DivineKingdomAbyssAbility extends Ability {
         if (k.ended || wave.isEmpty()) return;
         ServerLevel level = k.level;
         BlockState filth = ModBlocks.BLOCK_OF_FILTH.get().defaultBlockState();
+        BlockExpiryData expiryData = BlockExpiryData.get(level);
         for (BlockPos p : wave) {
-            BlockState s = level.getBlockState(p);
-            if (s.isAir() || s.is(filth.getBlock()) || s.getDestroySpeed(level, p) < 0 || level.getBlockEntity(p) != null || !s.getFluidState().isEmpty()) continue;
-            k.original.put(p.immutable(), s);
-            level.setBlock(p, filth, Block.UPDATE_CLIENTS);
+            BlockState originalState = level.getBlockState(p);
+            if (originalState.isAir() || originalState.is(filth.getBlock()) || originalState.getDestroySpeed(level, p) < 0 || level.getBlockEntity(p) != null || !originalState.getFluidState().isEmpty()) {
+                continue;
+            }
+            BlockPos pos = p.immutable();
+
+            if (level.setBlock(pos, filth, Block.UPDATE_CLIENTS)) {
+                k.original.put(pos, originalState);
+                expiryData.schedule(level, pos, DURATION_TICKS, originalState);
+            }
         }
         ParticleUtil.spawnParticles(level, FILTH_DUST, wave.getFirst().above().getCenter(), 6, 0.8, 0.05);
     }
@@ -147,7 +148,6 @@ public class DivineKingdomAbyssAbility extends Ability {
             }
             // A standing seq 0 abyss is untouched. Sneaking makes them sink like everyone else.
             if (FilthBlock.isAbyss(e) && !e.isShiftKeyDown()) continue;
-
             BlockPos feet = BlockPos.containing(e.getX(), e.getY() + 0.05, e.getZ());
             BlockPos head = BlockPos.containing(e.getX(), e.getBoundingBox().maxY - 0.05, e.getZ());
             boolean feetIn = isFilth(level, feet);
@@ -161,7 +161,6 @@ public class DivineKingdomAbyssAbility extends Ability {
                 }
             }
             else encasedTicks.remove(e.getUUID());
-
             Vec3 dm = e.getDeltaMovement();
             if (feetIn) {
                 double y;
@@ -176,7 +175,6 @@ public class DivineKingdomAbyssAbility extends Ability {
                     Abilities abilities = p.getAbilities();
                     if (abilities.flying) {
                         abilities.flying = false;
-                        abilities.mayfly = false;
                         // Remove the sudden downward momentum when flight is disabled.
                         Vec3 velocity = e.getDeltaMovement();
                         e.setDeltaMovement(velocity.x, 0.0, velocity.z);
@@ -185,7 +183,6 @@ public class DivineKingdomAbyssAbility extends Ability {
                 }
                 lockFlight(e);
             }
-
             e.hurtMarked = true;
             e.fallDistance = 0;
         }
@@ -203,16 +200,11 @@ public class DivineKingdomAbyssAbility extends Ability {
             Abilities abilities = p.getAbilities();
             if (abilities.flying || abilities.mayfly) {
                 abilities.flying = false;
-                abilities.mayfly = false;
                 p.onUpdateAbilities();
             }
         }
         if (!(e instanceof Player) && e.isNoGravity()) e.setNoGravity(false);
     }
-
-
-
-
     private static void sendToAbyss(MinecraftServer server, LivingEntity e) {
         ServerLevel abyss = server.getLevel(ModDimensions.ABYSS_DIMENSION_KEY);
         if (abyss == null || !e.isAlive()) return;
@@ -254,18 +246,9 @@ public class DivineKingdomAbyssAbility extends Ability {
                 break;
             }
         }
-
         // Teleport after the destination has been checked.
         assert safePosition != null;
-        e.teleportTo(
-                abyss,
-                safePosition.x,
-                safePosition.y,
-                safePosition.z,
-                Set.of(),
-                e.getYRot(),
-                e.getXRot()
-        );
+        e.teleportTo(abyss, safePosition.x, safePosition.y, safePosition.z, Set.of(), e.getYRot(), e.getXRot());
         e.setDeltaMovement(Vec3.ZERO);
         e.fallDistance = 0;
     }
@@ -283,8 +266,16 @@ public class DivineKingdomAbyssAbility extends Ability {
         lastJump.clear();
     }
     private static void restore(ServerLevel level, List<Map.Entry<BlockPos, BlockState>> chunk) {
-        for (Map.Entry<BlockPos, BlockState> en : chunk) if (level.getBlockState(en.getKey()).is(ModBlocks.BLOCK_OF_FILTH.get())) level.setBlock(en.getKey(), en.getValue(), Block.UPDATE_ALL);
+        BlockExpiryData expiryData = BlockExpiryData.get(level);
+        for (Map.Entry<BlockPos, BlockState> entry : chunk) {
+            BlockPos pos = entry.getKey();
+            if (level.getBlockState(pos).is(ModBlocks.BLOCK_OF_FILTH.get())) {
+                expiryData.cancel(pos);
+                level.setBlock(pos, entry.getValue(), Block.UPDATE_ALL);
+            }
+        }
     }
+
     private static void rescueEntities(Kingdom k) {
         ServerLevel level = k.level;
         AABB box = new AABB(k.center.x - RADIUS, level.getMinBuildHeight(), k.center.z - RADIUS, k.center.x + RADIUS, level.getMaxBuildHeight(), k.center.z + RADIUS);
@@ -294,14 +285,6 @@ public class DivineKingdomAbyssAbility extends Ability {
             if (e instanceof ServerPlayer p) p.teleportTo(level, e.getX(), y, e.getZ(), Set.of(), p.getYRot(), p.getXRot());
             else e.teleportTo(e.getX(), y, e.getZ());
         }
-    }
-    @SubscribeEvent
-    public static void onServerStopping(ServerStoppingEvent event) {
-        for (Kingdom k : ACTIVE) {
-            k.ended = true;
-            k.original.forEach((pos, state) -> {if (k.level.getBlockState(pos).is(ModBlocks.BLOCK_OF_FILTH.get())) k.level.setBlock(pos, state, Block.UPDATE_ALL);});
-        }
-        ACTIVE.clear();
     }
     public static void markJump(ServerPlayer player) {
         long now = player.level().getGameTime();
