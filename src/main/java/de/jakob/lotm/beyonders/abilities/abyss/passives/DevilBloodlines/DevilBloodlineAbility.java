@@ -69,6 +69,7 @@ public class DevilBloodlineAbility extends PassiveAbility {
         if (!(level instanceof ServerLevel serverLevel)) return;
         var component = player.getData(ModAttachments.BLOODLINE_COMPONENT.get());
         if (component.hasBloodline()) return;
+        getBloodlineFor(player, serverLevel);
         assignBloodlineIfMissing(player, serverLevel);
     }
     @Override
