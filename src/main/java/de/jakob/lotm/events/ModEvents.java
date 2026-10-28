@@ -58,7 +58,10 @@ import de.jakob.lotm.entity.custom.ability_entities.ControlBodyDouble;
 import de.jakob.lotm.entity.custom.ability_entities.door_pathway.BlinkAfterimageEntity;
 import de.jakob.lotm.entity.custom.npc.ForsWallEntity;
 import de.jakob.lotm.entity.custom.spirits.*;
+import de.jakob.lotm.item.ModItems;
+import de.jakob.lotm.item.models.HolyArmour;
 import de.jakob.lotm.network.PacketHandler;
+import de.jakob.lotm.network.packets.handlers.ClientHandler;
 import de.jakob.lotm.network.packets.toClient.SyncSharedAbilitiesDataPacket;
 import de.jakob.lotm.rendering.models.darkness.DarknessMythicalCreatureModel;
 import de.jakob.lotm.rendering.models.death.DeathMythicalCreatureModel;
@@ -76,16 +79,22 @@ import de.jakob.lotm.util.helper.CohortUtil;
 import de.jakob.lotm.util.helper.TeamUtils;
 import de.jakob.lotm.rendering.models.door.DoorMythicalCreatureModel;
 import de.jakob.lotm.rendering.models.tyrant.TyrantMythicalCreatureModel;
+import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.SpawnPlacementTypes;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
+import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
@@ -171,6 +180,8 @@ public class ModEvents {
         event.registerLayerDefinition(JusticiarMythicalCreatureModel.LAYER_LOCATION, JusticiarMythicalCreatureModel::createBodyLayer);;
         event.registerLayerDefinition(VisionaryMythicalCreatureModel.LAYER_LOCATION, VisionaryMythicalCreatureModel::createBodyLayer);
         event.registerLayerDefinition(DemonessMythicalCreatureModel.LAYER_LOCATION, DemonessMythicalCreatureModel::createBodyLayer);
+
+        event.registerLayerDefinition(HolyArmour.LAYER_LOCATION, HolyArmour::createBodyLayer);
     }
 
     @SubscribeEvent
@@ -199,6 +210,19 @@ public class ModEvents {
         event.put(ModEntities.KNOWLEDGE_DEMON.get(), KnowledgeDemonEntity.createAttributes().build());
         event.put(ModEntities.STONE_GOLEM.get(), StoneGolemEntity.createAttributes().build());
         event.put(ModEntities.HEADLESS_BRIDE.get(), HeadlessBrideEntity.createAttributes().build());
+    }
+
+    @SubscribeEvent
+    public static void registerExtensions(RegisterClientExtensionsEvent event) {
+        event.registerItem(new IClientItemExtensions() {
+                               @Override
+                               public HumanoidModel<?> getHumanoidArmorModel(LivingEntity entity, ItemStack stack,
+                                                                             EquipmentSlot slot, HumanoidModel<?> original) {
+                                   return new HolyArmour(
+                                           ClientHandler.getMinecraftInstance().getEntityModels().bakeLayer(HolyArmour.LAYER_LOCATION));
+                               }
+                           }, ModItems.HOLY_HELMET.get(), ModItems.HOLY_CHESTPLATE.get(),
+                ModItems.HOLY_LEGGINGS.get(), ModItems.HOLY_BOOTS.get());
     }
 
     @SubscribeEvent

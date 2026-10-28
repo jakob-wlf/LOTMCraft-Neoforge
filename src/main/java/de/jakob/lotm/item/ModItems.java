@@ -29,6 +29,9 @@ public class ModItems {
     public static final Tier CONJURED_TOOL_TIER = new SimpleTier(
             BlockTags.INCORRECT_FOR_IRON_TOOL, 2000, 12.0F, 8.0F, 14, () -> Ingredient.EMPTY);
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(LOTMCraft.MOD_ID);
+    public static final Tier HOLY_TOOL_TIER = new SimpleTier(
+            BlockTags.INCORRECT_FOR_NETHERITE_TOOL, 2031, 9.0F, 4.0F, 15, () -> Ingredient.of(Items.NETHERITE_INGOT));
+
 
     public static final DeferredItem<Item> FOOL_Card = ITEMS.registerItem("fool_card", Item::new, new Item.Properties());
     public static final DeferredItem<Item> MYSTERIOUS_SILVER_PLATE = ITEMS.registerItem("mysterious_silver_plate", Item::new, new Item.Properties());
@@ -58,6 +61,33 @@ public class ModItems {
                     "item.lotmcraft.uniqueness_map",
                     new Item.Properties()
             ));
+
+    private static final int DURABILITY = 37; // netherite multiplier
+
+    public static final DeferredItem<ArmorItem> HOLY_HELMET = ITEMS.register("holy_helmet",
+            () -> new ArmorItem(ModArmorMaterials.HOLY, ArmorItem.Type.HELMET,
+                    new Item.Properties().fireResistant()
+                            .durability(ArmorItem.Type.HELMET.getDurability(DURABILITY))));
+
+    public static final DeferredItem<ArmorItem> HOLY_CHESTPLATE = ITEMS.register("holy_chestplate",
+            () -> new ArmorItem(ModArmorMaterials.HOLY, ArmorItem.Type.CHESTPLATE,
+                    new Item.Properties().fireResistant()
+                            .durability(ArmorItem.Type.CHESTPLATE.getDurability(DURABILITY))));
+
+    public static final DeferredItem<ArmorItem> HOLY_LEGGINGS = ITEMS.register("holy_leggings",
+            () -> new ArmorItem(ModArmorMaterials.HOLY, ArmorItem.Type.LEGGINGS,
+                    new Item.Properties().fireResistant()
+                            .durability(ArmorItem.Type.LEGGINGS.getDurability(DURABILITY))));
+
+    public static final DeferredItem<ArmorItem> HOLY_BOOTS = ITEMS.register("holy_boots",
+            () -> new ArmorItem(ModArmorMaterials.HOLY, ArmorItem.Type.BOOTS,
+                    new Item.Properties().fireResistant()
+                            .durability(ArmorItem.Type.BOOTS.getDurability(DURABILITY))));
+
+    public static final DeferredItem<Item> HOLY_SWORD = ITEMS.registerItem("holy_sword",
+            props -> new HolyWeaponItem(HOLY_TOOL_TIER,
+                    props.attributes(SwordItem.createAttributes(HOLY_TOOL_TIER, 3, -2.4F)), 0.0F),
+            new Item.Properties().fireResistant());
 
     public static final DeferredItem<Item> PAPER_SWORD = ITEMS.registerItem("paper_sword", props -> new SwordItem(PAPER_TOOL_TIER, props.attributes(SwordItem.createAttributes(PAPER_TOOL_TIER, 3, -2.4f))), new Item.Properties().durability(15));
     public static final DeferredItem<Item> PAPER_PICKAXE = ITEMS.registerItem("paper_pickaxe", props -> new PickaxeItem(PAPER_TOOL_TIER, props.attributes(PickaxeItem.createAttributes(PAPER_TOOL_TIER, 1, -2.8f))), new Item.Properties().durability(15));
