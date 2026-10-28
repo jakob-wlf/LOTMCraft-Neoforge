@@ -74,7 +74,7 @@ public class BloodlineCorroderAbility extends SelectableAbility {
         return DevilBloodlineAbility.hasBloodline(entity, DevilBloodlineAbility.Bloodline.CORRODER);
     }
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.corroder_ability.corroding_flames",
                 "ability.lotmcraft.corroder_ability.dissolving_mist"

@@ -119,7 +119,7 @@ public class DevilWorshipAbility extends SelectableAbility {
     @Override
     public float getSpiritualityCost() { return 100; }
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[] {
                 "ability.lotmcraft.devil_worship.select_mob",
                 "ability.lotmcraft.devil_worship.summon_devil"

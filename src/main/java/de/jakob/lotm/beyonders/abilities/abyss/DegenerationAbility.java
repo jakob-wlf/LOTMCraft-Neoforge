@@ -93,9 +93,9 @@ public class DegenerationAbility extends SelectableAbility {
     @Override
     public Map<String, Integer> getRequirements() {return new HashMap<>(Map.of("abyss", 0));}
     @Override
-    public float getSpiritualityCost() {return 800;}
+    public float getSpiritualityCost() {return 8000;}
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.degeneration.person",
                 "ability.lotmcraft.degeneration.area"};

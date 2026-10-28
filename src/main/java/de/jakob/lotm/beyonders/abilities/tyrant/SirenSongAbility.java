@@ -56,15 +56,15 @@ public class SirenSongAbility extends SelectableAbility {
     }
     @Override
     public void nextAbility(LivingEntity entity) {
-        cycleToUnlocked(entity, 1);
+        cycleToUnlocked(entity);
     }
-    private void cycleToUnlocked(LivingEntity entity, int step) {
-        int length = getAbilityNames().length;
+    private void cycleToUnlocked(LivingEntity entity) {
+        int length = getAllAbilityNames().length;
         if (length == 0) return;
 
         int selected = selectedAbilities.getOrDefault(entity.getUUID(), 0);
         for (int i = 0; i < length; i++) {
-            selected = Math.floorMod(selected + step, length);
+            selected = Math.floorMod(selected + 1, length);
             if (isSubAbilityUnlocked(entity, selected)) break;
         }
         selectedAbilities.put(entity.getUUID(), selected);
@@ -138,7 +138,6 @@ public class SirenSongAbility extends SelectableAbility {
         entity.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 20 * 20, strengthLevel, false, false, false));
         entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 20 * 20, speedLevel, false, false, false));
 
-        Set<UUID> buff = new HashSet<>();
         ServerScheduler.scheduleForDuration(0,  2, 20 * 20, () -> {
             if(entity.level().isClientSide)
                 return;
@@ -175,7 +174,6 @@ public class SirenSongAbility extends SelectableAbility {
         level.playSound(null, BlockPos.containing(entity.position()), ModSounds.DEATH_MELODY.get(), SoundSource.BLOCKS, 1, 1);
 
         int entitySeq = AbilityUtil.getSeqWithArt(entity, this);
-        float multiplier = multiplier(entity);
         float damage = baseDamage;
 
         final UUID[] posTrackerHolder = new UUID[1];

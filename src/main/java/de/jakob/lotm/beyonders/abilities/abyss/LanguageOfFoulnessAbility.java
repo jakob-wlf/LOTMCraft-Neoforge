@@ -100,7 +100,7 @@ public class LanguageOfFoulnessAbility extends SelectableAbility {
     }
     @Override
     public void nextAbility(LivingEntity entity) {
-        if (getAbilityNames().length == 0) return;
+        if (getAllAbilityNames().length == 0) return;
         int selected = selectedAbilities.getOrDefault(entity.getUUID(), 0) + 1;
         if (selected >= unlockedCount(entity)) selected = 0;
         selectedAbilities.put(entity.getUUID(), selected);
@@ -108,7 +108,7 @@ public class LanguageOfFoulnessAbility extends SelectableAbility {
     }
     @Override
     public void previousAbility(LivingEntity entity) {
-        if (getAbilityNames().length == 0) return;
+        if (getAllAbilityNames().length == 0) return;
         int selected = selectedAbilities.getOrDefault(entity.getUUID(), 0) - 1;
         if (selected < 0) selected = unlockedCount(entity) - 1;
         selectedAbilities.put(entity.getUUID(), selected);

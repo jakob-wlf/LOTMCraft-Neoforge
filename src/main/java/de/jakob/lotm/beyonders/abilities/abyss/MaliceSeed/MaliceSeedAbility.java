@@ -79,7 +79,7 @@ public class MaliceSeedAbility extends SelectableAbility {
     @Override
     public float getSpiritualityCost() {return 150;}
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.malice_seed.plant",
                 "ability.lotmcraft.malice_seed.view_seeds",

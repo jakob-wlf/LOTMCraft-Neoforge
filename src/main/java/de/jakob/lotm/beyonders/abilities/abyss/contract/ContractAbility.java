@@ -52,7 +52,7 @@ public class ContractAbility extends SelectableAbility {
         return 100;
     }
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.contract.make_contract",
                 "ability.lotmcraft.contract.destroy_unsigned_contract",

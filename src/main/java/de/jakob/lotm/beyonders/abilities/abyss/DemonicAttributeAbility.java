@@ -60,7 +60,7 @@ public class DemonicAttributeAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.demonic_attribute.slow",
                 "ability.lotmcraft.demonic_attribute.toxic_smoke",
@@ -76,7 +76,7 @@ public class DemonicAttributeAbility extends SelectableAbility {
     }
     public boolean isSubAbilityUnlocked(LivingEntity entity, int index) {
         if (index == 0) return true;
-        if (index < 0 || index >= getAbilityNames().length) return false;
+        if (index < 0 || index >= getAllAbilityNames().length) return false;
 
         int[] pair = getUnlockedPair(entity);
         return index == pair[0] || index == pair[1];
@@ -90,7 +90,7 @@ public class DemonicAttributeAbility extends SelectableAbility {
         cycleToUnlocked(entity, -1);
     }
     private void cycleToUnlocked(LivingEntity entity, int step) {
-        int length = getAbilityNames().length;
+        int length = getAllAbilityNames().length;
         if (length == 0) return;
         int selected = selectedAbilities.getOrDefault(entity.getUUID(), 0);
         for (int i = 0; i < length; i++) {
