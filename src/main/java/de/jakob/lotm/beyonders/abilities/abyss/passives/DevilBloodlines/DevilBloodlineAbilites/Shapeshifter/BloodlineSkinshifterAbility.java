@@ -46,7 +46,7 @@ public class BloodlineSkinshifterAbility extends ToggleAbility {
             EntityType.PILLAGER,
             EntityType.VILLAGER
     );
-    
+
     private static final float BREAK_DAMAGE_TOTAL = 20.0f;
 
     public BloodlineSkinshifterAbility(String id) {
