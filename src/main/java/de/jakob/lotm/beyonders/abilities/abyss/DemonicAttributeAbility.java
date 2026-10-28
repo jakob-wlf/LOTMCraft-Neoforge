@@ -36,8 +36,6 @@ import static de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.D
 
 
 public class DemonicAttributeAbility extends SelectableAbility {
-
-    // index 0 is always unlocked (guaranteed). Indices 1-4 are the random pool:
     // 1 = Toxic Smoke, 2 = Poisonous Flame, 3 = Curse, 4 = Sink Into Ground
     private static final int[][] POOL_PAIRS = {
             {1, 2}, {1, 3}, {1, 4}, {2, 3}, {2, 4}, {3, 4}

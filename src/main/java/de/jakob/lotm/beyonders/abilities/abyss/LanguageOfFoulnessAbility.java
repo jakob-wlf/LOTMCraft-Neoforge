@@ -44,7 +44,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @EventBusSubscriber(modid = LOTMCraft.MOD_ID)
 public class LanguageOfFoulnessAbility extends SelectableAbility {
-    private static final double SLOW_RADIUS = 8.0;
+    private static final double MIN_AOE_RADIUS = 6.0;
+    //stops at 30 blocks
+    private double getAoERadius(LivingEntity entity) {
+        int seq = Math.clamp(AbilityUtil.getSeqWithArt(entity, this), 1, 9);
+        return MIN_AOE_RADIUS + (9 - seq) * 3.0;
+    }
     private static final int CHAT_RANGE = 32;
     private static final int STUN_TICKS = 20 * 2;
     private static final int SLOTH_TICKS = 20 * 8;
@@ -92,64 +97,77 @@ public class LanguageOfFoulnessAbility extends SelectableAbility {
                 "ability.lotmcraft.language_of_foulness.sloth",
                 "ability.lotmcraft.language_of_foulness.blasphemy"};
     }
+    @Override
+    public String[] getSequenceDependantAbilityNames(int sequence) {
+        return switch (sequence) {
+            case 4, 3, 2, 1, 0 -> getAllAbilityNames();
+            default -> new String[]{
+                    "ability.lotmcraft.language_of_foulness.slow",
+                    "ability.lotmcraft.language_of_foulness.corruption",
+                    "ability.lotmcraft.language_of_foulness.death"
+            };
+        };
+    }
     private static int foulness(LivingEntity entity) {return (int) BloodlineCurselingAbility.getFoulnessMultiplier(entity);}
-    private int unlockedCount(LivingEntity entity) {
-        int seq = AbilityUtil.getSeqWithArt(entity, this);
-        if (seq > 6) return 3;
-        return 6;
-    }
-    @Override
-    public void nextAbility(LivingEntity entity) {
-        if (getAllAbilityNames().length == 0) return;
-        int selected = selectedAbilities.getOrDefault(entity.getUUID(), 0) + 1;
-        if (selected >= unlockedCount(entity)) selected = 0;
-        selectedAbilities.put(entity.getUUID(), selected);
-        PacketHandler.sendToServer(new AbilitySelectionPacket(getId(), selected));
-    }
-    @Override
-    public void previousAbility(LivingEntity entity) {
-        if (getAllAbilityNames().length == 0) return;
-        int selected = selectedAbilities.getOrDefault(entity.getUUID(), 0) - 1;
-        if (selected < 0) selected = unlockedCount(entity) - 1;
-        selectedAbilities.put(entity.getUUID(), selected);
-        PacketHandler.sendToServer(new AbilitySelectionPacket(getId(), selected));
-    }
-    @Override
-    public void setSelectedAbility(ServerPlayer player, int selectedAbility) {
-        if (selectedAbility >= unlockedCount(player)) return;
-        super.setSelectedAbility(player, selectedAbility);
-    }
-    @Override
-    public int getNPCSelectedAbility(LivingEntity entity, Level level) {
-        return random.nextInt(unlockedCount(entity));
-    }
     //CASTING
     @Override
     protected void castSelectedAbility(Level level, LivingEntity entity, int abilityIndex) {
         if (!(level instanceof ServerLevel serverLevel)) return;
-        if (abilityIndex >= unlockedCount(entity)) {
-            return;
-        }
-        // Slow is an area effect around the caster
-        if (abilityIndex == 0) {
+        if (abilityIndex < 0 || abilityIndex >= getSequenceDependantAbilityNames(BeyonderData.getSequence(entity)).length) return;
+
+        // Death remains single-target.
+        if (abilityIndex == 2) {
+            LivingEntity target = AbilityUtil.getTargetEntity(
+                    entity,
+                    15 * (int) Math.max(multiplier(entity) / 4, 1),
+                    2
+            );
+
+            if (target == null) {
+                AbilityUtil.sendActionBar(
+                        entity,
+                        Component.translatable("ability.lotmcraft.language_of_foulness.no_target")
+                                .withColor(0xFFa3070c)
+                );
+                return;
+            }
+
             speak(serverLevel, entity, abilityIndex);
-            castSlow(serverLevel, entity);
+            ParticleUtil.spawnParticles(serverLevel, dust, target.getEyePosition(),
+                    120, .5, .5, .5, 0.1);
+            ParticleUtil.spawnParticles(serverLevel, ParticleTypes.SMOKE,
+                    target.getEyePosition(), 120, .5, .5, .5, 0.1);
+
+            castDeath(serverLevel, entity, target);
             return;
         }
-        LivingEntity target = AbilityUtil.getTargetEntity(entity, 15 * (int) Math.max(multiplier(entity) / 4, 1), 2);
-        if (target == null) {
-            AbilityUtil.sendActionBar(entity, Component.translatable("ability.lotmcraft.language_of_foulness.no_target").withColor(0xFFa3070c));
-            return;
-        }
+
         speak(serverLevel, entity, abilityIndex);
-        ParticleUtil.spawnParticles(serverLevel, dust, target.getEyePosition(), 120, .5, .5, .5, 0.1);
-        ParticleUtil.spawnParticles(serverLevel, ParticleTypes.SMOKE, target.getEyePosition(), 120, .5, .5, .5, 0.1);
-        switch (abilityIndex) {
-            case 1 -> castCorruption(serverLevel, entity, target);
-            case 2 -> castDeath(serverLevel, entity, target);
-            case 3 -> castConfusion(serverLevel, entity, target);
-            case 4 -> castSloth(serverLevel, entity, target);
-            case 5 -> castBlasphemy(serverLevel, entity, target);
+
+        double radius = getAoERadius(entity);
+
+        ParticleUtil.spawnParticles(
+                serverLevel, dust, entity.position().add(0, 1, 0),
+                300, radius / 2, .5, radius / 2, 0.05
+        );
+
+        for (LivingEntity target : AbilityUtil.getNearbyEntities(
+                entity, serverLevel, entity.position(), radius)) {
+
+            if (!target.isAlive() || target == entity) continue;
+
+            ParticleUtil.spawnParticles(serverLevel, dust, target.getEyePosition(),
+                    40, .3, .3, .3, 0.05);
+            ParticleUtil.spawnParticles(serverLevel, ParticleTypes.SMOKE,
+                    target.getEyePosition(), 40, .3, .3, .3, 0.05);
+
+            switch (abilityIndex) {
+                case 0 -> castSlow(serverLevel, entity, target);
+                case 1 -> castCorruption(serverLevel, entity, target);
+                case 3 -> castConfusion(serverLevel, entity, target);
+                case 4 -> castSloth(serverLevel, entity, target);
+                case 5 -> castBlasphemy(serverLevel, entity, target);
+            }
         }
     }
     // Broadcasts the spoken command in the weird font to the caster and nearby players
@@ -159,15 +177,12 @@ public class LanguageOfFoulnessAbility extends SelectableAbility {
         Component msg = Component.literal("<").append(caster.getDisplayName()).append("> ").append(Component.literal(line).withStyle(FOUL_STYLE));
         for (ServerPlayer p : level.players()) {if (p == caster || p.distanceTo(caster) <= CHAT_RANGE) p.sendSystemMessage(msg);}
     }
-    private void castSlow(ServerLevel serverLevel, LivingEntity entity) {
+    private void castSlow(ServerLevel serverLevel, LivingEntity entity, LivingEntity target) {
         int entitySeq = AbilityUtil.getSeqWithArt(entity, this);
         int fullDuration = 8 * 20 * (int) Math.max(multiplier(entity) / 2, 1) * foulness(entity);
-        ParticleUtil.spawnParticles(serverLevel, dust, entity.position().add(0, 1, 0), 300, SLOW_RADIUS / 2, .5, SLOW_RADIUS / 2, 0.05);
-        for (LivingEntity target : AbilityUtil.getNearbyEntities(entity, serverLevel, entity.position(), SLOW_RADIUS)) {
-            if (!target.isAlive()) continue;
-            int duration = AbilityUtil.isTargetSignificantlyStronger(entitySeq, BeyonderData.getSequence(target)) ? (int) (10 * multiplier(entity)) : fullDuration;
-            holdInPlace(serverLevel, entity, target, duration, true);
-        }
+        if (!target.isAlive()) return;
+        int duration = AbilityUtil.isTargetSignificantlyStronger(entitySeq, BeyonderData.getSequence(target)) ? (int) (10 * multiplier(entity)) : fullDuration;
+        holdInPlace(serverLevel, entity, target, duration, true);
     }
     private void castDeath(ServerLevel serverLevel, LivingEntity entity, LivingEntity target) {
         int entitySeq = AbilityUtil.getSeqWithArt(entity, this);

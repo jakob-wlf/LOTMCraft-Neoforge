@@ -37,7 +37,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-public class BloodSovereignAbility extends PassiveAbility {
+public class UndyingBloodAbility extends PassiveAbility {
     public static float capacityFor(int sequence) {
         return switch (sequence) {
             case 2 -> 1000f;
@@ -67,7 +67,7 @@ public class BloodSovereignAbility extends PassiveAbility {
     private static final String KEY = "lotm_blood_sovereign";
     private static final DustParticleOptions BLOOD_DUST = new DustParticleOptions(new Vector3f(0.55f, 0.02f, 0.05f), 1.6f);
     private static final Map<UUID, float[]> LAST_SYNC = new ConcurrentHashMap<>();
-    public BloodSovereignAbility(String id) {
+    public UndyingBloodAbility(String id) {
         super(id);
     }
     @Override
@@ -103,7 +103,6 @@ public class BloodSovereignAbility extends PassiveAbility {
     static float capacity(ServerPlayer player) {
         return capacityFor(BeyonderData.getSequence(player));
     }
-    /** Current blood. A player with no saved vial yet starts full. */
     static float blood(ServerPlayer player) {
         CompoundTag tag = player.getPersistentData().getCompound(KEY);
         return tag.contains("blood") ? tag.getFloat("blood") : capacity(player);
@@ -190,7 +189,7 @@ public class BloodSovereignAbility extends PassiveAbility {
                 setBlood(player, 0);
                 return; // disintegrated by purification
             }
-            if (source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return; // /kill and the void are never revived
+            if (source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return;
             float cost = reviveCost(source);
             float current = blood(player);
             if (current < cost) return; // not enough blood, you die

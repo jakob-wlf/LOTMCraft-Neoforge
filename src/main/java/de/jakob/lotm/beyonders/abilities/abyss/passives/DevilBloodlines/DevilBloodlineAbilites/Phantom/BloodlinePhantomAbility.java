@@ -38,7 +38,6 @@ public class BloodlinePhantomAbility extends ToggleAbility {
         canBeUsedByNPC = false;
         instance = this;
     }
-
     @Override
     public Map<String, Integer> getRequirements() {return new HashMap<>(Map.of("abyss", 6));}
     @Override
@@ -137,7 +136,7 @@ public class BloodlinePhantomAbility extends ToggleAbility {
         }
         event.setCanceled(true);
     }
-    //No interacting with the world (runs on both sides, the attachment is synced)
+    //No interacting with the world
     @SubscribeEvent
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {if (isInPhantomForm(event.getEntity())) event.setCanceled(true);}
     @SubscribeEvent
