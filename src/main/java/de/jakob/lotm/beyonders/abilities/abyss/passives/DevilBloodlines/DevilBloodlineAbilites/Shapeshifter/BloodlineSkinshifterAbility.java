@@ -46,8 +46,7 @@ public class BloodlineSkinshifterAbility extends ToggleAbility {
             EntityType.PILLAGER,
             EntityType.VILLAGER
     );
-
-    /** Total damage taken while masked, as a fraction of max health, that breaks the mask form. */
+    
     private static final float BREAK_DAMAGE_TOTAL = 20.0f;
 
     public BloodlineSkinshifterAbility(String id) {
@@ -61,7 +60,7 @@ public class BloodlineSkinshifterAbility extends ToggleAbility {
     }
     @Override
     protected float getSpiritualityCost() {
-        return 0;
+        return 10;
     }
     @Override
     public boolean meetsBloodlineRequirement(LivingEntity entity) {
