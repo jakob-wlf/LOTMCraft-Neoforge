@@ -102,7 +102,10 @@ public final class TwilightAging {
         if (immune(source, target)) return;
         float amount = years * resistance(source, target);
         if (amount <= 0) return;
-        float total = target.getPersistentData().getFloat(YEARS) + amount;
+        float cap = yearCap(target);
+        float current = target.getPersistentData().getFloat(YEARS);
+        if (current >= cap) return;
+        float total = Math.min(cap, current + amount);
         target.getPersistentData().putFloat(YEARS, total);
         aged.add(target.getUUID());
         scheduleRecovery(target, level.getGameTime());
@@ -142,6 +145,7 @@ public final class TwilightAging {
             return true;
         }
         if (unaging(entity) || !entity.isAlive() || !(entity.level() instanceof ServerLevel level)) return false;
+        years = Math.min(years, yearCap(entity));
         float before = entity.getPersistentData().getFloat(YEARS);
         entity.getPersistentData().putFloat(YEARS, years);
         aged.add(entity.getUUID());
@@ -162,6 +166,7 @@ public final class TwilightAging {
             return;
         }
         if (!(entity.level() instanceof ServerLevel level)) return;
+        years = Math.min(years, yearCap(entity));
         CompoundTag tag = entity.getPersistentData();
         tag.remove(RECOVER_AT);
         tag.remove(CLEAR_AT);
@@ -287,6 +292,10 @@ public final class TwilightAging {
         if (sequence <= 0) return YEAR_LIMITS[0];
         if (sequence >= YEAR_LIMITS.length) return YEAR_LIMITS[YEAR_LIMITS.length - 1];
         return YEAR_LIMITS[sequence];
+    }
+
+    private static float yearCap(LivingEntity target) {
+        return yearLimit(target) * 2f;
     }
 
     private static float recoverableHealth(LivingEntity target) {
@@ -438,10 +447,11 @@ public final class TwilightAging {
             applyDebuffs(target, 0f, false);
             return;
         }
-        target.getPersistentData().putFloat(YEARS, passive);
+        float shown = Math.min(passive, yearCap(target));
+        target.getPersistentData().putFloat(YEARS, shown);
         aged.add(target.getUUID());
-        syncAgingModifier(target, passive);
-        applyDebuffs(target, passive, false);
+        syncAgingModifier(target, shown);
+        applyDebuffs(target, shown, false);
     }
 
     @SubscribeEvent
@@ -455,18 +465,22 @@ public final class TwilightAging {
         boolean gained = false;
         boolean earned = false;
         long needed = player.serverLevel().getGameRules().getInt(ModGameRules.PASSIVE_TWILIGHT_AGING_MINUTES) * 60L * 20L;
+        float cap = yearCap(player);
         if (played >= needed) {
             played -= needed;
-            passive += 1f;
-            tag.putFloat(PASSIVE_YEARS, passive);
-            gained = true;
-            earned = true;
+            if (passive < cap) {
+                passive = Math.min(cap, passive + 1f);
+                tag.putFloat(PASSIVE_YEARS, passive);
+                gained = true;
+                earned = true;
+            }
         }
         tag.putLong(PASSIVE_TICKS, played);
-        if (tag.getFloat(YEARS) < passive) {
-            tag.putFloat(YEARS, passive);
+        float shown = Math.min(passive, cap);
+        if (tag.getFloat(YEARS) < shown) {
+            tag.putFloat(YEARS, shown);
             aged.add(player.getUUID());
-            syncAgingModifier(player, passive);
+            syncAgingModifier(player, shown);
             gained = true;
         }
         if (earned && BeyonderData.getSequence(player) > 0) applyDebuffs(player, tag.getFloat(YEARS), true);
@@ -496,7 +510,8 @@ public final class TwilightAging {
         if (from.contains(PASSIVE_YEARS)) to.putFloat(PASSIVE_YEARS, from.getFloat(PASSIVE_YEARS));
         if (from.contains(PASSIVE_TICKS)) to.putLong(PASSIVE_TICKS, from.getLong(PASSIVE_TICKS));
         float passive = Math.max(0f, from.getFloat(PASSIVE_YEARS));
-        if (passive > 0f && to.getFloat(YEARS) < passive) to.putFloat(YEARS, passive);
+        float shown = Math.min(passive, yearCap(event.getEntity()));
+        if (shown > 0f && to.getFloat(YEARS) < shown) to.putFloat(YEARS, shown);
     }
 
     @SubscribeEvent
