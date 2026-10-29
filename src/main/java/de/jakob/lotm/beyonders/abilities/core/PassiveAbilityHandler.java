@@ -34,7 +34,6 @@ import de.jakob.lotm.beyonders.abilities.mother.passives.PhysicalEnhancementsMot
 import de.jakob.lotm.beyonders.abilities.red_priest.passive.FireResistanceAbility;
 import de.jakob.lotm.beyonders.abilities.red_priest.passive.FlamingHitAbility;
 import de.jakob.lotm.beyonders.abilities.red_priest.passive.PhysicalEnhancementsRedPriestAbility;
-import de.jakob.lotm.beyonders.abilities.sun.passives.InextinguishableLightAbility;
 import de.jakob.lotm.beyonders.abilities.sun.passives.PhysicalEnhancementsSunAbility;
 import de.jakob.lotm.beyonders.abilities.tyrant.passives.LightningArrowAbility;
 import de.jakob.lotm.beyonders.abilities.tyrant.passives.PhysicalEnhancementsTyrantAbility;
@@ -81,9 +80,6 @@ public class PassiveAbilityHandler {
         passiveAbilities.add(new OrderJusticiarAbility("order_justiciar_ability"));
         passiveAbilities.add(new EnhancedMentalAttributesAbility("enhanced_mental_attributes_justiciar_ability"));
         passiveAbilities.add(new ChaosHuntingAbility("chaos_hunting_justiciar_ability"));
-
-        // Sun
-        passiveAbilities.add(new InextinguishableLightAbility("inextinguishable_light_ability"));
 
         // Red priest
         passiveAbilities.add(new FlamingHitAbility("flaming_hit_ability"));
