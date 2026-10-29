@@ -4,6 +4,7 @@ import de.jakob.lotm.util.helper.AbilityUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.Comparator;
 import java.util.List;
@@ -11,6 +12,10 @@ import java.util.Map;
 
 public interface RitualResultHandler {
     void perform(Map<String, Object> params, ServerPlayer player, BlockPos ritualCenter);
+
+    default void perform(Map<String, Object> params, ServerPlayer player, BlockPos ritualCenter, List<ItemStack> sacrifices) {
+        perform(params, player, ritualCenter);
+    }
 
     default List<LivingEntity> getTargetEntity(String target, ServerPlayer player, int maxDistance) {
         return switch (target) {

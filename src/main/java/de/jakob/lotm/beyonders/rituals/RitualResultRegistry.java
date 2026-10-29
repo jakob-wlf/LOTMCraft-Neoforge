@@ -1,5 +1,6 @@
 package de.jakob.lotm.beyonders.rituals;
 
+import de.jakob.lotm.beyonders.rituals.impl.RitualHigherSequenceRecipe;
 import de.jakob.lotm.beyonders.rituals.impl.RitualMagicAreaEffect;
 import de.jakob.lotm.beyonders.rituals.impl.RitualMagicOpenPortal;
 import de.jakob.lotm.beyonders.rituals.impl.RitualMagicPotionEffect;
@@ -18,6 +19,7 @@ public final class RitualResultRegistry {
         register("area_effect", new RitualMagicAreaEffect());
         register("summon_entity", new RitualMagicSummonEntity());
         register("open_portal", new RitualMagicOpenPortal());
+        register("higher_sequence_recipe", new RitualHigherSequenceRecipe());
     }
 
     private RitualResultRegistry() {}
