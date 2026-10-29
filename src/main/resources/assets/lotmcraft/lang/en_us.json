@@ -319,6 +319,14 @@
   "lotmcraft.pure_white_light_ability.description": "Under the pure White Light, everything will be disintegrated",
   "lotmcraft.divine_kingdom_manifestation_ability": "Divine Kingdom Manifestation",
   "lotmcraft.divine_kingdom_manifestation_ability.description": "Manifest an embryonic Divine Kingdom to immediately scorch all non beyonders and weaken other Beyonders to the point of helplessness",
+  "lotmcraft.light_authority_ability": "Light Authority",
+  "lotmcraft.light_authority_ability.description": "Wield the Authority over Light itself: call down countless beams of blinding light from the sky, travel as light itself or lock your enemies inside a prison of solidified light",
+  "ability.lotmcraft.light_authority.beams_of_light": "Beams of Light",
+  "ability.lotmcraft.light_authority.light_traversal": "Light Traversal",
+  "ability.lotmcraft.light_authority.prison_of_light": "Prison of Light",
+  "lotmcraft.eternal_daytime_ability": "Eternal Daytime",
+  "lotmcraft.eternal_daytime_ability.description": "Bring eternal daytime to the area around you until you lift it again. Filth and evil are purified, sleep can't take hold and anything concealed is brought to light",
+  "ability.lotmcraft.eternal_daytime.blocked": "Nothing can hide or sleep under the Eternal Daytime",
 
   "lotmcraft.trap_ability": "Trap",
   "lotmcraft.trap_ability.description": "Set an explosive Trap",
@@ -1573,6 +1581,8 @@
   "ability.lotmcraft.nocturnality_ability.description": "Become stronger at night",
   "ability.lotmcraft.darkness_revival_ability": "Darkness Revival",
   "ability.lotmcraft.darkness_revival_ability.description": "Revive from the darkness at the cost of losing yourself slowly",
+  "ability.lotmcraft.inextinguishable_light_ability": "Inextinguishable Light",
+  "ability.lotmcraft.inextinguishable_light_ability.description": "Light can never be extinguished. When you are about to die, your body turns into light and escapes to a faraway place. Can only happen once every 30 minutes",
 
   "ability.lotmcraft.feather_fall_ability": "Feather Fall",
   "ability.lotmcraft.blood_loss_ability": "Blood Loss",
