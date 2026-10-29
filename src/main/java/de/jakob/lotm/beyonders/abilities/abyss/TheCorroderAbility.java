@@ -41,7 +41,7 @@ public class TheCorroderAbility extends ToggleAbility {
     private static final DustParticleOptions CORRODE_DUST = new DustParticleOptions(new Vector3f(0.15f, 0.45f, 0.1f), 1.2f);
     private static final int CORRODED_TICKS = 20 * 10;
     private static final int HIT_GEAR_DAMAGE = 30;
-    private static final int HARD_SLOW_AMPLIFIER = 11; // slowness at or above this is treated as a seal/cage and refused
+    private static final int HARD_SLOW_AMPLIFIER = 10; // slowness at or above this is treated as a seal/cage and refused
 
     private static final Set<UUID> active = ConcurrentHashMap.newKeySet();
 
