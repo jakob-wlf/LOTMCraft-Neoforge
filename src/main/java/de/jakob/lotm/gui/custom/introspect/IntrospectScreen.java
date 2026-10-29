@@ -926,6 +926,22 @@ public class IntrospectScreen extends AbstractContainerScreen<IntrospectMenu> {
         this.menu.updateData(sequence, pathway, digestionProgress, sanity);
         initializeAbilities();
     }
+    private void refreshPassivesIfChanged() {
+        if (minecraft == null || minecraft.player == null) return;
+
+        List<PassiveAbility> fresh =
+                LOTMCraft.passiveAbilityHandler.getPassiveAbilitiesForEntity(minecraft.player);
+
+        if (!fresh.equals(passiveAbilities)) {
+            passiveAbilities.clear();
+            passiveAbilities.addAll(fresh);
+        }
+    }
+    @Override
+    protected void containerTick() {
+        super.containerTick();
+        refreshPassivesIfChanged();
+    }
 
     // =====================================================================================
     //  Render
