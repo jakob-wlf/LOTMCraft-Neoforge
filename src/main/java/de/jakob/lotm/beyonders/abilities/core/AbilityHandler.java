@@ -74,6 +74,8 @@ public class AbilityHandler {
         abilities.add(new WingsOfLightAbility("wings_of_light_ability"));
         abilities.add(new PureWhiteLightAbility("pure_white_light_ability"));
         abilities.add(new DivineKingdomManifestationAbility("divine_kingdom_manifestation_ability"));
+        abilities.add(new LightAuthorityAbility("light_authority_ability"));
+        abilities.add(new EternalDaytimeAbility("eternal_daytime_ability"));
 
         // RED-PRIEST PATHWAY
         abilities.add(new TrapAbility("trap_ability"));

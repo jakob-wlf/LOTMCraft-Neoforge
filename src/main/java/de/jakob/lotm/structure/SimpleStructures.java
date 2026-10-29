@@ -1,20 +1,31 @@
 package de.jakob.lotm.structure;
 
+import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.QuartPos;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.NoiseColumn;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.BiomeSource;
+import net.minecraft.world.level.biome.Climate;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.WorldGenerationContext;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.heightproviders.HeightProvider;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureType;
 import net.minecraft.world.level.levelgen.structure.TerrainAdjustment;
+import net.minecraft.world.level.levelgen.structure.pieces.StructurePiecesBuilder;
 import net.minecraft.world.level.levelgen.structure.pools.DimensionPadding;
 import net.minecraft.world.level.levelgen.structure.pools.JigsawPlacement;
 import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
@@ -27,12 +38,9 @@ import java.util.Optional;
 
 public class SimpleStructures extends Structure {
 
-    // A customized structure settings codec to allow us to expand the abilities of the biomes field.
     public static final MapCodec<StructureSettings> STRUCTURE_SETTINGS_CODEC = StructureSettings.CODEC;
 
 
-    // A custom codec that changes the size limit for our code_structure_sea_boat.json's config to not be capped at 7.
-    // With this, we can have a structure with a size limit up to 30 if we want to have extremely long branches of pieces in the structure.
     public static final MapCodec<SimpleStructures> CODEC = RecordCodecBuilder.mapCodec(instance ->
             instance.group(STRUCTURE_SETTINGS_CODEC.forGetter(structureInfo -> structureInfo.modifiableStructureInfo().getOriginalStructureInfo().structureSettings()),
                     StructureTemplatePool.CODEC.fieldOf("start_pool").forGetter(structure -> structure.startPool),
@@ -43,7 +51,10 @@ public class SimpleStructures extends Structure {
                     Codec.intRange(1, 128).fieldOf("max_distance_from_center").forGetter(structure -> structure.maxDistanceFromCenter),
                     DimensionPadding.CODEC.optionalFieldOf("dimension_padding", JigsawStructure.DEFAULT_DIMENSION_PADDING).forGetter(structure -> structure.dimensionPadding),
                     LiquidSettings.CODEC.optionalFieldOf("liquid_settings", JigsawStructure.DEFAULT_LIQUID_SETTINGS).forGetter(structure -> structure.liquidSettings),
-                    TerrainAdjustment.CODEC.optionalFieldOf("terrain_adaptation", TerrainAdjustment.NONE).forGetter(structure -> structure.terrainAdaptation)
+                    TerrainAdjustment.CODEC.optionalFieldOf("terrain_adaptation", TerrainAdjustment.NONE).forGetter(structure -> structure.terrainAdaptation),
+                    Codec.BOOL.optionalFieldOf("require_dry_land", false).forGetter(structure -> structure.requireDryLand),
+                    Codec.intRange(0, 384).optionalFieldOf("max_terrain_height_difference").forGetter(structure -> structure.maxTerrainHeightDifference),
+                    Codec.intRange(1, 128).optionalFieldOf("max_ocean_distance").forGetter(structure -> structure.maxOceanDistance)
             ).apply(instance, SimpleStructures::new));
 
     private final Holder<StructureTemplatePool> startPool;
@@ -55,6 +66,9 @@ public class SimpleStructures extends Structure {
     private final DimensionPadding dimensionPadding;
     private final LiquidSettings liquidSettings;
     private final TerrainAdjustment terrainAdaptation;
+    private final boolean requireDryLand;
+    private final Optional<Integer> maxTerrainHeightDifference;
+    private final Optional<Integer> maxOceanDistance;
 
     public SimpleStructures(StructureSettings config,
                             Holder<StructureTemplatePool> startPool,
@@ -65,7 +79,10 @@ public class SimpleStructures extends Structure {
                             int maxDistanceFromCenter,
                             DimensionPadding dimensionPadding,
                             LiquidSettings liquidSettings,
-                            TerrainAdjustment terrainAdaptation)  // ← add this
+                            TerrainAdjustment terrainAdaptation,
+                            boolean requireDryLand,
+                            Optional<Integer> maxTerrainHeightDifference,
+                            Optional<Integer> maxOceanDistance)
     {
         super(config);
         this.startPool = startPool;
@@ -76,7 +93,70 @@ public class SimpleStructures extends Structure {
         this.maxDistanceFromCenter = maxDistanceFromCenter;
         this.dimensionPadding = dimensionPadding;
         this.liquidSettings = liquidSettings;
-        this.terrainAdaptation = terrainAdaptation;  // ← add this
+        this.terrainAdaptation = terrainAdaptation;
+        this.requireDryLand = requireDryLand;
+        this.maxTerrainHeightDifference = maxTerrainHeightDifference;
+        this.maxOceanDistance = maxOceanDistance;
+    }
+
+    private boolean hasTerrainChecks() {
+        return requireDryLand || maxTerrainHeightDifference.isPresent() || maxOceanDistance.isPresent();
+    }
+
+    private boolean passesTerrainChecks(Structure.GenerationContext context, BoundingBox box) {
+        ChunkGenerator generator = context.chunkGenerator();
+        LevelHeightAccessor heightAccessor = context.heightAccessor();
+        RandomState randomState = context.randomState();
+
+        int minX = box.minX() + 1, maxX = box.maxX() - 1, midX = (box.minX() + box.maxX()) / 2;
+        int minZ = box.minZ() + 1, maxZ = box.maxZ() - 1, midZ = (box.minZ() + box.maxZ()) / 2;
+        int[][] samples = {
+                {minX, minZ}, {minX, maxZ}, {maxX, minZ}, {maxX, maxZ},
+                {midX, minZ}, {midX, maxZ}, {minX, midZ}, {maxX, midZ}, {midX, midZ}
+        };
+
+        int lowest = Integer.MAX_VALUE;
+        int highest = Integer.MIN_VALUE;
+        for (int[] sample : samples) {
+            int floor = generator.getBaseHeight(sample[0], sample[1], Heightmap.Types.OCEAN_FLOOR_WG, heightAccessor, randomState);
+            if (requireDryLand) {
+                int surface = generator.getBaseHeight(sample[0], sample[1], Heightmap.Types.WORLD_SURFACE_WG, heightAccessor, randomState);
+                if (surface != floor) {
+                    return false;
+                }
+            }
+            lowest = Math.min(lowest, floor);
+            highest = Math.max(highest, floor);
+        }
+
+        if (maxTerrainHeightDifference.isPresent() && highest - lowest > maxTerrainHeightDifference.get()) {
+            return false;
+        }
+
+        return maxOceanDistance.isEmpty() || isNearOcean(context, box, maxOceanDistance.get(), lowest);
+    }
+
+    private static boolean isNearOcean(Structure.GenerationContext context, BoundingBox box, int distance, int y) {
+        BiomeSource biomeSource = context.chunkGenerator().getBiomeSource();
+        Climate.Sampler sampler = context.randomState().sampler();
+        int midX = (box.minX() + box.maxX()) / 2;
+        int midZ = (box.minZ() + box.maxZ()) / 2;
+
+        for (int offset = 4; offset <= distance; offset += 8) {
+            int west = box.minX() - offset, east = box.maxX() + offset;
+            int north = box.minZ() - offset, south = box.maxZ() + offset;
+            int[][] samples = {
+                    {west, north}, {west, south}, {east, north}, {east, south},
+                    {midX, north}, {midX, south}, {west, midZ}, {east, midZ}
+            };
+            for (int[] sample : samples) {
+                Holder<Biome> biome = biomeSource.getNoiseBiome(QuartPos.fromBlock(sample[0]), QuartPos.fromBlock(y), QuartPos.fromBlock(sample[1]), sampler);
+                if (biome.is(BiomeTags.IS_OCEAN)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /*
@@ -106,10 +186,8 @@ public class SimpleStructures extends Structure {
      * it to spawn in specific biomes that aren't in the dimension they don't like if they wish.
      */
     private static boolean extraSpawningChecks(Structure.GenerationContext context) {
-        // Grabs the chunk position we are at
         ChunkPos chunkpos = context.chunkPos();
 
-        // Get first non-air block.
         int occupiedYPos = context.chunkGenerator().getFirstOccupiedHeight(
                 chunkpos.getMinBlockX(),
                 chunkpos.getMinBlockZ(),
@@ -117,11 +195,8 @@ public class SimpleStructures extends Structure {
                 context.heightAccessor(),
                 context.randomState());
 
-        // Get column of blocks at corner of the chunk. BEWARE, getBaseColumn is an expensive call. Call this as few times as possible for your checks.
-        // Note, this column of blocks only has the raw terrain of the world which for the Overworld is Stone, Water, and Air.
         NoiseColumn columnOfBlocks = context.chunkGenerator().getBaseColumn(chunkpos.getBlockX(0), chunkpos.getBlockZ(0), context.heightAccessor(), context.randomState());
 
-        // Grab the block at the specified Y value.
         BlockState blockState = columnOfBlocks.getBlock(occupiedYPos);
 
         BlockState above = columnOfBlocks.getBlock(occupiedYPos + 1);
@@ -171,8 +246,18 @@ public class SimpleStructures extends Structure {
          * Such as for example, forcing 3 pieces to always spawn every time, limiting how often a piece spawns, or remove the intersection limitation of pieces.
          */
 
-        // Return the pieces generator that is now set up so that the game runs it when it needs to create the layout of structure pieces.
-        return structurePiecesGenerator;
+        if (structurePiecesGenerator.isEmpty() || !hasTerrainChecks()) {
+            // Return the pieces generator that is now set up so that the game runs it when it needs to create the layout of structure pieces.
+            return structurePiecesGenerator;
+        }
+
+        // Build the pieces now so the real footprint can be checked, then hand the built pieces back so they aren't generated twice.
+        GenerationStub stub = structurePiecesGenerator.get();
+        StructurePiecesBuilder piecesBuilder = stub.getPiecesBuilder();
+        if (piecesBuilder.isEmpty() || !passesTerrainChecks(context, piecesBuilder.getBoundingBox())) {
+            return Optional.empty();
+        }
+        return Optional.of(new GenerationStub(stub.position(), Either.right(piecesBuilder)));
     }
 
     @Override

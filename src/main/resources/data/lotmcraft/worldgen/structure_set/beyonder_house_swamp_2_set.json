@@ -9,8 +9,8 @@
     "type": "minecraft:random_spread",
 
     "salt": 526776776,
-    "spacing": 40,
-    "separation": 12,
+    "spacing": 48,
+    "separation": 14,
     "heightmap": "WORLD_SURFACE_WG",
     "max_tries": 10
   }
