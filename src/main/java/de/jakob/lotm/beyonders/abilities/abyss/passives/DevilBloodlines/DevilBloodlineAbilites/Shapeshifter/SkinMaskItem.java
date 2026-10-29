@@ -46,16 +46,17 @@ public class SkinMaskItem extends Item {
     public @NotNull Component getName(@NotNull ItemStack stack) {
         String shape = getShape(stack);
         if (shape == null) return super.getName(stack);
+        if (shape.contains("beyonder_npc")) return Component.literal("Skin Mask: Beyonder NPC");
+        // Player masks.
         if (shape.startsWith("player:")) {
             String[] parts = shape.split(":");
             return Component.literal("Skin Mask: " + (parts.length > 1 ? parts[1] : "Player"));
         }
+        // Regular entity masks.
         ResourceLocation id = ResourceLocation.tryParse(shape);
         if (id != null) {
             EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getOptional(id).orElse(null);
-            if (type != null) {
-                return Component.literal("Skin Mask: ").append(type.getDescription());
-            }
+            if (type != null) return Component.literal("Skin Mask: ").append(type.getDescription());
         }
         return super.getName(stack);
     }

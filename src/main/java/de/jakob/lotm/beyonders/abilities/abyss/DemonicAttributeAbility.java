@@ -181,12 +181,12 @@ public class DemonicAttributeAbility extends SelectableAbility {
     }
 
     // ── 3: Curse
-    private void curse(Level ignoredLevel, LivingEntity entity) {
+    private void curse(Level Level, LivingEntity entity) {
         LivingEntity target = AbilityUtil.getTargetEntity(entity, 20, 2.5f);
         if (target == null) return;
         target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 20 * 5, 1, false, false,false));
-        target.addEffect(new MobEffectInstance(MobEffects.POISON, 20 * 2, 1, false, false,false));
-        target.hurt(target.damageSources().magic(), 4f);
+        target.addEffect(new MobEffectInstance(MobEffects.POISON, 20 * 5, 1, false, false,false));
+        target.hurt(ModDamageTypes.source(Level, ModDamageTypes.CURSE, entity), 4f);
     }
     //4: Sink Into Ground
     private void sinkIntoGround(Level level, LivingEntity entity) {
