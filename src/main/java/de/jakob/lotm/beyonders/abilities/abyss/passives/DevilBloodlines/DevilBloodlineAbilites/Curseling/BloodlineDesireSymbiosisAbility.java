@@ -101,7 +101,7 @@ public class BloodlineDesireSymbiosisAbility extends Ability {
     }
     @Override
     public float getSpiritualityCost() {
-        return 200;
+        return 300;
     }
     @Override
     public boolean meetsBloodlineRequirement(LivingEntity entity) {

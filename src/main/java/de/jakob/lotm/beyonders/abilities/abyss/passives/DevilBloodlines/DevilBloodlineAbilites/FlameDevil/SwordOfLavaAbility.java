@@ -79,7 +79,7 @@ public class SwordOfLavaAbility extends Ability {
     }
     @Override
     public float getSpiritualityCost() {
-        return 120;
+        return 300;
     }
     @Override
     public boolean meetsBloodlineRequirement(LivingEntity entity) {

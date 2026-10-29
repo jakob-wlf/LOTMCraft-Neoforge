@@ -43,7 +43,7 @@ public class AbyssalAwakeningAbility extends ToggleAbility {
     @Override
     public Map<String, Integer> getRequirements() {return new HashMap<>(Map.of("abyss", 0));}
     @Override
-    protected float getSpiritualityCost() {return 500;}
+    protected float getSpiritualityCost() {return 200;}
 
     @Override
     public void start(Level level, LivingEntity entity) {if (!level.isClientSide) active.add(entity.getUUID());}

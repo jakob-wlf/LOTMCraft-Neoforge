@@ -77,7 +77,7 @@ public class MaliceSeedAbility extends SelectableAbility {
     @Override
     public Map<String, Integer> getRequirements() {return new HashMap<>(Map.of("abyss", 2));}
     @Override
-    public float getSpiritualityCost() {return 150;}
+    public float getSpiritualityCost() {return 750;}
     @Override
     protected String[] getAllAbilityNames() {
         return new String[]{
@@ -228,9 +228,9 @@ public class MaliceSeedAbility extends SelectableAbility {
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onCasterDeath(LivingDeathEvent event) {
         LivingEntity caster = event.getEntity();
-        // Purification damage permanently bypasses Malice Seed resurrection.
+        // Corruption/info destruction/ losing control damage permanently bypasses Malice Seed resurrection.
         String damageId = event.getSource().getMsgId().toLowerCase(Locale.ROOT);
-        if (damageId.contains("purification") || damageId.contains("purify")) {
+        if (damageId.contains("corruption") || damageId.contains("information_destruction") || damageId.contains("loosing_control")) {
             removeAllSeedsFromCaster(caster.getUUID(), caster.level() instanceof ServerLevel level ? level.getServer() : null);
             knownCasters.remove(caster.getUUID());
             return;

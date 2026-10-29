@@ -39,7 +39,7 @@ public class MindFogAbility extends ToggleAbility {
 
     @Override
     protected float getSpiritualityCost() {
-        return 25;
+        return 16;
     }
 
     @Override

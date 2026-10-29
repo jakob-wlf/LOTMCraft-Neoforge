@@ -58,7 +58,7 @@ public class BloodlineCorroderAbility extends SelectableAbility {
     private final DustParticleOptions mistDust = new DustParticleOptions(new Vector3f(0.12F, 0.35F, 0.15F), 2.4F);
 
     public BloodlineCorroderAbility(String id) {
-        super(id, 5.5f); // flame cooldown, like Poisonous Flame. The mist has its own cooldown below.
+        super(id, 5f);
         canBeUsedByNPC = false;
     }
     @Override
@@ -67,7 +67,7 @@ public class BloodlineCorroderAbility extends SelectableAbility {
     }
     @Override
     public float getSpiritualityCost() {
-        return 60;
+        return 80;
     }
     @Override
     public boolean meetsBloodlineRequirement(LivingEntity entity) {

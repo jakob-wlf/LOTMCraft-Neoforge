@@ -33,7 +33,7 @@ import java.util.Map;
 public class FlameSpellsAbility extends SelectableAbility {
 
     public FlameSpellsAbility(String id) {
-        super(id, 20f, "burning");
+        super(id, 10f, "burning");
     }
 
     @Override
@@ -45,7 +45,7 @@ public class FlameSpellsAbility extends SelectableAbility {
 
     @Override
     protected float getSpiritualityCost() {
-        return 30;
+        return 150;
     }
     @Override
     public boolean meetsBloodlineRequirement(LivingEntity entity) {

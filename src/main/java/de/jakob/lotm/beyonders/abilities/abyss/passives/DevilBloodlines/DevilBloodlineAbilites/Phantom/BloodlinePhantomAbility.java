@@ -41,7 +41,7 @@ public class BloodlinePhantomAbility extends ToggleAbility {
     @Override
     public Map<String, Integer> getRequirements() {return new HashMap<>(Map.of("abyss", 6));}
     @Override
-    protected float getSpiritualityCost() {return 50;}
+    protected float getSpiritualityCost() {return 35;}
     @Override
     public boolean meetsBloodlineRequirement(LivingEntity entity) {return hasPhantomBloodline(entity);}
     // copies never have bloodline to stop the shadow clone world destoryer

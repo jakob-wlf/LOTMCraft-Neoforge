@@ -56,7 +56,7 @@ public class TheCorroderAbility extends ToggleAbility {
     @Override
     public Map<String, Integer> getRequirements() {return new HashMap<>(Map.of("abyss", 1));}
     @Override
-    protected float getSpiritualityCost() {return 100;}
+    protected float getSpiritualityCost() {return 70;}
 
     public static boolean isCorroding(UUID uuid) {return active.contains(uuid);}
 
