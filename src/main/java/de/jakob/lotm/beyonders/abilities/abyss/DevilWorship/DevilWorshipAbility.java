@@ -112,7 +112,7 @@ public class DevilWorshipAbility extends SelectableAbility {
     }
     //ability
     public DevilWorshipAbility(String id) {
-        super(id, 600f);
+        super(id, 3f);
         canBeUsedByNPC = false;
         canBeCopied = false;
         canBeUsedInArtifact = true;

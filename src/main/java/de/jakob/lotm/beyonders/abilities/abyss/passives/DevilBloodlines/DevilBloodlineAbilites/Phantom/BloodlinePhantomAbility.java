@@ -41,7 +41,7 @@ public class BloodlinePhantomAbility extends ToggleAbility {
     @Override
     public Map<String, Integer> getRequirements() {return new HashMap<>(Map.of("abyss", 6));}
     @Override
-    protected float getSpiritualityCost() {return 100;}
+    protected float getSpiritualityCost() {return 50;}
     @Override
     public boolean meetsBloodlineRequirement(LivingEntity entity) {return hasPhantomBloodline(entity);}
     // copies never have bloodline to stop the shadow clone world destoryer
@@ -62,7 +62,6 @@ public class BloodlinePhantomAbility extends ToggleAbility {
         if (level.isClientSide()) return;
         PhantomFormAttachment.setGhost(entity, true);
         entity.setInvisible(true);
-        applyToggleCooldown(entity);
         if (entity instanceof ServerPlayer player) {
             player.displayClientMessage(Component.translatable("ability.lotmcraft.wraith_ability.activated").withColor(0xBFA7FF), true);
         }
@@ -75,6 +74,9 @@ public class BloodlinePhantomAbility extends ToggleAbility {
         if (!isInPhantomForm(entity)) {PhantomFormAttachment.setGhost(entity, true);}
         entity.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 40, 0, false, false, false));
         entity.fallDistance = 0;
+        boolean insideWall = !level.noCollision(entity);
+        if (insideWall) entity.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 40, 10, false, false, false));
+        else entity.removeEffect(MobEffects.BLINDNESS);
     }
     @Override
     public void stop(Level level, LivingEntity entity) {
