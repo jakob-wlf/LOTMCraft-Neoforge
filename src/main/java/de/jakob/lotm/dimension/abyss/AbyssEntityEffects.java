@@ -5,7 +5,9 @@ import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.beyonders.abilities.abyss.AbyssalAwakeningAbility;
 import de.jakob.lotm.dimension.ModDimensions;
 import de.jakob.lotm.util.BeyonderData;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.biome.Biome;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
@@ -23,7 +25,7 @@ public class AbyssEntityEffects {
     @SubscribeEvent
     public static void onPlayerTick(PlayerTickEvent.Post event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
-        if (!player.level().dimension().equals(ModDimensions.ABYSS_DIMENSION_KEY)) return;
+        if (!player.level().dimension().equals(ModDimensions.ABYSS_DIMENSION_KEY) || (!isAbyssBiome(player))) return;
         if (player.isCreative() || player.isSpectator()) return;
         if (!player.isAlive()) return;
         boolean awakened = AbyssalAwakeningAbility.isAwakened(player.serverLevel());
@@ -34,6 +36,9 @@ public class AbyssEntityEffects {
     }
     private static boolean isAbyss(ServerPlayer player) {
         return BeyonderData.isBeyonder(player) && "abyss".equals(BeyonderData.getPathway(player)) && BeyonderData.getSequence(player) == 0;
+    }
+    private static boolean isAbyssBiome(ServerPlayer player) {
+        return player.level().getBiome(player.blockPosition()).is(ModDimensions.ABYSS_BIOME_KEY);
     }
 
     private static boolean isProtected(ServerPlayer player) {

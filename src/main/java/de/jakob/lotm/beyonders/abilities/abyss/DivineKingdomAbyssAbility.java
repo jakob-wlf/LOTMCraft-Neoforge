@@ -1,5 +1,6 @@
 package de.jakob.lotm.beyonders.abilities.abyss;
 
+import de.jakob.lotm.attachments.BiomeExpiryData;
 import de.jakob.lotm.attachments.BlockExpiryData;
 import de.jakob.lotm.attachments.DisabledFlightComponent;
 import de.jakob.lotm.attachments.ModAttachments;
@@ -11,6 +12,7 @@ import de.jakob.lotm.dimension.ModDimensions;
 import de.jakob.lotm.util.helper.ParticleUtil;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -19,12 +21,20 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Abilities;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.LevelChunkSection;
+import net.minecraft.world.level.chunk.PalettedContainer;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import org.joml.Vector3f;
 
 import java.util.*;
@@ -37,7 +47,6 @@ public class DivineKingdomAbyssAbility extends Ability {
     private static final int VERTICAL_REACH = 16;          // how far above/below the caster it looks for ground
     private static final int DURATION_TICKS = 20 * 60;
     private static final int BUILD_WAVE_SIZE = 300;        // blocks converted per tick
-    private static final int RESTORE_WAVE_SIZE = 600;      // blocks restored per tick
     // downward speed inside the filth
     private static final int DAMAGE_INTERVAL_TICKS = 20;
     private static final float DAMAGE_PER_PULSE = 1f;
@@ -60,8 +69,8 @@ public class DivineKingdomAbyssAbility extends Ability {
         final UUID casterId;
         final ServerLevel level;
         final Vec3 center;
-        final Map<BlockPos, BlockState> original = new LinkedHashMap<>();
         boolean ended = false;
+        int waves;
         Kingdom(UUID casterId, ServerLevel level, Vec3 center) {this.casterId = casterId;this.level = level;this.center = center;}
     }
     private static final List<Kingdom> ACTIVE = new CopyOnWriteArrayList<>();
@@ -84,6 +93,7 @@ public class DivineKingdomAbyssAbility extends Ability {
         Kingdom kingdom = new Kingdom(entity.getUUID(), serverLevel, entity.position());
         ACTIVE.add(kingdom);
         buildFilth(kingdom);
+        applyAbyssBiome(kingdom);
         ServerScheduler.scheduleForDuration(0, 1, DURATION_TICKS, () -> tickKingdom(kingdom), () -> endKingdom(kingdom), serverLevel);
     }
     // Building
@@ -111,6 +121,7 @@ public class DivineKingdomAbyssAbility extends Ability {
             List<BlockPos> chunk = new ArrayList<>(targets.subList(i, Math.min(i + BUILD_WAVE_SIZE, targets.size())));
             ServerScheduler.scheduleDelayed(wave, () -> placeWave(k, chunk), level);
         }
+        k.waves = wave;
     }
     private static void placeWave(Kingdom k, List<BlockPos> wave) {
         if (k.ended || wave.isEmpty()) return;
@@ -125,7 +136,6 @@ public class DivineKingdomAbyssAbility extends Ability {
             BlockPos pos = p.immutable();
 
             if (level.setBlock(pos, filth, Block.UPDATE_CLIENTS)) {
-                k.original.put(pos, originalState);
                 expiryData.schedule(level, pos, DURATION_TICKS, originalState);
             }
         }
@@ -247,7 +257,7 @@ public class DivineKingdomAbyssAbility extends Ability {
             }
         }
         // Teleport after the destination has been checked.
-        assert safePosition != null;
+        if (safePosition == null) return;
         e.teleportTo(abyss, safePosition.x, safePosition.y, safePosition.z, Set.of(), e.getYRot(), e.getXRot());
         e.setDeltaMovement(Vec3.ZERO);
         e.fallDistance = 0;
@@ -255,27 +265,12 @@ public class DivineKingdomAbyssAbility extends Ability {
     // Ending
     private static void endKingdom(Kingdom k) {
         k.ended = true;
-        ServerLevel level = k.level;
-        List<Map.Entry<BlockPos, BlockState>> entries = new ArrayList<>(k.original.entrySet());
-        int wave = 0;
-        for (int i = 0; i < entries.size(); i += RESTORE_WAVE_SIZE, wave++) {
-            List<Map.Entry<BlockPos, BlockState>> chunk = entries.subList(i, Math.min(i + RESTORE_WAVE_SIZE, entries.size()));
-            ServerScheduler.scheduleDelayed(wave, () -> restore(level, chunk), level);
-        }
-        ServerScheduler.scheduleDelayed(wave + 1, () -> {rescueEntities(k); ACTIVE.remove(k);}, level);
+        // Blocks and biomes restore themselves from the saved data. Lift anyone still stuck once the last wave is back
+        ServerScheduler.scheduleDelayed(k.waves + 10, () -> {rescueEntities(k); ACTIVE.remove(k);}, k.level);
         lastJump.clear();
+        jumpsInFilth.clear();
+        encasedTicks.clear();
     }
-    private static void restore(ServerLevel level, List<Map.Entry<BlockPos, BlockState>> chunk) {
-        BlockExpiryData expiryData = BlockExpiryData.get(level);
-        for (Map.Entry<BlockPos, BlockState> entry : chunk) {
-            BlockPos pos = entry.getKey();
-            if (level.getBlockState(pos).is(ModBlocks.BLOCK_OF_FILTH.get())) {
-                expiryData.cancel(pos);
-                level.setBlock(pos, entry.getValue(), Block.UPDATE_ALL);
-            }
-        }
-    }
-
     private static void rescueEntities(Kingdom k) {
         ServerLevel level = k.level;
         AABB box = new AABB(k.center.x - RADIUS, level.getMinBuildHeight(), k.center.z - RADIUS, k.center.x + RADIUS, level.getMaxBuildHeight(), k.center.z + RADIUS);
@@ -298,5 +293,17 @@ public class DivineKingdomAbyssAbility extends Ability {
         Vec3 dm = player.getDeltaMovement();
         player.setDeltaMovement(dm.x, Math.max(dm.y, strength), dm.z);
         player.hurtMarked = true;
+    }
+    // Biomes
+    private static void applyAbyssBiome(Kingdom k) {
+        List<ChunkPos> chunks = new ArrayList<>();
+        BlockPos c = BlockPos.containing(k.center);
+        for (int cx = (c.getX() - RADIUS) >> 4; cx <= (c.getX() + RADIUS) >> 4; cx++) {
+            for (int cz = (c.getZ() - RADIUS) >> 4; cz <= (c.getZ() + RADIUS) >> 4; cz++) {
+                double nx = Mth.clamp(k.center.x, cx << 4, (cx << 4) + 15), nz = Mth.clamp(k.center.z, cz << 4, (cz << 4) + 15);
+                if ((nx - k.center.x) * (nx - k.center.x) + (nz - k.center.z) * (nz - k.center.z) <= RADIUS * RADIUS) chunks.add(new ChunkPos(cx, cz));
+            }
+        }
+        BiomeExpiryData.get(k.level).schedule(k.level, chunks, ModDimensions.ABYSS_BIOME_KEY, DURATION_TICKS);
     }
 }
