@@ -6,11 +6,9 @@ import de.jakob.lotm.beyonders.abilities.core.interaction.InteractionHandler;
 import de.jakob.lotm.damage.ModDamageTypes;
 import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.BeyonderData;
-import de.jakob.lotm.util.helper.AbilityUtil;
 import de.jakob.lotm.util.helper.ParticleUtil;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -60,9 +58,7 @@ public class HandOfDeathAbility extends ToggleAbility {
         ParticleUtil.spawnSphereParticles(serverLevel, ParticleTypes.SOUL, center, 1.2, 50, 0.35);
         ParticleUtil.spawnCircleParticles(serverLevel, ParticleTypes.SOUL, entity.position(), 1.5, 28);
         serverLevel.playSound(null, entity.getX(), entity.getY(), entity.getZ(), SoundEvents.WITHER_AMBIENT, SoundSource.PLAYERS, 0.8f, 0.45f);
-
-        // TEMP: build marker, remove after verifying
-        AbilityUtil.sendActionBar(entity, Component.literal("Hand of Death v2"));    }
+    }
 
     @Override
     public void tick(Level level, LivingEntity entity) {
@@ -96,28 +92,12 @@ public class HandOfDeathAbility extends ToggleAbility {
 
         float damage = SOUL_DAMAGE.get(seq) * (float) BeyonderData.getMultiplier(caster);
 
-        // TEMP: debug readout, remove after verifying
-        float healthBeforeMelee = target.getHealth();
-        float meleeIncoming = event.getAmount();
-
         // Next tick, so the melee hit's i-frames don't swallow the soul damage
         ServerScheduler.scheduleDelayed(1, () -> {
             if (!target.isAlive()) return;
 
-            float healthBeforeSoul = target.getHealth();
             target.invulnerableTime = 0;
             target.hurt(ModDamageTypes.source(serverLevel, ModDamageTypes.SOUL_BASED, caster), damage);
-
-            // TEMP: debug readout, remove after verifying
-            caster.sendSystemMessage(Component.literal(String.format(
-                    "[HoD] seq %d/%d (%s) | mult %.2f | soul sent %.1f, took %.1f | melee sent %.1f, took %.1f | steelSkin %b",
-                    seq, BeyonderData.getSequence(target), BeyonderData.getPathway(target),
-                    BeyonderData.getMultiplier(caster),
-                    damage, healthBeforeSoul - target.getHealth(),
-                    meleeIncoming, healthBeforeMelee - healthBeforeSoul,
-                    de.jakob.lotm.beyonders.abilities.red_priest.SteelSkinAbility.set.contains(target.getUUID()))));
-            caster.sendSystemMessage(Component.literal("[HoD] your modifiers: "
-                    + caster.getData(de.jakob.lotm.attachments.ModAttachments.MULTIPLIER_MODIFIER_COMPONENT).modifiers));
 
             Vec3 center = target.position().add(0, 1, 0);
             ParticleUtil.spawnSphereParticles(serverLevel, ParticleTypes.SOUL, center, 0.8, 30, 0.3);

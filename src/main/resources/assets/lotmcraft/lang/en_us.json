@@ -1542,6 +1542,8 @@
 
   "ability.lotmcraft.undead_ignorance_ability": "Undead Ignorance",
   "ability.lotmcraft.undead_ignorance_ability.description": "Undead mobs no longer perceive you as a target",
+  "ability.lotmcraft.absolute_death_ability": "Absolute Death",
+  "ability.lotmcraft.absolute_death_ability.description": "Within 30 blocks of you, no enemy can escape death through a substitute",
 
   "ability.lotmcraft.solar_sensitivity_ability": "Solar Sensitivity",
   "ability.lotmcraft.solar_sensitivity_ability.description": "During daytime you suffer Weakness. Sun pathway attacks deal 50% more damage to you",

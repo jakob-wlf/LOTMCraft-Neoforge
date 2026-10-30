@@ -10,6 +10,7 @@ import de.jakob.lotm.beyonders.abilities.darkness.passives.PhysicalEnhancementsD
 import de.jakob.lotm.beyonders.abilities.death.passives.PhysicalEnhancementsDeathAbility;
 import de.jakob.lotm.beyonders.abilities.death.passives.ReincarnationAbility;
 import de.jakob.lotm.beyonders.abilities.death.passives.SolarSensitivityAbility;
+import de.jakob.lotm.beyonders.abilities.death.passives.AbsoluteDeathAbility;
 import de.jakob.lotm.beyonders.abilities.death.passives.UndeadIgnoranceAbility;
 import de.jakob.lotm.beyonders.abilities.demoness.passives.BloodLossAbility;
 import de.jakob.lotm.beyonders.abilities.demoness.passives.FeatherFallAbility;
@@ -122,6 +123,7 @@ public class PassiveAbilityHandler {
 
         // Death
         passiveAbilities.add(new UndeadIgnoranceAbility("undead_ignorance_ability"));
+        passiveAbilities.add(new AbsoluteDeathAbility("absolute_death_ability"));
         passiveAbilities.add(new SolarSensitivityAbility("solar_sensitivity_ability"));
         passiveAbilities.add(new ReincarnationAbility("reincarnation_ability"));
 

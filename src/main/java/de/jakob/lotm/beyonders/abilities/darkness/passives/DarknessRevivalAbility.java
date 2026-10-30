@@ -1,5 +1,6 @@
 package de.jakob.lotm.beyonders.abilities.darkness.passives;
 
+import de.jakob.lotm.beyonders.abilities.death.passives.AbsoluteDeathAbility;
 import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.attachments.SanityComponent;
@@ -48,6 +49,7 @@ public class DarknessRevivalAbility extends PassiveAbility {
         if (!PassiveAbilityHandler.getById("darkness_revival_ability").shouldApplyTo(entity)) return;
 
         if (LawAbility.SOLACE_KILLED.contains(entity.getUUID())) return;
+        if (AbsoluteDeathAbility.isEffectedByAbsoluteDeath(entity)) return;
 
         var pos = entity.blockPosition();
         // Must be at or below light level 7

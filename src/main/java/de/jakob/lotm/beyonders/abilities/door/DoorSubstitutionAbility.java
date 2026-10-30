@@ -1,6 +1,7 @@
 package de.jakob.lotm.beyonders.abilities.door;
 
 import de.jakob.lotm.LOTMCraft;
+import de.jakob.lotm.beyonders.abilities.death.passives.AbsoluteDeathAbility;
 import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.damage.ModDamageTypes;
 import de.jakob.lotm.events.ProhibitionHandler;
@@ -115,6 +116,7 @@ public class DoorSubstitutionAbility extends Ability {
 
         LivingEntity entity = event.getEntity();
         if (entity.level() instanceof ServerLevel sl && ProhibitionHandler.isInStandInsZone(entity.position(), sl, BeyonderData.getSequence(entity))) return;
+        if (AbsoluteDeathAbility.isEffectedByAbsoluteDeath(entity)) return;
 
         int num = figurineNumbers.get(event.getEntity().getUUID());
 

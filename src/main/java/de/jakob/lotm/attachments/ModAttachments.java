@@ -342,6 +342,11 @@ public class ModAttachments {
                     .build()
     );
 
+    public static final Supplier<AttachmentType<Long>> ABSOLUTE_DEATH_UNTIL = ATTACHMENT_TYPES.register(
+            "absolute_death_until",
+            () -> AttachmentType.builder(() -> 0L).build()
+    );
+
     public static void register(IEventBus eventBus) {
         ATTACHMENT_TYPES.register(eventBus);
     }
