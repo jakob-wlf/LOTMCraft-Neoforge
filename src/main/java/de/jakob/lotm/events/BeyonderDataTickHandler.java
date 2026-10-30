@@ -172,7 +172,7 @@ public class BeyonderDataTickHandler {
 
     private static float spiritualityMultiplier(LivingEntity entity) {
         if (entity != null && entity.level().dimension().equals(ModDimensions.SPIRIT_WORLD_DIMENSION_KEY)) return 10f;
-        if (entity != null && !SpiritualityTideAbility.natural() && "darkness".equals(BeyonderData.getPathway(entity)) && BeyonderData.getSequence(entity) == 0) return 1.5f;
+        if (entity != null && "darkness".equals(BeyonderData.getPathway(entity)) && BeyonderData.getSequence(entity) == 0) return 1.5f;
         return Math.max(0f, 1f + 0.5f * SpiritualityTideAbility.tide());
     }
 

@@ -22,7 +22,6 @@ import java.util.UUID;
 @EventBusSubscriber(modid = LOTMCraft.MOD_ID)
 public class SpiritualityTideAbility extends SelectableAbility {
     private static int darkness = 0;
-    private static boolean natural = false;
     private static UUID darknessOwner;
 
     public SpiritualityTideAbility(String id) {
@@ -55,12 +54,10 @@ public class SpiritualityTideAbility extends SelectableAbility {
         if (!(entity instanceof ServerPlayer player) || !"darkness".equals(BeyonderData.getPathway(player))) return;
         if (abilityIndex == 2) {
             darkness = 0;
-            natural = true;
             darknessOwner = player.getUUID();
             AbilityUtil.sendActionBar(player, Component.literal("The tide returns.").withColor(0xFF3300b5));
             return;
         }
-        natural = false;
         int want = abilityIndex == 0 ? -1 : 1;
         if (darkness == want && player.getUUID().equals(darknessOwner)) {
             darkness = 0;
@@ -75,10 +72,6 @@ public class SpiritualityTideAbility extends SelectableAbility {
 
     public static int tide() {
         return darkness;
-    }
-
-    public static boolean natural() {
-        return natural;
     }
 
     public static boolean dry(LivingEntity entity) {
