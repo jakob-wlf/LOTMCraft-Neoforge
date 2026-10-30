@@ -15,11 +15,14 @@ import de.jakob.lotm.rendering.effectRendering.EffectIds;
 import de.jakob.lotm.rendering.effectRendering.EffectManager;
 import de.jakob.lotm.rendering.effectRendering.EffectParams;
 import de.jakob.lotm.util.BeyonderData;
+import de.jakob.lotm.util.ClientBeyonderCache;
 import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.helper.AbilityUtil;
 import de.jakob.lotm.util.helper.ParticleUtil;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -59,6 +62,18 @@ public class HorrorAuraAbility extends ToggleAbility {
     @Override
     public Map<String, Integer> getRequirements() {
         return new HashMap<>(Map.of("darkness", 3));
+    }
+
+    @Override
+    public MutableComponent getName() {
+        if (ClientBeyonderCache.localSequence() <= 0) return Component.translatable("ability.lotmcraft.horror_authority").withStyle(ChatFormatting.BOLD);
+        return super.getName();
+    }
+
+    @Override
+    public MutableComponent getDescription() {
+        if (ClientBeyonderCache.localSequence() <= 0) return Component.translatable("ability.lotmcraft.horror_authority.description");
+        return (MutableComponent) super.getDescription();
     }
 
     @Override
