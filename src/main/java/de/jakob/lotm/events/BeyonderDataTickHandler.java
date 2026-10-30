@@ -6,6 +6,8 @@ import de.jakob.lotm.beyonders.abilities.core.PassiveAbility;
 import de.jakob.lotm.beyonders.abilities.core.PhysicalEnhancementsAbility;
 import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.beyonders.abilities.core.ToggleAbility;
+import de.jakob.lotm.beyonders.abilities.darkness.SpiritualityTideAbility;
+import de.jakob.lotm.dimension.ModDimensions;
 import de.jakob.lotm.beyonders.abilities.door.passives.VoidImmunityAbility;
 import de.jakob.lotm.beyonders.abilities.twilight_giant.ProxyAbility;
 import de.jakob.lotm.beyonders.abilities.wheel_of_fortune.passives.PassiveLuckAbility;
@@ -168,6 +170,12 @@ public class BeyonderDataTickHandler {
         }
     }
 
+    private static float spiritualityMultiplier(LivingEntity entity) {
+        if (entity != null && entity.level().dimension().equals(ModDimensions.SPIRIT_WORLD_DIMENSION_KEY)) return 10f;
+        if (entity != null && "darkness".equals(BeyonderData.getPathway(entity)) && BeyonderData.getSequence(entity) == 0) return 1.5f;
+        return Math.max(0f, 1f + 0.5f * SpiritualityTideAbility.tide());
+    }
+
     private static int getWormRecoverTime(LivingEntity entity) {
         return switch (BeyonderData.getPathway(entity)) {
             case "fool" -> 20 * 60 * 5;
@@ -190,7 +198,7 @@ public class BeyonderDataTickHandler {
         if (BeyonderData.isBeyonder(player)) {
             // Regenerate Spirituality
             float amount = BeyonderData.getMaxSpirituality(BeyonderData.getPathway(player, true),
-                    BeyonderData.getSequence(player, false, true), player) * 0.0006f;
+                    BeyonderData.getSequence(player, false, true), player) * 0.0006f * spiritualityMultiplier(player);
 
             var disabler = player.getData(ModAttachments.REGEN_DISABLER.get());
             if(disabler.isDisabled())

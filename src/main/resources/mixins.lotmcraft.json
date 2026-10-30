@@ -5,10 +5,13 @@
     "mixins": [
     "EntityAccessor",
     "MixinIngredient",
-    "MercuryPushMixin"
+    "MercuryPushMixin",
+    "SignConcealMixin"
   ],
   "client": [
-    "EntityGlowMixin"
+    "EntityGlowMixin",
+    "ConcealmentRenderMixin",
+    "ConcealmentParticleMixin"
   ],
   "injectors": {
     "defaultRequire": 1

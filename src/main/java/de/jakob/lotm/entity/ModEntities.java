@@ -5,6 +5,7 @@ import de.jakob.lotm.beyonders.abilities.death.handlers.SpiritHandler;
 import de.jakob.lotm.entity.custom.*;
 import de.jakob.lotm.entity.custom.ability_entities.*;
 import de.jakob.lotm.entity.custom.ability_entities.darkness_pathway.ConcealedDomainEntity;
+import de.jakob.lotm.entity.custom.ability_entities.darkness_pathway.DarknessPourEntity;
 import de.jakob.lotm.entity.custom.ability_entities.darkness_pathway.NightmareBodyEntity;
 import de.jakob.lotm.entity.custom.ability_entities.death_pathway.DeathDivineKingdomEntity;
 import de.jakob.lotm.entity.custom.ability_entities.death_pathway.UnderworldGateEntity;
@@ -131,6 +132,10 @@ public class ModEntities {
     public static final Supplier<EntityType<ConcealedDomainEntity>> CONCEALED_DOMAIN =
             ENTITY_TYPES.register("concealed_domain", () -> EntityType.Builder.<ConcealedDomainEntity>of(ConcealedDomainEntity::new, MobCategory.MISC)
                     .sized(0.5F, 0.5F).clientTrackingRange(64).updateInterval(1).noSummon().noSave().fireImmune().build("concealed_domain"));
+
+    public static final Supplier<EntityType<DarknessPourEntity>> DARKNESS_POUR =
+            ENTITY_TYPES.register("darkness_pour", () -> EntityType.Builder.<DarknessPourEntity>of(DarknessPourEntity::new, MobCategory.MISC)
+                    .sized(0.5F, 0.5F).clientTrackingRange(64).updateInterval(1).noSummon().fireImmune().build("darkness_pour"));
     
     // Ability Entities - Door Pathway
 

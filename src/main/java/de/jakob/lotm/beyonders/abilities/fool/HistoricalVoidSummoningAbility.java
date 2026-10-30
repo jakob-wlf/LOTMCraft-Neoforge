@@ -770,6 +770,8 @@ public class HistoricalVoidSummoningAbility extends SelectableAbility {
                 player.sendSystemMessage(Component.translatable("ability.lotmcraft.historical_void_summoning.summoned_entity", entity.getName().getString()).withStyle(ChatFormatting.GREEN));
                 if(entity instanceof LivingEntity living)
                     AllyUtil.makeAllies(player, living);
+                if (isPlayer && entity instanceof BeyonderNPCEntity npc)
+                    de.jakob.lotm.beyonders.abilities.darkness.ConcealmentAbility.projectionSummoned(level, player, npc);
 
                 ServerScheduler.scheduleDelayed(duration, () -> {
                     ServerPlayer onlinePlayer = level.getServer().getPlayerList().getPlayer(player.getUUID());

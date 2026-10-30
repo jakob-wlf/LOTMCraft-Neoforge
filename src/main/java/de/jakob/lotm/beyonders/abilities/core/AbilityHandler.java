@@ -179,9 +179,13 @@ public class AbilityHandler {
         abilities.add(new HorrorAuraAbility("horror_aura_ability"));
         abilities.add(new SurgeOfDarknessAbility("surge_of_darkness_ability"));
         abilities.add(new ConcealmentAbility("concealment_ability"));
+        abilities.add(new ConcealmentAuthorityAbility("concealment_authority_ability"));
         abilities.add(new IdentityConcealmentAbility("identity_concealment_ability"));
         abilities.add(new ConcealedDomainAbility("concealed_domain_ability"));
         abilities.add(new SwordOfDarknessAbility("sword_of_darkness_ability"));
+        abilities.add(new MisfortuneAuthorityAbility("misfortune_authority_ability"));
+        abilities.add(new DarknessAuthorityAbility("darkness_authority_ability"));
+        abilities.add(new SpiritualityTideAbility("spirituality_tide_ability"));
 
         // DEMONESS PATHWAY
         abilities.add(new ShadowConcealmentAbility("shadow_concealment_ability"));

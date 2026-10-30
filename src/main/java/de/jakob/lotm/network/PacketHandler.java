@@ -35,6 +35,12 @@ public class PacketHandler {
 
     private static void registerClientPackets(PayloadRegistrar registrar) {
         registrar.playToClient(
+                CameraShakePacket.TYPE,
+                CameraShakePacket.STREAM_CODEC,
+                CameraShakePacket::handle
+        );
+
+        registrar.playToClient(
                 SyncBeyonderDataPacket.TYPE,
                 SyncBeyonderDataPacket.STREAM_CODEC,
                 SyncBeyonderDataPacket::handle
@@ -288,6 +294,24 @@ public class PacketHandler {
                 SyncFogPacket.TYPE,
                 SyncFogPacket.STREAM_CODEC,
                 SyncFogPacket::handle
+        );
+
+        registrar.playToClient(
+                OpenConcealSecretScreenPacket.TYPE,
+                OpenConcealSecretScreenPacket.STREAM_CODEC,
+                OpenConcealSecretScreenPacket::handle
+        );
+
+        registrar.playToClient(
+                OpenDivinationMisleadScreenPacket.TYPE,
+                OpenDivinationMisleadScreenPacket.STREAM_CODEC,
+                OpenDivinationMisleadScreenPacket::handle
+        );
+
+        registrar.playToClient(
+                SyncConcealmentVeilsPacket.TYPE,
+                SyncConcealmentVeilsPacket.STREAM_CODEC,
+                SyncConcealmentVeilsPacket::handle
         );
 
         registrar.playToClient(
@@ -1016,6 +1040,30 @@ public class PacketHandler {
                 StopDiscernmentPacket.TYPE,
                 StopDiscernmentPacket.STREAM_CODEC,
                 StopDiscernmentPacket::handle
+        );
+
+        registrar.playToServer(
+                SubmitConcealSecretPacket.TYPE,
+                SubmitConcealSecretPacket.STREAM_CODEC,
+                SubmitConcealSecretPacket::handle
+        );
+
+        registrar.playToServer(
+                RemoveConcealSecretPacket.TYPE,
+                RemoveConcealSecretPacket.STREAM_CODEC,
+                RemoveConcealSecretPacket::handle
+        );
+
+        registrar.playToServer(
+                SubmitDivinationMisleadPacket.TYPE,
+                SubmitDivinationMisleadPacket.STREAM_CODEC,
+                SubmitDivinationMisleadPacket::handle
+        );
+
+        registrar.playToServer(
+                RemoveDivinationMisleadPacket.TYPE,
+                RemoveDivinationMisleadPacket.STREAM_CODEC,
+                RemoveDivinationMisleadPacket::handle
         );
 
         registrar.playToServer(

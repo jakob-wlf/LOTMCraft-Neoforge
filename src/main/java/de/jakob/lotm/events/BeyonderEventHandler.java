@@ -93,7 +93,7 @@ public class BeyonderEventHandler {
             serverPlayer.addEffect(new MobEffectInstance(ModEffects.CONCEALMENT, 20 * 5, 99));
             BeyonderData.recalculateCharStackModifiers(serverPlayer);
             serverPlayer.getData(ModAttachments.LUCK_COMPONENT.get()).setLuck(0);
-            PacketHandler.sendToPlayer(serverPlayer, new SyncPsychologicalInvisibilityPacket(PsychologicalInvisibilityAbility.invisiblePlayers));
+            PacketHandler.sendToPlayer(serverPlayer, new SyncPsychologicalInvisibilityPacket(PsychologicalInvisibilityAbility.finalInvisiblePlayers));
 
             PacketHandler.syncBeyonderDataToPlayer(serverPlayer);
         }

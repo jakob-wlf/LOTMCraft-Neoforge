@@ -4,6 +4,7 @@ import de.jakob.lotm.beyonders.abilities.abyss.passives.CriminalProficiencyAbili
 import de.jakob.lotm.beyonders.abilities.abyss.passives.FireResistanceAbyssAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.PhysicalEnhancementsAbyssAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.WordImmunityAbility;
+import de.jakob.lotm.beyonders.abilities.darkness.passives.ConcealmentSenseAbility;
 import de.jakob.lotm.beyonders.abilities.darkness.passives.DarknessRevivalAbility;
 import de.jakob.lotm.beyonders.abilities.darkness.passives.NocturnalityAbility;
 import de.jakob.lotm.beyonders.abilities.darkness.passives.PhysicalEnhancementsDarknessAbility;
@@ -111,6 +112,7 @@ public class PassiveAbilityHandler {
         // Darkness
         passiveAbilities.add(new NocturnalityAbility("nocturnality_ability"));
         passiveAbilities.add(new DarknessRevivalAbility("darkness_revival_ability"));
+        passiveAbilities.add(new ConcealmentSenseAbility("concealment_sense_ability"));
 
         // Error
         passiveAbilities.add(new PassiveTheftAbility("passive_theft_ability"));

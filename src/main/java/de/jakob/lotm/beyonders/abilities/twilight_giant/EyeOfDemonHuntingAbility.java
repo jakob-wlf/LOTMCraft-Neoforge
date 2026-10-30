@@ -3,6 +3,7 @@ package de.jakob.lotm.beyonders.abilities.twilight_giant;
 import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.beyonders.abilities.core.ToggleAbility;
+import de.jakob.lotm.beyonders.abilities.darkness.ConcealmentAbility;
 import de.jakob.lotm.beyonders.abilities.fool.passives.DangerPremonitionAbility;
 import de.jakob.lotm.beyonders.abilities.visionary.handlers.VisionaryHandler;
 import de.jakob.lotm.network.PacketHandler;
@@ -152,7 +153,7 @@ public class EyeOfDemonHuntingAbility extends ToggleAbility {
         for (Map.Entry<UUID, Deque<Footprint>> entry : footprints.entrySet()) {
             if (entry.getKey().equals(viewer.getUUID())) continue;
             Player owner = level.getPlayerByUUID(entry.getKey());
-            if (owner != null && VisionaryHandler.shouldStayInvisible(BeyonderData.getSequence(viewer), owner)) continue;
+            if (owner != null && (ConcealmentAbility.peaceful(owner) || VisionaryHandler.shouldStayInvisible(BeyonderData.getSequence(viewer), owner))) continue;
             for (Footprint footprint : entry.getValue()) {
                 if (!footprint.dimension().equals(dimension) || footprint.position().distanceToSqr(viewer.position()) > rangeSqr) continue;
                 Vec3 pos = footprint.position();
@@ -165,7 +166,7 @@ public class EyeOfDemonHuntingAbility extends ToggleAbility {
     private static void warnGazes(ServerLevel level, ServerPlayer viewer) {
         int viewerSequence = BeyonderData.getSequence(viewer);
         for (LivingEntity threat : AbilityUtil.getNearbyEntities(viewer, level, viewer.position(), GAZE_RANGE)) {
-            if (AllyUtil.areAllies(viewer, threat) || MindConcealmentAbility.isHiddenFrom(viewer, threat) || VisionaryHandler.shouldStayInvisible(viewerSequence, threat)) continue;
+            if (ConcealmentAbility.peaceful(threat) || AllyUtil.areAllies(viewer, threat) || MindConcealmentAbility.isHiddenFrom(viewer, threat) || VisionaryHandler.shouldStayInvisible(viewerSequence, threat)) continue;
             if (!DangerPremonitionAbility.isThreatLookingAtUser(viewer, threat, GAZE_RANGE)) continue;
             int threatSequence = BeyonderData.getSequence(threat);
             int pulses = Mth.clamp(1 + (viewerSequence - threatSequence) + 2, 1, MAX_PULSES);

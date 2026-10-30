@@ -1,12 +1,16 @@
 package de.jakob.lotm.beyonders.abilities.darkness;
 
+import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.attachments.ModAttachments;
+import de.jakob.lotm.beyonders.abilities.core.AbilityUseEvent;
 import de.jakob.lotm.beyonders.abilities.core.AbilityUsedEvent;
 import de.jakob.lotm.beyonders.abilities.core.ToggleAbility;
 import de.jakob.lotm.beyonders.abilities.core.interaction.InteractionHandler;
 import de.jakob.lotm.beyonders.abilities.sun.HolyOathAbility;
 import de.jakob.lotm.damage.ModDamageTypes;
 import de.jakob.lotm.effect.ModEffects;
+import de.jakob.lotm.network.PacketHandler;
+import de.jakob.lotm.network.packets.toClient.CameraShakePacket;
 import de.jakob.lotm.rendering.effectRendering.EffectIds;
 import de.jakob.lotm.rendering.effectRendering.EffectManager;
 import de.jakob.lotm.rendering.effectRendering.EffectParams;
@@ -15,11 +19,15 @@ import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.helper.AbilityUtil;
 import de.jakob.lotm.util.helper.ParticleUtil;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.NeoForge;
 
 import java.util.HashMap;
@@ -28,6 +36,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+@EventBusSubscriber(modid = LOTMCraft.MOD_ID)
 public class HorrorAuraAbility extends ToggleAbility {
     private static final int RADIUS = 20;
     private static final int STARE_CAP = 20 * 20;
@@ -85,6 +94,7 @@ public class HorrorAuraAbility extends ToggleAbility {
         NeoForge.EVENT_BUS.post(new AbilityUsedEvent(serverLevel, entity.position(), entity, this, interactionFlags, interactionRadius, interactionCacheTicks));
 
         int seq = AbilityUtil.getSeqWithArt(entity, this);
+        int casterSeq = BeyonderData.getSequence(entity);
         Location loc = new Location(entity.position(), serverLevel);
         if (InteractionHandler.isInteractionPossible(loc, "purification", seq)) {
             ParticleUtil.spawnSphereParticles(serverLevel, ParticleTypes.END_ROD, entity.getEyePosition().subtract(0, .5, 0), 1, 30);
@@ -96,6 +106,7 @@ public class HorrorAuraAbility extends ToggleAbility {
         for (LivingEntity target : AbilityUtil.getNearbyEntities(entity, serverLevel, entity.position(), RADIUS)) {
             Location targetLoc = new Location(target.position(), serverLevel);
             int targetSeq = BeyonderData.getSequence(target);
+            if (targetSeq < casterSeq) continue;
             boolean hasMorale = InteractionHandler.isInteractionPossibleForEntity(targetLoc, "morale_boost", seq, target);
             if (!hasMorale) {
                 hasMorale = ToggleAbility.getActiveAbilitiesForEntity(target).stream().anyMatch(a -> a instanceof HolyOathAbility) && targetSeq <= seq;
@@ -103,7 +114,7 @@ public class HorrorAuraAbility extends ToggleAbility {
             if (hasMorale) continue;
 
             seen.add(target.getUUID());
-            boolean looking = AbilityUtil.getTargetEntity(target, RADIUS, 5f) == entity;
+            boolean looking = AbilityUtil.getTargetEntity(target, RADIUS, 5f, true) == entity;
             int stare = stares.getOrDefault(target.getUUID(), 0);
             stare = looking ? Math.min(STARE_CAP, stare + tickRate) : Math.max(0, stare - tickRate);
             if (stare == 0) stares.remove(target.getUUID());
@@ -131,8 +142,45 @@ public class HorrorAuraAbility extends ToggleAbility {
             if (seconds >= 8 && target.getRandom().nextInt(60) == 0) {
                 target.hurt(ModDamageTypes.source(level, ModDamageTypes.LOOSING_CONTROL, entity), Float.MAX_VALUE);
             }
+            if (BeyonderData.getSequence(entity) == 0 && seconds / 16f > 0.75f) {
+                AbilityUtil.sealAllTargetAbilities(entity, target, "horror_authority", Math.min(20 * 8, seconds * 10));
+            }
         }
         stares.keySet().removeIf(id -> !seen.contains(id));
+    }
+
+    public int stareSeconds(LivingEntity target) {
+        if (!(target.level() instanceof ServerLevel level) || level.getServer() == null) return 0;
+        int targetSeq = BeyonderData.getSequence(target);
+        int best = 0;
+        for (Map.Entry<UUID, Map<UUID, Integer>> entry : staring.entrySet()) {
+            LivingEntity caster = level.getServer().getPlayerList().getPlayer(entry.getKey());
+            if (caster == null) {
+                for (ServerLevel serverLevel : level.getServer().getAllLevels()) {
+                    if (serverLevel.getEntity(entry.getKey()) instanceof LivingEntity living) {
+                        caster = living;
+                        break;
+                    }
+                }
+            }
+            if (caster == null || BeyonderData.getSequence(caster) != 0) continue;
+            if (targetSeq < BeyonderData.getSequence(caster)) continue;
+            best = Math.max(best, entry.getValue().getOrDefault(target.getUUID(), 0));
+        }
+        return best / 20;
+    }
+
+    @SubscribeEvent
+    public static void onUse(AbilityUseEvent event) {
+        if (LOTMCraft.abilityHandler == null || !(LOTMCraft.abilityHandler.getById("horror_aura_ability") instanceof HorrorAuraAbility aura)) return;
+        int seconds = aura.stareSeconds(event.getEntity());
+        if (seconds <= 0) return;
+        if (event.getEntity().getRandom().nextFloat() >= Math.min(0.75f, seconds / 16f)) return;
+        event.setCanceled(true);
+        if (event.getEntity() instanceof ServerPlayer player) {
+            AbilityUtil.sendActionBar(player, Component.literal("The horror twists the ability.").withColor(0xFF3300b5));
+            PacketHandler.sendToPlayer(player, new CameraShakePacket(6f, 16));
+        }
     }
 
     private static float sanityAmount(int seq) {

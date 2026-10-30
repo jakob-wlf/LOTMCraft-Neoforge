@@ -1,6 +1,7 @@
 package de.jakob.lotm.network.packets.toServer;
 
 import de.jakob.lotm.LOTMCraft;
+import de.jakob.lotm.beyonders.abilities.darkness.ConcealmentAuthorityAbility;
 import de.jakob.lotm.beyonders.abilities.twilight_giant.CombatAuthorityAbility;
 import de.jakob.lotm.beyonders.abilities.twilight_giant.ProxyAbility;
 import de.jakob.lotm.beyonders.abilities.twilight_giant.ServantsAbility;
@@ -117,6 +118,17 @@ public record PlayerDivinationSelectedPacket(UUID selectedPlayerUuid, PlayerSele
 
         if (targetPlayer != null && CombatAuthorityAbility.blocksDivination(player, targetPlayer)) {
             player.sendSystemMessage(Component.translatable("ability.lotmcraft.combat_authority.divination_blocked"));
+            return;
+        }
+
+        if (ConcealmentAuthorityAbility.undivinable(targetPlayer)) {
+            player.sendSystemMessage(Component.literal("§cDivination failed"));
+            return;
+        }
+
+        String mislead = ConcealmentAuthorityAbility.misleadPlayer(player, targetPlayer);
+        if (mislead != null) {
+            player.sendSystemMessage(Component.literal(mislead));
             return;
         }
 

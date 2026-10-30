@@ -70,6 +70,7 @@ import java.util.UUID;
 @EventBusSubscriber(modid = LOTMCraft.MOD_ID, value = Dist.CLIENT)
 public class ClientHandler {
     public static Boolean isSpectating = false;
+    private static final ArrayList<Double> concealmentSpheres = new ArrayList<>();
 
     private static final HashMap<UUID, EntityEffectExecutor> activeEffects = new HashMap<>();
     private static final HashMap<UUID, BlockEffectExecutor> activeBlockEffects = new HashMap<>();
@@ -289,9 +290,23 @@ public class ClientHandler {
             return;
         }
 
-        entity.getData(ModAttachments.FOG_COMPONENT.get()).setActive(packet.active());
-        entity.getData(ModAttachments.FOG_COMPONENT.get()).setFogIndex(packet.index());
-        entity.getData(ModAttachments.FOG_COMPONENT.get()).setColor(new Vec3f(packet.red(), packet.green(), packet.blue()));
+        entity.getData(ModAttachments.FOG_COMPONENT.get()).apply(packet.active(), packet.index(), new Vec3f(packet.red(), packet.green(), packet.blue()), packet.durationMillis());
+    }
+
+    public static void setConcealmentSpheres(List<Double> packed) {
+        concealmentSpheres.clear();
+        if (packed != null) concealmentSpheres.addAll(packed);
+    }
+
+    public static boolean concealmentHides(double x, double y, double z) {
+        for (int i = 0; i + 3 < concealmentSpheres.size(); i += 4) {
+            double dx = x - concealmentSpheres.get(i);
+            double dy = y - concealmentSpheres.get(i + 1);
+            double dz = z - concealmentSpheres.get(i + 2);
+            double radius = concealmentSpheres.get(i + 3);
+            if (dx * dx + dy * dy + dz * dz < radius * radius) return true;
+        }
+        return false;
     }
 
     public static void addEffect(AddEffectPacket packet) {
