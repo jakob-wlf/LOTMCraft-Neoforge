@@ -13,7 +13,9 @@ import de.jakob.lotm.attachments.AllyComponent;
 import de.jakob.lotm.attachments.DisabledAbilitiesComponent;
 import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.block.ModBlocks;
+import de.jakob.lotm.gui.custom.conceal_secret.ConcealSecretScreen;
 import de.jakob.lotm.gui.custom.coordinate_input.CoordinateInputScreen;
+import de.jakob.lotm.gui.custom.divination_mislead.DivinationMisleadScreen;
 import de.jakob.lotm.gui.custom.introspect.IntrospectScreen;
 import de.jakob.lotm.gui.custom.quest.QuestAcceptanceScreen;
 import de.jakob.lotm.gui.custom.selection_gui.*;
@@ -76,6 +78,14 @@ public class ClientHandler {
     private static final HashMap<UUID, BlockEffectExecutor> activeBlockEffects = new HashMap<>();
     public static void openCoordinateScreen(Player player, String use) {
         Minecraft.getInstance().setScreen(new CoordinateInputScreen(player, use));
+    }
+
+    public static void openConcealSecretScreen(List<String> words) {
+        Minecraft.getInstance().setScreen(new ConcealSecretScreen(words));
+    }
+
+    public static void openDivinationMisleadScreen(List<String> lines) {
+        Minecraft.getInstance().setScreen(new DivinationMisleadScreen(lines));
     }
 
     public static void syncLivingEntityBeyonderData(SyncLivingEntityBeyonderDataPacket packet) {
