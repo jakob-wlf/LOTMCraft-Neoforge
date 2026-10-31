@@ -7,17 +7,11 @@ import net.neoforged.api.distmarker.OnlyIn;
 
 import java.util.*;
 
-/**
- * Everything the client knows about the Error pathway's perception and the deceits it is suffering from.
- * Times are in client game ticks.
- */
 @OnlyIn(Dist.CLIENT)
 public final class ErrorClientState {
 
     private ErrorClientState() {
     }
-
-    // ==================== SUPERIOR OBSERVATION ====================
 
     public record ValuableHint(Vec3 pos, float strength) {}
 
@@ -38,10 +32,7 @@ public final class ErrorClientState {
     public static List<Threat> threats = new ArrayList<>();
     public static long threatsReceived = 0;
 
-    /** entity id -> last held item, for the spark when it changes */
     public static final Map<Integer, ItemStack> lastHeld = new HashMap<>();
-
-    // ==================== DECRYPTION ====================
 
     public static int decryptionTarget = -1;
     public static int decryptionLevel = 0;
@@ -49,15 +40,10 @@ public final class ErrorClientState {
     public static List<String> decryptionLines = new ArrayList<>();
     public static long decryptionReceived = 0;
 
-    /** entity id -> client time until which their invisibility flickers away */
     public static final Map<Integer, Long> revealed = new HashMap<>();
-
-    // ==================== THEFT ====================
 
     public static int theftMark = -1;
     public static long theftMarkReceived = 0;
-
-    // ==================== TREASURE HUNTER ====================
 
     public static int treasureTarget = -1;
     public static String treasureName = "";
@@ -65,8 +51,6 @@ public final class ErrorClientState {
     public static List<ItemStack> treasureItems = new ArrayList<>();
     public static List<Integer> treasureItemValues = new ArrayList<>();
     public static long treasureReceived = 0;
-
-    // ==================== DECEITS ON THE LOCAL PLAYER ====================
 
     public static float fakeSanity = 1f;
     public static long fakeSanityUntil = 0;

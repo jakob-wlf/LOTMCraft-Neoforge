@@ -8,9 +8,6 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
-/**
- * Inventory Deceit: which item the deceived player's inventory screen shows in a slot.
- */
 @OnlyIn(Dist.CLIENT)
 public final class ErrorInventoryDeceit {
 

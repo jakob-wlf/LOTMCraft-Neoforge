@@ -21,9 +21,6 @@ import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 
 import java.util.List;
 
-/**
- * Screen space visuals of the Error pathway.
- */
 @EventBusSubscriber(modid = LOTMCraft.MOD_ID, value = Dist.CLIENT)
 public final class ErrorHudRenderer {
 
@@ -56,11 +53,8 @@ public final class ErrorHudRenderer {
         if (ErrorClientFlags.treasureHunterActive && now - ErrorClientState.treasureReceived < 20) renderTreasure(graphics, mc, width, height, partial);
     }
 
-    // ==================== VALUABLES ====================
-
     private static final ResourceLocation FLASH = ResourceLocation.fromNamespaceAndPath(LOTMCraft.MOD_ID, "textures/gui/error/observation_flash.png");
 
-    /** A valuable as it is currently drawn; fades in and out and glides instead of jumping between server updates. */
     private static final class ShownHint {
         Vec3 pos;
         float strength;
@@ -100,7 +94,6 @@ public final class ErrorHudRenderer {
             }
         }
 
-        // stale data: the passive stopped sending, everything fades
         boolean stale = now - ErrorClientState.valuablesReceived > 40;
         float frame = now + partial;
         float dt = lastHintFrame < 0 ? 0 : Math.min(5, frame - lastHintFrame);
@@ -112,10 +105,6 @@ public final class ErrorHudRenderer {
         shownHints.removeIf(h -> !h.alive && h.alpha < 0.01f);
     }
 
-    /**
-     * A soft golden glow with light streaks at the edge of the screen in the direction of each valuable – never on the
-     * thing itself. Overlapping glows add up, so a direction with many valuables shines brighter.
-     */
     private static void renderValuables(GuiGraphics graphics, Player player, int width, int height, long now, float partial) {
         updateShownHints(now, partial);
         if (shownHints.isEmpty()) return;
@@ -138,10 +127,8 @@ public final class ErrorHudRenderer {
             float dPitch = Mth.clamp(targetPitch - pitch, -60, 60);
             if (Math.abs(dYaw) < 1 && Math.abs(dPitch) < 1) dYaw = 1;
 
-            // direction on screen: right is positive yaw, down is positive pitch
             double angle = Math.atan2(dPitch * 1.4, dYaw);
             float closeness = (float) Mth.clamp(1 - to.length() / 48, 0.2, 1);
-            // irregular shimmer, like light catching on gold
             float shimmer = 0.62f + 0.24f * Mth.sin(time * 0.21f + hint.phase) + 0.14f * Mth.sin(time * 0.53f + hint.phase * 2.3f);
             float alpha = Mth.clamp(hint.alpha * shimmer * (0.35f + 0.65f * hint.strength) * (0.45f + 0.55f * closeness), 0, 1);
             if (alpha <= 0.02f) continue;
@@ -163,7 +150,6 @@ public final class ErrorHudRenderer {
         float ex = (float) (cx + dx * scale);
         float ey = (float) (cy + dy * scale);
 
-        // the texture glows from its left edge towards the right; turn it so it shines into the screen
         boolean sideEdge = Math.abs(dx) * cy >= Math.abs(dy) * cx;
         float inward = sideEdge ? (dx > 0 ? (float) Math.PI : 0f) : (dy > 0 ? (float) (-Math.PI / 2) : (float) (Math.PI / 2));
 
@@ -177,8 +163,6 @@ public final class ErrorHudRenderer {
         graphics.blit(FLASH, 0, -h / 2, w, h, 0, 0, 64, 128, 64, 128);
         pose.popPose();
     }
-
-    // ==================== THREATS (Seq 3) ====================
 
     private static void renderThreats(GuiGraphics graphics, int width, long now) {
         List<ErrorClientState.Threat> threats = ErrorClientState.threats;
@@ -203,8 +187,6 @@ public final class ErrorHudRenderer {
         }
         RenderSystem.disableBlend();
     }
-
-    // ==================== TREASURE HUNTER ====================
 
     private static void renderTreasure(GuiGraphics graphics, Minecraft mc, int width, int height, float partial) {
         if (ErrorClientState.treasureTarget < 0) return;
@@ -254,8 +236,6 @@ public final class ErrorHudRenderer {
             graphics.renderItemDecorations(mc.font, items.get(i), ix, iy);
         }
     }
-
-    // ==================== HEALTH & HUNGER DECEIT ====================
 
     @SubscribeEvent
     public static void onRenderLayer(RenderGuiLayerEvent.Pre event) {

@@ -24,10 +24,6 @@ import org.joml.Vector4f;
 
 import java.util.Map;
 
-/**
- * World space visuals of the Error pathway: sanity bars, the Quick Theft mark, highlighted containers and items,
- * and the strings between marionettes / second bodies and their masters.
- */
 @EventBusSubscriber(modid = LOTMCraft.MOD_ID, value = Dist.CLIENT)
 public final class ErrorWorldRenderer {
 
@@ -62,11 +58,6 @@ public final class ErrorWorldRenderer {
         if (now - ErrorClientState.linksReceived < 40) renderLinks(mc, poseStack, camera, partial, now);
     }
 
-    // ==================== SCREEN PROJECTION ====================
-
-    /**
-     * Projects a world position onto the gui. Returns null if the point is behind the camera.
-     */
     public static float[] project(Vec3 world, int guiWidth, int guiHeight) {
         if (!hasMatrices) return null;
         Vector4f vector = new Vector4f((float) (world.x - lastCamera.x), (float) (world.y - lastCamera.y), (float) (world.z - lastCamera.z), 1f);
@@ -77,8 +68,6 @@ public final class ErrorWorldRenderer {
         float y = vector.y / vector.w;
         return new float[]{(x * 0.5f + 0.5f) * guiWidth, (1f - (y * 0.5f + 0.5f)) * guiHeight};
     }
-
-    // ==================== SANITY BARS ====================
 
     private static void renderSanityBars(Minecraft mc, PoseStack poseStack, Camera camera, float partial) {
         if (ErrorClientState.sanityReveals.isEmpty()) return;
@@ -121,8 +110,6 @@ public final class ErrorWorldRenderer {
         builder.addVertex(matrix, x2, y2, 0).setColor(r, g, b, a);
         builder.addVertex(matrix, x2, y1, 0).setColor(r, g, b, a);
     }
-
-    // ==================== QUICK THEFT MARK ====================
 
     private static void renderTheftMark(Minecraft mc, PoseStack poseStack, Camera camera, float partial, long now) {
         if (ErrorClientState.theftMark < 0 || now - ErrorClientState.theftMarkReceived > 25) return;
@@ -171,8 +158,6 @@ public final class ErrorWorldRenderer {
         builder.addVertex(matrix, x2 + nx, y2 + ny, 0).setColor(r, g, b, a);
     }
 
-    // ==================== SUPERIOR OBSERVATION FOCUS ====================
-
     private static void renderHighlights(Minecraft mc, PoseStack poseStack, Camera camera, long now) {
         Vec3 cam = camera.getPosition();
         int radius = 32;
@@ -196,7 +181,6 @@ public final class ErrorWorldRenderer {
         }
 
         for (ItemEntity item : mc.level.getEntitiesOfClass(ItemEntity.class, mc.player.getBoundingBox().inflate(radius))) {
-            // items glow in the colour of their rarity, worthless ones in a pale silver
             Integer rarity = item.getItem().getRarity().color().getColor();
             int color = rarity == null || item.getItem().getRarity() == net.minecraft.world.item.Rarity.COMMON ? 0xC8D2E6 : rarity;
             float bob = (float) Math.sin((now + item.getId() * 7) * 0.1) * 0.05f;
@@ -217,7 +201,6 @@ public final class ErrorWorldRenderer {
         poseStack.translate(-cam.x, -cam.y, -cam.z);
         Matrix4f matrix = poseStack.last().pose();
 
-        // faint tinted volume
         BufferBuilder faces = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
         for (Highlight h : highlights) {
             float a = 0.1f * fadeWithDistance(h.distance, radius) * (0.75f + 0.25f * (float) Math.sin(now * 0.12 + h.distance));
@@ -225,7 +208,6 @@ public final class ErrorWorldRenderer {
         }
         BufferUploader.drawWithShader(faces.buildOrThrow());
 
-        // glowing corner brackets
         RenderSystem.lineWidth(2.5f);
         BufferBuilder lines = Tesselator.getInstance().begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
         for (Highlight h : highlights) {
@@ -260,7 +242,6 @@ public final class ErrorWorldRenderer {
         }
     }
 
-    /** Only the corners of the box, like a jeweller's loupe marking something worth a look. */
     private static void corners(BufferBuilder builder, Matrix4f m, AABB box, float r, float g, float b, float a) {
         double lx = (box.maxX - box.minX) * 0.3, ly = (box.maxY - box.minY) * 0.3, lz = (box.maxZ - box.minZ) * 0.3;
         for (double x : new double[]{box.minX, box.maxX}) {
@@ -280,8 +261,6 @@ public final class ErrorWorldRenderer {
         builder.addVertex(m, (float) x1, (float) y1, (float) z1).setColor(r, g, b, a);
         builder.addVertex(m, (float) x2, (float) y2, (float) z2).setColor(r, g, b, a * 0.25f);
     }
-
-    // ==================== STRINGS (Seq 3) ====================
 
     private static void renderLinks(Minecraft mc, PoseStack poseStack, Camera camera, float partial, long now) {
         if (ErrorClientState.links.isEmpty()) return;
@@ -314,7 +293,6 @@ public final class ErrorWorldRenderer {
                 default -> new float[]{0.85f, 0.85f, 0.95f};
             };
 
-            // the string sags a little and trembles
             int segments = 16;
             Vec3 previous = from;
             for (int i = 1; i <= segments; i++) {

@@ -32,9 +32,8 @@ import org.joml.Vector3f;
 
 import java.util.*;
 
-/**
- * Client side counterpart of {@link de.jakob.lotm.network.packets.error.ErrorSyncPacket}.
- */
+// Client side counterpart of ErrorSyncPacket
+
 @EventBusSubscriber(modid = LOTMCraft.MOD_ID, value = Dist.CLIENT)
 public final class ErrorClientHandler {
 
