@@ -16,6 +16,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.Level;
@@ -39,8 +41,11 @@ public class DarknessPourEntity extends Entity {
     private static final EntityDataAccessor<Boolean> DESTINATION = SynchedEntityData.defineId(DarknessPourEntity.class, EntityDataSerializers.BOOLEAN);
     private static final int BAND = 8;
 
+    private static final List<DarknessPourEntity> active = new ArrayList<>();
+
     private final Map<UUID, Integer> stage = new HashMap<>();
     private final Set<UUID> sealed = new HashSet<>();
+    private final Set<UUID> loose = new HashSet<>();
     private final Map<UUID, Vec3> anchor = new HashMap<>();
     private final Set<UUID> physics = new HashSet<>();
     private final Set<Long> darkened = new HashSet<>();
@@ -48,6 +53,7 @@ public class DarknessPourEntity extends Entity {
     private float shown;
     private int age;
     private boolean restored;
+    private boolean listed;
 
     public DarknessPourEntity(EntityType<?> type, Level level) {
         super(type, level);
@@ -65,6 +71,10 @@ public class DarknessPourEntity extends Entity {
     public void tick() {
         super.tick();
         if (!(level() instanceof ServerLevel serverLevel)) return;
+        if (!listed) {
+            active.add(this);
+            listed = true;
+        }
         age++;
         boolean destination = entityData.get(DESTINATION);
         int life = destination ? 20 * 18 + 1 : 20 * 12 + 1;
@@ -99,8 +109,10 @@ public class DarknessPourEntity extends Entity {
             int elapsed = age - step;
             float progress = Math.min(1f, elapsed / (float) delay);
             shake(target, progress);
-            sink(target, progress);
-            sinking.add(target.getUUID());
+            if (!loose.contains(target.getUUID())) {
+                sink(target, progress);
+                sinking.add(target.getUUID());
+            }
             if (!sealed.contains(target.getUUID()) && delay - elapsed <= 40) {
                 AbilityUtil.sealAllTargetAbilities(owner == null ? target : owner, target, "dissolve", 40);
                 sealed.add(target.getUUID());
@@ -109,16 +121,42 @@ public class DarknessPourEntity extends Entity {
                 target.kill();
                 stage.put(target.getUUID(), age + life);
             } else if (elapsed >= 40) {
-                target.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.WEAKNESS, 40, 2, false, false, false));
-                target.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN, 40, 3, false, false, false));
-                target.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.DIG_SLOWDOWN, 40, 2, false, false, false));
+                target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 40, 2, false, false, false));
+                target.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, 40, 2, false, false, false));
             }
         }
         physics.removeIf(id -> {
             if (sinking.contains(id)) return false;
+            anchor.remove(id);
             if (serverLevel.getEntity(id) instanceof LivingEntity living) living.noPhysics = false;
             return true;
         });
+    }
+
+    public static void releasePull(LivingEntity target) {
+        UUID id = target.getUUID();
+        for (DarknessPourEntity pour : active) {
+            if (!pour.loose.add(id)) continue;
+            pour.anchor.remove(id);
+            pour.physics.remove(id);
+        }
+        target.noPhysics = false;
+    }
+
+    private void sink(LivingEntity target, float progress) {
+        Vec3 spot = anchor.computeIfAbsent(target.getUUID(), id -> target.position());
+        double y = spot.y - target.getBbHeight() * progress;
+        target.noPhysics = true;
+        target.fallDistance = 0;
+        target.setDeltaMovement(Vec3.ZERO);
+        target.setOnGround(false);
+        physics.add(target.getUUID());
+        if (target instanceof ServerPlayer player) {
+            player.connection.teleport(spot.x, y, spot.z, player.getYRot(), player.getXRot());
+        } else {
+            target.setPos(spot.x, y, spot.z);
+            target.hurtMarked = true;
+        }
     }
 
     private void spread(ServerLevel level, float radius) {
@@ -181,22 +219,6 @@ public class DarknessPourEntity extends Entity {
         darkened.clear();
     }
 
-    private void sink(LivingEntity target, float progress) {
-        Vec3 spot = anchor.computeIfAbsent(target.getUUID(), id -> target.position());
-        double y = spot.y - target.getBbHeight() * progress;
-        target.noPhysics = true;
-        target.fallDistance = 0;
-        target.setDeltaMovement(Vec3.ZERO);
-        target.setOnGround(false);
-        physics.add(target.getUUID());
-        if (target instanceof ServerPlayer player) {
-            player.connection.teleport(spot.x, y, spot.z, player.getYRot(), player.getXRot());
-        } else {
-            target.setPos(spot.x, y, spot.z);
-            target.hurtMarked = true;
-        }
-    }
-
     private static void shake(LivingEntity target, float progress) {
         if (!(target instanceof ServerPlayer player)) return;
         float felt = 0.35f + progress * progress * 7.5f;
@@ -212,6 +234,7 @@ public class DarknessPourEntity extends Entity {
 
     @Override
     public void remove(RemovalReason reason) {
+        active.remove(this);
         if (level() instanceof ServerLevel serverLevel) {
             for (UUID id : physics) {
                 if (serverLevel.getEntity(id) instanceof LivingEntity living) living.noPhysics = false;

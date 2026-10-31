@@ -1,7 +1,16 @@
 package de.jakob.lotm.beyonders.abilities.darkness;
 
 import de.jakob.lotm.LOTMCraft;
+import de.jakob.lotm.beyonders.abilities.core.Ability;
+import de.jakob.lotm.beyonders.abilities.core.AbilityUseEvent;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
+import de.jakob.lotm.beyonders.abilities.door.BlinkAbility;
+import de.jakob.lotm.beyonders.abilities.door.ExileAbility;
+import de.jakob.lotm.beyonders.abilities.door.PlayerTeleportationAbility;
+import de.jakob.lotm.beyonders.abilities.door.TeleportationAuthorityAbility;
+import de.jakob.lotm.beyonders.abilities.door.TravelersDoorAbility;
+import de.jakob.lotm.beyonders.abilities.error.DeceitAbility;
+import de.jakob.lotm.beyonders.abilities.visionary.EnvisionPositionAbility;
 import de.jakob.lotm.effect.ModEffects;
 import de.jakob.lotm.entity.custom.ability_entities.darkness_pathway.DarknessPourEntity;
 import de.jakob.lotm.util.helper.AbilityUtil;
@@ -111,6 +120,21 @@ public class DarknessAuthorityAbility extends SelectableAbility {
         clearMind(target);
         level.sendParticles(DUST, center.getX() + 0.5, center.getY(), center.getZ() + 0.5, 40, 1.2, 0.2, 1.2, 0.01);
         bar(player, "Eternal slumber takes them.");
+    }
+
+    @SubscribeEvent
+    public static void onUse(AbilityUseEvent event) {
+        if (!isEscape(event.getEntity(), event.getAbility())) return;
+        DarknessPourEntity.releasePull(event.getEntity());
+    }
+
+    private static boolean isEscape(LivingEntity caster, Ability ability) {
+        if (ability instanceof ExileAbility || ability instanceof BlinkAbility || ability instanceof PlayerTeleportationAbility || ability instanceof TravelersDoorAbility || ability instanceof TeleportationAuthorityAbility || ability instanceof EnvisionPositionAbility) return true;
+        if (ability instanceof DeceitAbility deceit && deceit.getSelectedAbilityIndex(caster.getUUID()) == 1) return true;
+        for (String flag : ability.getInteractionFlags()) {
+            if (flag.equals("blink_escape") || flag.equals("escape")) return true;
+        }
+        return false;
     }
 
     @SubscribeEvent
