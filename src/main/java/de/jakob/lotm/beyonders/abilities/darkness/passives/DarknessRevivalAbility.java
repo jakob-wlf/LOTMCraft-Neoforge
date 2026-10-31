@@ -81,9 +81,11 @@ public class DarknessRevivalAbility extends PassiveAbility {
                 && BeyonderData.getSequence(killer) == BeyonderData.getSequence(entity)) return;
 
         if (seq1) {
+            var sanity = entity.getData(ModAttachments.SANITY_COMPONENT);
+            sanity.increaseSanityAndSync(-5f, entity);
+            if (sanity.getSanity() < 0.10f) return;
             event.setCanceled(true);
             rise(serverLevel, entity, entity.getMaxHealth() / 2);
-            entity.getData(ModAttachments.SANITY_COMPONENT).increaseSanityAndSync(-5f, entity);
             return;
         }
 
