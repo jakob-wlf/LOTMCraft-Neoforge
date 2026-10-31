@@ -324,7 +324,8 @@ public class NationOfTheDeadAbility extends Ability {
                 if (damagePercent <= 0) return;
 
                 float damage = target.getMaxHealth() * damagePercent;
-                ModDamageTypes.trueDamage(target, damage, serverLevel, entity);
+                target.invulnerableTime = 0;
+                target.hurt(ModDamageTypes.source(serverLevel, ModDamageTypes.SOUL_BASED, entity), damage);
 
                 Vec3 targetPos = target.position();
                 spawnShellParticles(serverLevel, ParticleTypes.SOUL, targetPos, 1.5, 16);

@@ -1,5 +1,6 @@
 package de.jakob.lotm.beyonders.abilities.darkness.passives;
 
+import de.jakob.lotm.beyonders.abilities.death.passives.AbsoluteDeathAbility;
 import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.beyonders.abilities.core.PassiveAbility;
@@ -72,6 +73,7 @@ public class DarknessRevivalAbility extends PassiveAbility {
         if (!(entity.level() instanceof ServerLevel serverLevel)) return;
         if (LawAbility.SOLACE_KILLED.contains(entity.getUUID())) return;
         if (JusticeEnforcement.inHalo(entity)) return;
+        if (AbsoluteDeathAbility.isEffectedByAbsoluteDeath(entity)) return;
 
         boolean seq1 = "darkness".equals(BeyonderData.getPathway(entity)) && BeyonderData.getSequence(entity) == 1;
         if (seq1 && event.getSource().getEntity() instanceof LivingEntity killer

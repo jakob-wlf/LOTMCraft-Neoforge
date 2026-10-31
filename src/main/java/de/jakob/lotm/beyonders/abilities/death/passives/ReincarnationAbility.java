@@ -80,6 +80,7 @@ public class ReincarnationAbility extends PassiveAbility {
 
         if (!PassiveAbilityHandler.getById("reincarnation_ability").shouldApplyTo(player)) return;
         if (!BeyonderData.isBeyonder(player)) return;
+        if (AbsoluteDeathAbility.isEffectedByAbsoluteDeath(player)) return;
 
         int sequence = BeyonderData.getSequence(player);
         long cooldownMs = getCooldownMs(sequence);

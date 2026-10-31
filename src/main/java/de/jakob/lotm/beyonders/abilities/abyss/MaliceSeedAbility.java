@@ -1,5 +1,6 @@
 package de.jakob.lotm.beyonders.abilities.abyss;
 
+import de.jakob.lotm.beyonders.abilities.death.passives.AbsoluteDeathAbility;
 import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.beyonders.abilities.core.interaction.InteractionHandler;
@@ -142,6 +143,7 @@ public class MaliceSeedAbility extends Ability {
         LivingEntity caster = event.getEntity();
         if (LawAbility.SOLACE_KILLED.contains(caster.getUUID())) return;
         if (!(caster.level() instanceof ServerLevel serverLevel)) return;
+        if (AbsoluteDeathAbility.isEffectedByAbsoluteDeath(caster)) return;
 
         UUID casterUUID = caster.getUUID();
         if (!casterTarget.containsKey(casterUUID)) return;
