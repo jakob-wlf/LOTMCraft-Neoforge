@@ -555,6 +555,7 @@ public class ConcealmentAbility extends SelectableAbility {
         if (!(entity instanceof ServerPlayer player) || !(level instanceof ServerLevel)) return;
         boolean removed = veils.removeIf(veil -> veil.caster.equals(player.getUUID()) && veil.ground == ground);
         if (removed) {
+            syncVeils(player.server);
             bar(player, "The concealment lifts.");
             return;
         }
@@ -562,6 +563,7 @@ public class ConcealmentAbility extends SelectableAbility {
         double radius = ground ? 4 : 10 + Math.max(0, 2 - seq) * 4.0;
         long until = ground ? ((ServerLevel) level).getServer().overworld().getGameTime() + GROUND_TICKS : Long.MAX_VALUE;
         veils.add(new Veil(player.getUUID(), level.dimension(), player.getX(), player.getY(), player.getZ(), radius, seq, ground, until));
+        syncVeils(player.server);
         bar(player, ground ? "The ground gives way." : "The area slips out of sight.");
     }
 
@@ -678,6 +680,10 @@ public class ConcealmentAbility extends SelectableAbility {
     }
 
     private static boolean canPass(LivingEntity entity, Veil veil) {
+        if (entity.getUUID().equals(veil.caster)) return true;
+        if (!veil.ground) {
+            return "darkness".equals(BeyonderData.getPathway(entity)) && BeyonderData.getSequence(entity) < veil.casterSeq;
+        }
         if (sees(entity)) return true;
         return BeyonderData.getSequence(entity) <= veil.casterSeq - 1;
     }
@@ -762,14 +768,23 @@ public class ConcealmentAbility extends SelectableAbility {
     private static void syncVeils(MinecraftServer server) {
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             ArrayList<Double> packed = new ArrayList<>();
-            if (!sees(player)) {
-                for (Veil veil : veils) {
-                    if (!veil.dimension.equals(player.level().dimension())) continue;
-                    packed.add(veil.x);
-                    packed.add(veil.y);
-                    packed.add(veil.z);
-                    packed.add(veil.radius);
-                }
+            boolean darkness = "darkness".equals(BeyonderData.getPathway(player));
+            int seq = BeyonderData.getSequence(player);
+            boolean blind = !sees(player);
+            for (Veil veil : veils) {
+                if (!veil.dimension.equals(player.level().dimension())) continue;
+                boolean own = veil.caster.equals(player.getUUID());
+                boolean higher = !veil.ground && darkness && seq < veil.casterSeq;
+                boolean lower = !veil.ground && darkness && seq > veil.casterSeq;
+                boolean hide = veil.ground || !darkness ? blind : lower;
+                double look = !veil.ground && own ? 0.5 : lower ? 1.0 : higher ? 0.5 : 0.0;
+                packed.add(veil.x);
+                packed.add(veil.y);
+                packed.add(veil.z);
+                packed.add(veil.radius);
+                packed.add(hide ? 1.0 : 0.0);
+                packed.add(veil.ground ? 1.0 : 0.0);
+                packed.add(look);
             }
             PacketHandler.sendToPlayer(player, new SyncConcealmentVeilsPacket(packed));
         }

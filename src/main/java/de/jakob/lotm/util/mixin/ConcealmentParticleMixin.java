@@ -17,6 +17,6 @@ public class ConcealmentParticleMixin {
         AABB box = particle.getBoundingBox();
         if (box == null) return;
         Vec3 center = box.getCenter();
-        if (ClientHandler.concealmentHides(center.x, center.y, center.z)) ci.cancel();
+        if (ClientHandler.concealmentMutes(center.x, center.y, center.z)) ci.cancel();
     }
 }

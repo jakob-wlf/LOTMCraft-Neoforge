@@ -298,15 +298,39 @@ public class ClientHandler {
         if (packed != null) concealmentSpheres.addAll(packed);
     }
 
+    public static final int VEIL_STRIDE = 7;
+
+    public static List<Double> concealmentSpheres() {
+        return concealmentSpheres;
+    }
+
     public static boolean concealmentHides(double x, double y, double z) {
-        for (int i = 0; i + 3 < concealmentSpheres.size(); i += 4) {
-            double dx = x - concealmentSpheres.get(i);
-            double dy = y - concealmentSpheres.get(i + 1);
-            double dz = z - concealmentSpheres.get(i + 2);
-            double radius = concealmentSpheres.get(i + 3);
-            if (dx * dx + dy * dy + dz * dz < radius * radius) return true;
+        Vec3 camera = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+        for (int i = 0; i + VEIL_STRIDE - 1 < concealmentSpheres.size(); i += VEIL_STRIDE) {
+            if (concealmentSpheres.get(i + 4) < 0.5 || !insideVeil(i, x, y, z)) continue;
+            boolean ground = concealmentSpheres.get(i + 5) > 0.5;
+            if (!ground && insideVeil(i, camera.x, camera.y, camera.z)) continue;
+            return true;
         }
         return false;
+    }
+
+    public static boolean concealmentMutes(double x, double y, double z) {
+        if (concealmentHides(x, y, z)) return true;
+        Vec3 camera = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+        for (int i = 0; i + VEIL_STRIDE - 1 < concealmentSpheres.size(); i += VEIL_STRIDE) {
+            if (concealmentSpheres.get(i + 5) > 0.5) continue;
+            if (insideVeil(i, camera.x, camera.y, camera.z) && !insideVeil(i, x, y, z)) return true;
+        }
+        return false;
+    }
+
+    private static boolean insideVeil(int index, double x, double y, double z) {
+        double dx = x - concealmentSpheres.get(index);
+        double dy = y - concealmentSpheres.get(index + 1);
+        double dz = z - concealmentSpheres.get(index + 2);
+        double radius = concealmentSpheres.get(index + 3);
+        return dx * dx + dy * dy + dz * dz < radius * radius;
     }
 
     public static void addEffect(AddEffectPacket packet) {
