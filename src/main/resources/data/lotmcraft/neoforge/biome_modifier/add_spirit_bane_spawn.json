@@ -1,5 +1,6 @@
 {
-  "type": "neoforge:add_spawns",
+  "type": "lotmcraft:configurable_add_spawns",
+  "spawn_group": "mob",
   "biomes": [
     "lotmcraft:spirit_wool_meadows",
     "lotmcraft:spirit_void_gardens",

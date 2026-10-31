@@ -68,7 +68,7 @@ public abstract class ToggleAbility extends Ability {
     public void prepareTick(Level level, LivingEntity entity) {
         if(!level.isClientSide && shouldConsumeSpirituality(entity)) {
             float cost = getSpiritualityCost();
-            if(BeyonderData.getSpirituality(entity) <= cost) {
+            if(BeyonderData.getSpirituality(entity) <= cost * BeyonderData.getSpiritualityCostMultiplier()) {
                 cancel((ServerLevel) level, entity);
                 return;
             }

@@ -1458,7 +1458,7 @@ public class AbilityUtil {
 
     public static void refund(Player player, Ability ability, boolean cd, boolean sp) {
         if(cd) player.getData(ModAttachments.COOLDOWN_COMPONENT).setCooldown(ability.getId(), 0);
-        if(sp) BeyonderData.incrementSpirituality(player, ability.spiritualityCost(BeyonderData.getSequence(player)));
+        if(sp) BeyonderData.incrementSpirituality(player, ability.spiritualityCost(BeyonderData.getSequence(player)) * BeyonderData.getSpiritualityCostMultiplier());
     }
 
 }

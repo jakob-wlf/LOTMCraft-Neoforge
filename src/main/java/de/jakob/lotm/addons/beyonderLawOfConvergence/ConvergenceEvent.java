@@ -1,5 +1,6 @@
 package de.jakob.lotm.addons.beyonderLawOfConvergence;
 
+import de.jakob.lotm.util.Config;
 import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.entity.ModEntities;
@@ -155,9 +156,9 @@ public class ConvergenceEvent {
 
     private static int getTime(int seq){
         return switch (seq){
-            case 9,8,7 -> 60 * 35;
-            case 6,5 -> 60 * 55 ;
-            case 4,3,2,1,0 -> 60 * 90;
+            case 9,8,7 -> Config.CONVERGENCE_TIME_LOW_SEQUENCES.get();
+            case 6,5 -> Config.CONVERGENCE_TIME_MID_SEQUENCES.get();
+            case 4,3,2,1,0 -> Config.CONVERGENCE_TIME_HIGH_SEQUENCES.get();
             default -> 0;
         };
     }
