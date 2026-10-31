@@ -4,11 +4,7 @@ import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.beyonders.abilities.core.AbilityUseEvent;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
-import de.jakob.lotm.beyonders.abilities.door.BlinkAbility;
-import de.jakob.lotm.beyonders.abilities.door.ExileAbility;
-import de.jakob.lotm.beyonders.abilities.door.PlayerTeleportationAbility;
-import de.jakob.lotm.beyonders.abilities.door.TeleportationAuthorityAbility;
-import de.jakob.lotm.beyonders.abilities.door.TravelersDoorAbility;
+import de.jakob.lotm.beyonders.abilities.door.*;
 import de.jakob.lotm.beyonders.abilities.error.DeceitAbility;
 import de.jakob.lotm.beyonders.abilities.visionary.EnvisionPositionAbility;
 import de.jakob.lotm.effect.ModEffects;
@@ -23,7 +19,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -129,7 +124,7 @@ public class DarknessAuthorityAbility extends SelectableAbility {
     }
 
     private static boolean isEscape(LivingEntity caster, Ability ability) {
-        if (ability instanceof ExileAbility || ability instanceof BlinkAbility || ability instanceof PlayerTeleportationAbility || ability instanceof TravelersDoorAbility || ability instanceof TeleportationAuthorityAbility || ability instanceof EnvisionPositionAbility) return true;
+        if (ability instanceof ExileAbility || ability instanceof BlinkAbility || ability instanceof PlayerTeleportationAbility || ability instanceof TravelersDoorAbility || ability instanceof TeleportationAuthorityAbility || ability instanceof EnvisionPositionAbility || ability instanceof WaypointAbility) return true;
         if (ability instanceof DeceitAbility deceit && deceit.getSelectedAbilityIndex(caster.getUUID()) == 1) return true;
         for (String flag : ability.getInteractionFlags()) {
             if (flag.equals("blink_escape") || flag.equals("escape")) return true;
