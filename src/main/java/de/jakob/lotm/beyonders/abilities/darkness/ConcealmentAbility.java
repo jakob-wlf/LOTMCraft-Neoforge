@@ -467,6 +467,7 @@ public class ConcealmentAbility extends SelectableAbility {
     private record Mark(UUID caster, int casterSeq, long until) {}
 
     private static final List<Veil> veils = new ArrayList<>();
+    private static final Set<UUID> intruders = new HashSet<>();
     private static final Map<UUID, Mark> concealedOthers = new HashMap<>();
     private static final Set<UUID> peaceful = new HashSet<>();
     private static final List<Secret> secrets = new ArrayList<>();
@@ -544,6 +545,7 @@ public class ConcealmentAbility extends SelectableAbility {
         else duration = 20 * 4;
         long until = serverLevel.getServer().overworld().getGameTime() + duration;
         concealedOthers.put(target.getUUID(), new Mark(entity.getUUID(), casterSeq, until));
+        syncVeils(serverLevel.getServer());
         if (target instanceof ServerPlayer playerTarget) {
             playerTarget.getData(ModAttachments.FOG_COMPONENT.get()).concealFor(duration * 50L, playerTarget);
             bar(playerTarget, "Darkness covers your eyes.");
@@ -553,13 +555,15 @@ public class ConcealmentAbility extends SelectableAbility {
 
     private void concealArea(Level level, LivingEntity entity, boolean ground) {
         if (!(entity instanceof ServerPlayer player) || !(level instanceof ServerLevel)) return;
-        boolean removed = veils.removeIf(veil -> veil.caster.equals(player.getUUID()) && veil.ground == ground);
-        if (removed) {
-            syncVeils(player.server);
-            bar(player, "The concealment lifts.");
-            return;
-        }
         int seq = AbilityUtil.getSeqWithArt(entity, this);
+        if (ground || seq > 0) {
+            boolean removed = veils.removeIf(veil -> veil.caster.equals(player.getUUID()) && veil.ground == ground);
+            if (removed) {
+                syncVeils(player.server);
+                bar(player, "The concealment lifts.");
+                return;
+            }
+        }
         double radius = ground ? 4 : 10 + Math.max(0, 2 - seq) * 4.0;
         long until = ground ? ((ServerLevel) level).getServer().overworld().getGameTime() + GROUND_TICKS : Long.MAX_VALUE;
         veils.add(new Veil(player.getUUID(), level.dimension(), player.getX(), player.getY(), player.getZ(), radius, seq, ground, until));
@@ -677,6 +681,15 @@ public class ConcealmentAbility extends SelectableAbility {
         if (target instanceof ServerPlayer player) {
             player.getData(ModAttachments.FOG_COMPONENT.get()).clearFog(player);
         }
+        if (target.level().getServer() != null) syncVeils(target.level().getServer());
+    }
+
+    private static boolean seesVeil(LivingEntity entity, Veil veil) {
+        if (veil.caster.equals(entity.getUUID())) return true;
+        if (!veil.ground && "darkness".equals(BeyonderData.getPathway(entity)) && BeyonderData.getSequence(entity) > veil.casterSeq) return false;
+        if (sees(entity)) return true;
+        if ("door".equals(BeyonderData.getPathway(entity)) && BeyonderData.getSequence(entity) == 0) return true;
+        return !veil.ground && "darkness".equals(BeyonderData.getPathway(entity));
     }
 
     private static boolean canPass(LivingEntity entity, Veil veil) {
@@ -704,20 +717,18 @@ public class ConcealmentAbility extends SelectableAbility {
         player.connection.send(new ClientboundSetActionBarTextPacket(Component.literal(text).withColor(0xFF3300b5)));
     }
 
-    private static void holdBack(LivingEntity entity) {
+    private static void watch(ServerPlayer player) {
+        boolean bare = false;
         for (Veil veil : veils) {
-            if (veil.ground || !inside(entity, veil) || canPass(entity, veil)) continue;
-            double dx = entity.getX() - veil.x;
-            double dy = entity.getY() - veil.y;
-            double dz = entity.getZ() - veil.z;
-            double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-            double scale = dist < 0.01 ? veil.radius + 0.6 : (veil.radius + 0.6) / dist;
-            if (dist < 0.01) entity.teleportTo(veil.x + veil.radius + 0.6, entity.getY(), veil.z);
-            else entity.teleportTo(veil.x + dx * scale, veil.y + dy * scale, veil.z + dz * scale);
-            entity.setDeltaMovement(Vec3.ZERO);
-            entity.hurtMarked = true;
-            return;
+            if (veil.ground || !inside(player, veil) || seesVeil(player, veil)) continue;
+            bare = true;
+            break;
         }
+        boolean was = intruders.contains(player.getUUID());
+        if (bare == was) return;
+        if (bare) intruders.add(player.getUUID());
+        else intruders.remove(player.getUUID());
+        syncVeils(player.server);
     }
 
     private static void dropFloor(LivingEntity entity) {
@@ -766,18 +777,23 @@ public class ConcealmentAbility extends SelectableAbility {
     }
 
     private static void syncVeils(MinecraftServer server) {
+        List<Integer> bare = bareIds(server);
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             ArrayList<Double> packed = new ArrayList<>();
             boolean darkness = "darkness".equals(BeyonderData.getPathway(player));
             int seq = BeyonderData.getSequence(player);
+            boolean door = "door".equals(BeyonderData.getPathway(player)) && seq == 0;
             boolean blind = !sees(player);
             for (Veil veil : veils) {
                 if (!veil.dimension.equals(player.level().dimension())) continue;
                 boolean own = veil.caster.equals(player.getUUID());
-                boolean higher = !veil.ground && darkness && seq < veil.casterSeq;
                 boolean lower = !veil.ground && darkness && seq > veil.casterSeq;
-                boolean hide = veil.ground || !darkness ? blind : lower;
-                double look = !veil.ground && own ? 0.5 : lower ? 1.0 : higher ? 0.5 : 0.0;
+                boolean same = !veil.ground && darkness && seq == veil.casterSeq;
+                boolean doorShell = door && !veil.ground && veil.casterSeq == 0;
+                boolean hide = own ? false : door ? doorShell : veil.ground || !darkness ? blind : lower || same;
+                boolean sees = seesVeil(player, veil);
+                double look = veil.ground || !sees ? 0.0 : 0.5;
+                boolean affected = veil.ground || !inside(player, veil) || seesVeil(player, veil);
                 packed.add(veil.x);
                 packed.add(veil.y);
                 packed.add(veil.z);
@@ -785,9 +801,51 @@ public class ConcealmentAbility extends SelectableAbility {
                 packed.add(hide ? 1.0 : 0.0);
                 packed.add(veil.ground ? 1.0 : 0.0);
                 packed.add(look);
+                packed.add(affected ? 1.0 : 0.0);
             }
-            PacketHandler.sendToPlayer(player, new SyncConcealmentVeilsPacket(packed));
+            PacketHandler.sendToPlayer(player, new SyncConcealmentVeilsPacket(packed, bare, concealedIds(server, player)));
         }
+    }
+
+    private static List<Integer> concealedIds(MinecraftServer server, ServerPlayer viewer) {
+        ArrayList<Integer> ids = new ArrayList<>();
+        if (concealedOthers.isEmpty()) return ids;
+        boolean darkness = "darkness".equals(BeyonderData.getPathway(viewer));
+        int seq = BeyonderData.getSequence(viewer);
+        boolean door = "door".equals(BeyonderData.getPathway(viewer)) && seq == 0;
+        boolean blind = !sees(viewer);
+        long time = server.overworld().getGameTime();
+        for (var entry : concealedOthers.entrySet()) {
+            if (entry.getKey().equals(viewer.getUUID())) continue;
+            Mark mark = entry.getValue();
+            if (mark.until <= time || mark.caster.equals(viewer.getUUID())) continue;
+            boolean lower = darkness && seq > mark.casterSeq;
+            boolean same = darkness && seq == mark.casterSeq;
+            boolean doorShell = door && mark.casterSeq == 0;
+            boolean hide = door ? doorShell : !darkness ? blind : lower || same;
+            if (!hide) continue;
+            for (ServerLevel level : server.getAllLevels()) {
+                Entity entity = level.getEntity(entry.getKey());
+                if (entity == null) continue;
+                ids.add(entity.getId());
+                break;
+            }
+        }
+        return ids;
+    }
+
+    private static List<Integer> bareIds(MinecraftServer server) {
+        ArrayList<Integer> ids = new ArrayList<>();
+        for (Veil veil : veils) {
+            if (veil.ground) continue;
+            ServerLevel level = server.getLevel(veil.dimension);
+            if (level == null) continue;
+            AABB box = new AABB(veil.x - veil.radius, veil.y - veil.radius, veil.z - veil.radius, veil.x + veil.radius, veil.y + veil.radius, veil.z + veil.radius);
+            for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, box, living -> inside(living, veil) && !seesVeil(living, veil))) {
+                ids.add(entity.getId());
+            }
+        }
+        return ids;
     }
 
     private static void shoveMobs(MinecraftServer server) {
@@ -795,9 +853,9 @@ public class ConcealmentAbility extends SelectableAbility {
             ServerLevel level = server.getLevel(veil.dimension);
             if (level == null) continue;
             AABB box = new AABB(veil.x - veil.radius, veil.y - veil.radius, veil.z - veil.radius, veil.x + veil.radius, veil.y + veil.radius, veil.z + veil.radius);
+            if (!veil.ground) continue;
             for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, box, living -> !(living instanceof Player))) {
-                if (veil.ground) dropFloor(entity);
-                else holdBack(entity);
+                dropFloor(entity);
             }
         }
     }
@@ -805,7 +863,7 @@ public class ConcealmentAbility extends SelectableAbility {
     @SubscribeEvent
     public static void onPlayerTick(PlayerTickEvent.Post event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
-        holdBack(player);
+        watch(player);
         dropFloor(player);
         calm(player);
         if (peaceful.contains(player.getUUID())) {
@@ -827,14 +885,16 @@ public class ConcealmentAbility extends SelectableAbility {
             if (caster != null) bar(caster, "The ground settles.");
             return true;
         });
+        int concealedBefore = concealedOthers.size();
         concealedOthers.entrySet().removeIf(entry -> {
             if (entry.getValue().until > time) return false;
             ServerPlayer concealed = level.getServer().getPlayerList().getPlayer(entry.getKey());
             if (concealed != null) concealed.getData(ModAttachments.FOG_COMPONENT.get()).clearFog(concealed);
             return true;
         });
+        intruders.removeIf(id -> level.getServer().getPlayerList().getPlayer(id) == null);
         if (time % 5 == 0) shoveMobs(level.getServer());
-        if (time % 20 == 0) syncVeils(level.getServer());
+        if (concealedBefore != concealedOthers.size() || time % 20 == 0) syncVeils(level.getServer());
     }
 
     @SubscribeEvent
@@ -864,17 +924,20 @@ public class ConcealmentAbility extends SelectableAbility {
 
     @SubscribeEvent
     public static void onAttack(AttackEntityEvent event) {
-        if (locked(event.getEntity())) event.setCanceled(true);
+        if (!locked(event.getEntity())) return;
+        if (event.getTarget() instanceof LivingEntity victim && inArea(victim)) return;
+        event.setCanceled(true);
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onHurt(LivingIncomingDamageEvent event) {
-        if (hiddenFromHarm(event.getEntity())) {
+        LivingEntity attacker = event.getSource().getEntity() instanceof LivingEntity living ? living : null;
+        if (hiddenFromHarm(event.getEntity()) && (attacker == null || attacker == event.getEntity() || !inArea(attacker))) {
             event.setCanceled(true);
             event.setAmount(0);
             return;
         }
-        if (!(event.getSource().getEntity() instanceof LivingEntity attacker) || attacker == event.getEntity()) return;
+        if (attacker == null || attacker == event.getEntity()) return;
         if (crossesArea(attacker, event.getEntity())) {
             event.setCanceled(true);
             event.setAmount(0);
@@ -894,10 +957,26 @@ public class ConcealmentAbility extends SelectableAbility {
         return Math.abs(player.getX() - secret.x) <= reach && Math.abs(player.getZ() - secret.z) <= reach;
     }
 
+    private static boolean inArea(LivingEntity entity) {
+        for (Veil veil : veils) {
+            if (!veil.ground && inside(entity, veil)) return true;
+        }
+        return false;
+    }
+
     private static boolean crossesArea(LivingEntity attacker, LivingEntity victim) {
+        if (hiddenFromHarm(victim) && inArea(attacker)) return false;
+        if (hiddenFromHarm(attacker) && inArea(victim)) return false;
         for (Veil veil : veils) {
             if (veil.ground) continue;
-            if (inside(attacker, veil) != inside(victim, veil)) return true;
+            if (inside(victim, veil) && seesVeil(victim, veil) && (attacker.getUUID().equals(veil.caster) || (inside(attacker, veil) && seesVeil(attacker, veil)))) {
+                return false;
+            }
+        }
+        for (Veil veil : veils) {
+            if (veil.ground) continue;
+            if (!seesVeil(attacker, veil) && inside(victim, veil) && seesVeil(victim, veil)) return true;
+            if (inside(attacker, veil) && seesVeil(attacker, veil)) return true;
         }
         return false;
     }

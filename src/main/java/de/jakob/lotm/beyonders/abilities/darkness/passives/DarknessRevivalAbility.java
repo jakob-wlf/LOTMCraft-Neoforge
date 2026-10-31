@@ -9,11 +9,15 @@ import de.jakob.lotm.beyonders.abilities.justiciar.LawAbility;
 import de.jakob.lotm.beyonders.abilities.sun.justice.JusticeEnforcement;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.helper.ParticleUtil;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -97,8 +101,45 @@ public class DarknessRevivalAbility extends PassiveAbility {
     }
 
     private static void rise(ServerLevel level, LivingEntity entity, float health) {
+        BlockPos spot = darkSpot(level);
+        if (spot != null) {
+            double x = spot.getX() + 0.5;
+            double y = spot.getY();
+            double z = spot.getZ() + 0.5;
+            entity.fallDistance = 0;
+            if (entity instanceof ServerPlayer player) {
+                player.connection.teleport(x, y, z, player.getYRot(), player.getXRot());
+            } else {
+                entity.teleportTo(x, y, z);
+            }
+        }
         entity.setHealth(health);
         ParticleUtil.spawnParticles(level, dust, entity.position().add(0, entity.getEyeHeight() / 2, 0),
                 40, .5, entity.getEyeHeight() / 2, .5, 0.1);
+    }
+
+    private static BlockPos darkSpot(ServerLevel level) {
+        var border = level.getWorldBorder();
+        double minX = border.getMinX() + 1;
+        double maxX = border.getMaxX() - 1;
+        double minZ = border.getMinZ() + 1;
+        double maxZ = border.getMaxZ() - 1;
+        if (maxX <= minX || maxZ <= minZ) return null;
+        var random = level.random;
+        int floor = level.getMinBuildHeight() + 2;
+        for (int attempt = 0; attempt < 48; attempt++) {
+            int x = Mth.floor(Mth.lerp(random.nextDouble(), minX, maxX));
+            int z = Mth.floor(Mth.lerp(random.nextDouble(), minZ, maxZ));
+            level.getChunk(x >> 4, z >> 4);
+            int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+            for (int y = top; y >= floor; y--) {
+                BlockPos feet = new BlockPos(x, y, z);
+                if (!level.getBlockState(feet).isAir() || !level.getBlockState(feet.above()).isAir()) continue;
+                if (level.getBlockState(feet.below()).getCollisionShape(level, feet.below()).isEmpty()) continue;
+                if (level.getMaxLocalRawBrightness(feet) >= 7) continue;
+                return feet;
+            }
+        }
+        return null;
     }
 }

@@ -65,6 +65,7 @@ import org.joml.Random;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -73,6 +74,8 @@ import java.util.UUID;
 public class ClientHandler {
     public static Boolean isSpectating = false;
     private static final ArrayList<Double> concealmentSpheres = new ArrayList<>();
+    private static final HashSet<Integer> bareConcealment = new HashSet<>();
+    private static final HashSet<Integer> concealedOthers = new HashSet<>();
 
     private static final HashMap<UUID, EntityEffectExecutor> activeEffects = new HashMap<>();
     private static final HashMap<UUID, BlockEffectExecutor> activeBlockEffects = new HashMap<>();
@@ -303,15 +306,25 @@ public class ClientHandler {
         entity.getData(ModAttachments.FOG_COMPONENT.get()).apply(packet.active(), packet.index(), new Vec3f(packet.red(), packet.green(), packet.blue()), packet.durationMillis());
     }
 
-    public static void setConcealmentSpheres(List<Double> packed) {
+    public static void setConcealmentSpheres(List<Double> packed, List<Integer> bare, List<Integer> concealed) {
         concealmentSpheres.clear();
+        bareConcealment.clear();
+        concealedOthers.clear();
         if (packed != null) concealmentSpheres.addAll(packed);
+        if (bare != null) bareConcealment.addAll(bare);
+        if (concealed != null) concealedOthers.addAll(concealed);
     }
 
-    public static final int VEIL_STRIDE = 7;
+    public static final int VEIL_STRIDE = 8;
 
     public static List<Double> concealmentSpheres() {
         return concealmentSpheres;
+    }
+
+    public static boolean concealmentHides(Entity entity) {
+        if (concealedOthers.contains(entity.getId())) return true;
+        if (bareConcealment.contains(entity.getId())) return false;
+        return concealmentHides(entity.getX(), entity.getY(), entity.getZ());
     }
 
     public static boolean concealmentHides(double x, double y, double z) {
@@ -319,7 +332,8 @@ public class ClientHandler {
         for (int i = 0; i + VEIL_STRIDE - 1 < concealmentSpheres.size(); i += VEIL_STRIDE) {
             if (concealmentSpheres.get(i + 4) < 0.5 || !insideVeil(i, x, y, z)) continue;
             boolean ground = concealmentSpheres.get(i + 5) > 0.5;
-            if (!ground && insideVeil(i, camera.x, camera.y, camera.z)) continue;
+            boolean affected = concealmentSpheres.get(i + 7) > 0.5;
+            if (!ground && affected && insideVeil(i, camera.x, camera.y, camera.z)) continue;
             return true;
         }
         return false;
@@ -329,7 +343,7 @@ public class ClientHandler {
         if (concealmentHides(x, y, z)) return true;
         Vec3 camera = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
         for (int i = 0; i + VEIL_STRIDE - 1 < concealmentSpheres.size(); i += VEIL_STRIDE) {
-            if (concealmentSpheres.get(i + 5) > 0.5) continue;
+            if (concealmentSpheres.get(i + 5) > 0.5 || concealmentSpheres.get(i + 7) < 0.5) continue;
             if (insideVeil(i, camera.x, camera.y, camera.z) && !insideVeil(i, x, y, z)) return true;
         }
         return false;

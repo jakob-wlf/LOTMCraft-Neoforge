@@ -67,7 +67,7 @@ public class ConcealedAreaRenderer {
         List<Double> veils = ClientHandler.concealmentSpheres();
         int stride = ClientHandler.VEIL_STRIDE;
         for (int i = 0; i + stride - 1 < veils.size(); i += stride) {
-            if (veils.get(i + 5) > 0.5) continue;
+            if (veils.get(i + 5) > 0.5 || veils.get(i + 7) < 0.5) continue;
             double r = veils.get(i + 3);
             if (camera.distanceToSqr(veils.get(i), veils.get(i + 1), veils.get(i + 2)) < r * r) return r;
         }
@@ -200,7 +200,8 @@ public class ConcealedAreaRenderer {
             if (look < 0.25) continue;
             Vec3 center = new Vec3(veils.get(i), veils.get(i + 1), veils.get(i + 2));
             float radius = veils.get(i + 3).floatValue();
-            boolean inside = camera.distanceToSqr(center) < radius * radius;
+            boolean inside = camera.distanceToSqr(center) < (double) radius * radius;
+            if (veils.get(i + 7) < 0.5 && inside) continue;
             boolean dark = look > 0.75;
             float haze = dark ? 0.3f : 0.1f;
 

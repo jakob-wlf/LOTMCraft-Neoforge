@@ -16,6 +16,6 @@ public class ConcealmentRenderMixin {
     @Inject(method = "render(Lnet/minecraft/world/entity/Entity;DDDFFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V", at = @At("HEAD"), cancellable = true)
     private void lotm$hideConcealed(Entity entity, double x, double y, double z, float yaw, float partial, PoseStack pose, MultiBufferSource buffer, int light, CallbackInfo ci) {
         if (Minecraft.getInstance().player == entity) return;
-        if (ClientHandler.concealmentHides(entity.getX(), entity.getY(), entity.getZ())) ci.cancel();
+        if (ClientHandler.concealmentHides(entity)) ci.cancel();
     }
 }
