@@ -276,6 +276,6 @@ public class AreaMiniaturizationAbility extends SelectableAbility {
     }
 
     private void refund(LivingEntity entity) {
-        BeyonderData.incrementSpirituality(entity, spiritualityCost(BeyonderData.getSequence(entity)));
+        BeyonderData.incrementSpirituality(entity, spiritualityCost(BeyonderData.getSequence(entity)) * BeyonderData.getSpiritualityCostMultiplier());
     }
 }

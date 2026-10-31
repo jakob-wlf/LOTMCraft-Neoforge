@@ -337,7 +337,7 @@ public abstract class Ability {
         AbilityCooldownComponent component = entity.getData(ModAttachments.COOLDOWN_COMPONENT);
         if(component.isOnCooldown(id)) return false;
 
-        if((BeyonderData.getSpirituality(entity) < getSpiritualityCost()) && doesConsumeSpirituality) return false;
+        if((BeyonderData.getSpirituality(entity) < getSpiritualityCost() * BeyonderData.getSpiritualityCostMultiplier()) && doesConsumeSpirituality) return false;
 
         if(!(entity instanceof Player) && !canBeUsedByNPC) return false;
 

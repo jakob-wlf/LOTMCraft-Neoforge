@@ -1470,7 +1470,7 @@ public class AbilityUtil {
             player.getData(ModAttachments.COOLDOWN_COMPONENT).setCooldown(ability.getId(), 0);
             AbilityCooldownComponent.syncToClient(player);
         }
-        if(sp) BeyonderData.incrementSpirituality(player, ability.spiritualityCost(BeyonderData.getSequence(player)));
+        if(sp) BeyonderData.incrementSpirituality(player, ability.spiritualityCost(BeyonderData.getSequence(player) * BeyonderData.getSpiritualityCostMultiplier()));
     }
 
 }

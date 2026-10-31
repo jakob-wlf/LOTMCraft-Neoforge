@@ -32,6 +32,50 @@ public class Config
                     obj -> obj instanceof String && ((String) obj).contains(":"));
 
 
+    static {
+        BUILDER.comment("Spawn rates. Multipliers scale the spawn weight of this mod's natural spawns (1.0 = default, 0 = disabled).",
+                "Changes take effect after a world/server restart.").push("spawning");
+    }
+
+    public static final ModConfigSpec.DoubleValue BEYONDER_SPAWN_RATE_MULTIPLIER = BUILDER
+            .comment("Spawn rate multiplier for Beyonder NPCs.")
+            .defineInRange("beyonder_spawn_rate_multiplier", 1.0, 0.0, 100.0);
+
+    public static final ModConfigSpec.DoubleValue MOB_SPAWN_RATE_MULTIPLIER = BUILDER
+            .comment("Spawn rate multiplier for all other mobs of this mod (spirit world creatures, grim reapers, ...).")
+            .defineInRange("mob_spawn_rate_multiplier", 1.0, 0.0, 100.0);
+
+    static {
+        BUILDER.pop();
+        BUILDER.comment("Law of Beyonder Characteristics Convergence.",
+                "Time (in seconds) a Beyonder has to spend in the overworld before convergence can start attracting other Beyonders.").push("convergence");
+    }
+
+    public static final ModConfigSpec.IntValue CONVERGENCE_TIME_LOW_SEQUENCES = BUILDER
+            .comment("Time for Sequence 9 - 7.")
+            .defineInRange("convergence_time_seq_9_to_7", 60 * 35, 0, Integer.MAX_VALUE / 20);
+
+    public static final ModConfigSpec.IntValue CONVERGENCE_TIME_MID_SEQUENCES = BUILDER
+            .comment("Time for Sequence 6 - 5.")
+            .defineInRange("convergence_time_seq_6_to_5", 60 * 55, 0, Integer.MAX_VALUE / 20);
+
+    public static final ModConfigSpec.IntValue CONVERGENCE_TIME_HIGH_SEQUENCES = BUILDER
+            .comment("Time for Sequence 4 - 0.")
+            .defineInRange("convergence_time_seq_4_to_0", 60 * 90, 0, Integer.MAX_VALUE / 20);
+
+    static {
+        BUILDER.pop();
+        BUILDER.push("spirituality");
+    }
+
+    public static final ModConfigSpec.DoubleValue SPIRITUALITY_COST_MULTIPLIER = BUILDER
+            .comment("Multiplier for all spirituality players lose (ability costs, toggle upkeep, drains). 1.0 = default, 0 = free.")
+            .defineInRange("spirituality_cost_multiplier", 1.0, 0.0, 100.0);
+
+    static {
+        BUILDER.pop();
+    }
+
     public static final ModConfigSpec SPEC = BUILDER.build();
 
     public static Set<ResourceLocation> biomes;
