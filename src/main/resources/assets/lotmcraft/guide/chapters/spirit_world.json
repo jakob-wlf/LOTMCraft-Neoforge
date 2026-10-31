@@ -1,0 +1,47 @@
+{
+  "order": 70,
+  "title": "guide.lotmcraft.spirit_world.title",
+  "icon": "minecraft:end_stone",
+  "color": "#2E8A8A",
+  "quote": "guide.lotmcraft.spirit_world.quote",
+  "cover_entity": "lotmcraft:spirit_dervish",
+  "elements": [
+    "guide.lotmcraft.spirit_world.intro_1",
+    "guide.lotmcraft.spirit_world.intro_2",
+    { "type": "heading", "text": "guide.lotmcraft.spirit_world.enter_heading" },
+    "guide.lotmcraft.spirit_world.enter",
+    {
+      "type": "steps",
+      "steps": [
+        "guide.lotmcraft.spirit_world.enter_ritual",
+        "guide.lotmcraft.spirit_world.enter_patch"
+      ]
+    },
+    { "type": "model", "item": "lotmcraft:spirit_portal", "height": 52, "caption": "guide.lotmcraft.spirit_world.portal_caption" },
+    { "type": "note", "style": "tip", "text": "guide.lotmcraft.spirit_world.portal_tip" },
+    { "type": "page_break" },
+    { "type": "heading", "text": "guide.lotmcraft.spirit_world.creatures_heading" },
+    "guide.lotmcraft.spirit_world.creatures",
+    {
+      "type": "entity_grid",
+      "columns": 3,
+      "entities": [
+        { "id": "lotmcraft:spirit_dervish", "note": "guide.lotmcraft.rarity.very_common" },
+        { "id": "lotmcraft:spirit_bubbles", "note": "guide.lotmcraft.rarity.very_common" },
+        { "id": "lotmcraft:spirit_malmouth", "note": "guide.lotmcraft.rarity.common" },
+        { "id": "lotmcraft:spirit_ghost", "note": "guide.lotmcraft.rarity.common" },
+        { "id": "lotmcraft:spirit_blue_wizard", "note": "guide.lotmcraft.rarity.common" },
+        { "id": "lotmcraft:spirit_translucent_wizard", "note": "guide.lotmcraft.rarity.common" },
+        { "id": "lotmcraft:asmann", "note": "guide.lotmcraft.rarity.uncommon" },
+        { "id": "lotmcraft:headless_bride", "note": "guide.lotmcraft.rarity.uncommon" },
+        { "id": "lotmcraft:abscessed_hand", "note": "guide.lotmcraft.rarity.uncommon" },
+        { "id": "lotmcraft:grim_reaper", "note": "guide.lotmcraft.rarity.uncommon" },
+        { "id": "lotmcraft:rabbit_of_knowledge", "note": "guide.lotmcraft.rarity.uncommon" },
+        { "id": "lotmcraft:spirit_bizarro_bane", "note": "guide.lotmcraft.rarity.uncommon" },
+        { "id": "lotmcraft:spirit_bane", "note": "guide.lotmcraft.rarity.rare" },
+        { "id": "lotmcraft:knowledge_demon", "note": "guide.lotmcraft.rarity.rare" }
+      ]
+    },
+    { "type": "note", "style": "warning", "text": "guide.lotmcraft.spirit_world.creatures_warning" }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "order": 30,
+  "title": "guide.lotmcraft.brewing.title",
+  "icon": "lotmcraft:brewing_cauldron",
+  "color": "#2D5E8E",
+  "quote": "guide.lotmcraft.brewing.quote",
+  "elements": [
+    "guide.lotmcraft.brewing.intro",
+    { "type": "crafting", "recipe": "lotmcraft:brewing_cauldron", "caption": "guide.lotmcraft.brewing.craft_caption" },
+    { "type": "heading", "text": "guide.lotmcraft.brewing.fill_heading" },
+    {
+      "type": "steps",
+      "steps": [
+        "guide.lotmcraft.brewing.fill_1",
+        "guide.lotmcraft.brewing.fill_2",
+        "guide.lotmcraft.brewing.fill_3",
+        "guide.lotmcraft.brewing.fill_4"
+      ]
+    },
+    { "type": "potion_recipe", "sequence": 9, "caption": "guide.lotmcraft.brewing.example_caption" },
+    { "type": "note", "style": "warning", "text": "guide.lotmcraft.brewing.warning" },
+    { "type": "heading", "text": "guide.lotmcraft.brewing.drink_heading" },
+    "guide.lotmcraft.brewing.drink",
+    { "type": "link", "chapter": "advancing", "text": "guide.lotmcraft.brewing.link" }
+  ]
+}

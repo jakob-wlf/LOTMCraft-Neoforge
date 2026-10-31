@@ -128,7 +128,6 @@ import de.jakob.lotm.beyonders.potions.BeyonderCharacteristicItemHandler;
 import de.jakob.lotm.beyonders.potions.PotionItemHandler;
 import de.jakob.lotm.beyonders.potions.PotionRecipeItemHandler;
 import de.jakob.lotm.beyonders.quest.QuestRegistry;
-import de.jakob.lotm.rendering.GuidingBookRenderer;
 import de.jakob.lotm.beyonders.rituals.RitualManager;
 import de.jakob.lotm.sound.ModSounds;
 import de.jakob.lotm.structure.ModStructures;
@@ -371,8 +370,6 @@ public class LOTMCraft
             EntityRenderers.register(ModEntities.STONE_GOLEM.get(), StoneGolemRenderer::new);
             EntityRenderers.register(ModEntities.HEADLESS_BRIDE.get(), HeadlessBrideRenderer::new);
 
-
-            GuidingBookRenderer.loadPages(LOTMCraft.MOD_ID);
 
             event.enqueueWork(() -> {
                 ItemBlockRenderTypes.setRenderLayer(ModBlocks.MYSTICAL_RING.get(), RenderType.cutout());
