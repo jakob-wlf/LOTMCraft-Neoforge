@@ -60,10 +60,8 @@ public class DarknessPourEntity extends Entity {
         for (LivingEntity target : serverLevel.getEntitiesOfClass(LivingEntity.class, box, LivingEntity::isAlive)) {
             if (owner != null && target.getUUID().equals(owner.getUUID())) continue;
             if (!entityData.get(DESTINATION) && owner != null && AllyUtil.areAllies(owner, target)) continue;
-            if (entityData.get(DESTINATION)) {
-                String pathway = BeyonderData.getPathway(target);
-                if ("death".equals(pathway) || "mother".equals(pathway)) continue;
-            }
+            String pathway = BeyonderData.getPathway(target);
+            if (BeyonderData.getSequence(target) == 0 && ("death".equals(pathway) || "mother".equals(pathway))) continue;
             int step = stage.getOrDefault(target.getUUID(), 0);
             if (step == 0) {
                 if (target instanceof Mob mob) mob.setNoAi(true);
