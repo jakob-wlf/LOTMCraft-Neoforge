@@ -7,9 +7,14 @@
     "MixinIngredient",
     "PlayerPhantomMixin",
     "EntityPhantomMixin"
+    "ErrorItemNameMixin"
   ],
   "client": [
-    "EntityGlowMixin"
+    "EntityGlowMixin",
+    "ErrorItemModelMixin",
+    "ErrorInventoryScreenMixin",
+    "ErrorInvisibilityMixin",
+    "ErrorParticleMixin"
   ],
   "injectors": {
     "defaultRequire": 1

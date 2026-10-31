@@ -47,6 +47,10 @@ public class MarionetteUtils {
             return false;
         }
 
+        if (de.jakob.lotm.beyonders.abilities.error.StealConnectionAbility.isThreadImmune(entity)) {
+            return false;
+        }
+
         component.setMarionette(true);
         component.setControllerUUID(controller.getStringUUID());
         if (controller instanceof LivingEntity livingController) {

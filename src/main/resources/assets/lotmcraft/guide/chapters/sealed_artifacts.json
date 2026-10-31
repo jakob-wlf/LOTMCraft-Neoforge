@@ -1,0 +1,20 @@
+{
+  "order": 90,
+  "title": "guide.lotmcraft.artifacts.title",
+  "icon": "lotmcraft:sealed_artifact_gem",
+  "color": "#8E5A2D",
+  "quote": "guide.lotmcraft.artifacts.quote",
+  "elements": [
+    "guide.lotmcraft.artifacts.intro_1",
+    "guide.lotmcraft.artifacts.intro_2",
+    { "type": "heading", "text": "guide.lotmcraft.artifacts.forge_heading" },
+    "guide.lotmcraft.artifacts.forge",
+    {
+      "type": "items",
+      "items": ["minecraft:heart_of_the_sea", "minecraft:netherite_sword", "minecraft:nether_star"],
+      "caption": "guide.lotmcraft.artifacts.vessels_caption"
+    },
+    { "type": "note", "style": "warning", "text": "guide.lotmcraft.artifacts.warning" },
+    "guide.lotmcraft.artifacts.destroy"
+  ]
+}

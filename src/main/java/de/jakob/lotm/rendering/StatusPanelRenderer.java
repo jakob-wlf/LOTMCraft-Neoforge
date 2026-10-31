@@ -93,10 +93,13 @@ public class StatusPanelRenderer {
 
         float max = BeyonderData.getMaxSpirituality(pathway, sequence, mc.player);
         float spiritTarget = max > 0 ? HudTheme.clamp01(ClientBeyonderCache.getSpirituality(id) / max) : 0f;
+        // Spirituality Deceit: the bar shows what the Mentor of Deceit wants it to show
+        spiritTarget = de.jakob.lotm.rendering.error.ErrorDeceitDisplay.deceiveSpirituality(spiritTarget, time);
         smoothSpirit = smoothSpirit < 0 ? spiritTarget : smoothSpirit + (spiritTarget - smoothSpirit) * smooth;
         if (Math.abs(smoothSpirit - spiritTarget) < 0.002f) smoothSpirit = spiritTarget;
 
         float sanityTarget = HudTheme.clamp01(mc.player.getData(ModAttachments.SANITY_COMPONENT.get()).getSanity());
+        sanityTarget = de.jakob.lotm.rendering.error.ErrorDeceitDisplay.deceiveSanity(sanityTarget);
         smoothSanity = smoothSanity < 0 ? sanityTarget : smoothSanity + (sanityTarget - smoothSanity) * smooth;
         if (Math.abs(smoothSanity - sanityTarget) < 0.002f) smoothSanity = sanityTarget;
 

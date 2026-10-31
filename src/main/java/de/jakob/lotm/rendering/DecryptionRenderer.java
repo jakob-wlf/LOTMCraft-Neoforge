@@ -12,7 +12,6 @@ public class DecryptionRenderer {
 
     @SubscribeEvent
     public static void onAddLayers(EntityRenderersEvent.AddLayers event) {
-        // Add the petrification layer to all living entity renderers
         event.getSkins().forEach(skin -> {
             addLayerIfPossible(event.getSkin(skin));
         });
@@ -26,6 +25,7 @@ public class DecryptionRenderer {
     private static void addLayerIfPossible(Object renderer) {
         if (renderer instanceof LivingEntityRenderer livingRenderer) {
             livingRenderer.addLayer(new DecryptionRenderLayer(livingRenderer));
+            livingRenderer.addLayer(new de.jakob.lotm.rendering.error.ArmorCrackLayer(livingRenderer));
         }
     }
 }

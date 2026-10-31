@@ -1,0 +1,36 @@
+{
+  "order": 40,
+  "title": "guide.lotmcraft.advancing.title",
+  "icon": "lotmcraft:seer_characteristic",
+  "color": "#8A1C1C",
+  "quote": "guide.lotmcraft.advancing.quote",
+  "elements": [
+    "guide.lotmcraft.advancing.intro",
+    { "type": "heading", "text": "guide.lotmcraft.advancing.acting_heading" },
+    "guide.lotmcraft.advancing.acting",
+    {
+      "type": "steps",
+      "steps": [
+        "guide.lotmcraft.advancing.acting_1",
+        "guide.lotmcraft.advancing.acting_2",
+        "guide.lotmcraft.advancing.acting_3",
+        "guide.lotmcraft.advancing.acting_4"
+      ]
+    },
+    { "type": "heading", "text": "guide.lotmcraft.advancing.safe_heading" },
+    "guide.lotmcraft.advancing.safe",
+    {
+      "type": "steps",
+      "steps": [
+        "guide.lotmcraft.advancing.safe_1",
+        "guide.lotmcraft.advancing.safe_2",
+        "guide.lotmcraft.advancing.safe_3"
+      ]
+    },
+    { "type": "note", "style": "warning", "text": "guide.lotmcraft.advancing.warning" },
+    { "type": "heading", "text": "guide.lotmcraft.advancing.switch_heading" },
+    "guide.lotmcraft.advancing.switch",
+    { "type": "note", "style": "lore", "text": "guide.lotmcraft.advancing.switch_groups" },
+    { "type": "link", "chapter": "abilities", "text": "guide.lotmcraft.advancing.link" }
+  ]
+}

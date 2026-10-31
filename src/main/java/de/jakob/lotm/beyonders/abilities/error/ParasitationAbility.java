@@ -4,6 +4,7 @@ import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.FlameDevil.BloodlineFilthFlameSpiritAbility;
 import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
+import de.jakob.lotm.beyonders.abilities.error.handler.DeceitHandler;
 import de.jakob.lotm.beyonders.abilities.error.handler.TheftHandler;
 import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.attachments.ParasitationComponent;
@@ -78,7 +79,10 @@ public class ParasitationAbility extends SelectableAbility {
         if (!(level instanceof ServerLevel serverLevel)) return;
         if (!(entity instanceof ServerPlayer player)) return;
 
-        // Already controlling — exit
+        if (BeyonderData.getSequence(player) <= 2 && tryParasitizeArtifact(player)) {
+            return;
+        }
+
         if (controllingMap.containsKey(player.getUUID())) {
             exitControl(serverLevel, player);
             return;
@@ -94,7 +98,6 @@ public class ParasitationAbility extends SelectableAbility {
             return;
         }
 
-        // If currently concealed, cancel concealment
         if (concealedMap.containsKey(player.getUUID())) {
             cancelConcealed(serverLevel, player);
         }
@@ -103,20 +106,22 @@ public class ParasitationAbility extends SelectableAbility {
     }
 
     private void attemptControl(ServerLevel serverLevel, ServerPlayer player, LivingEntity target) {
-        // 0.05 heart to trigger substitutes/swaps
-        target.hurt(ModDamageTypes.source(serverLevel, ModDamageTypes.SPIRITUAL, player), 0.1f);
+        int userSeq = BeyonderData.getSequence(player);
+        boolean silentWorms = userSeq <= 2;
+
+        if (!silentWorms) {
+            target.hurt(ModDamageTypes.source(serverLevel, ModDamageTypes.BEYONDER_GENERIC, player), 0.1f);
+        }
 
         if (!target.isAlive() || target.isRemoved()) {
             AbilityUtil.sendActionBar(player, Component.literal("§cTarget evaded!"));
             return;
         }
 
-        int userSeq = BeyonderData.getSequence(player);
         int targetSeq = BeyonderData.isBeyonder(target) ? BeyonderData.getSequence(target) : 10;
         boolean lowerSeq = targetSeq > userSeq;
 
-        // 55% vs lower seq, 15% against same, 0% chance against higher sequence
-        float chance = lowerSeq ? 0.55f : 0.15f;
+        float chance = (lowerSeq ? 0.55f : 0.15f) + (silentWorms ? 0.2f : 0f);
         if (random.nextFloat() >= chance || userSeq > targetSeq) {
             AbilityUtil.sendActionBar(player, Component.literal(lowerSeq
                     ? "§cControl failed!"
@@ -158,6 +163,7 @@ public class ParasitationAbility extends SelectableAbility {
             ParasitationComponent pc = host.getData(ModAttachments.PARASITE_COMPONENT);
             pc.setParasited(false);
             pc.setParasiteUUID(null);
+            DeceitHandler.onParasiteReleased(host);
 
             if (!lowerSeq) {
                 boolean killedBySteal = performExitSteal(serverLevel, player, host);
@@ -207,13 +213,40 @@ public class ParasitationAbility extends SelectableAbility {
     }
 
 
-    // conceal mode
+    public static final String PARASITIZED_ARTIFACT_TAG = "lotm_parasitized_by";
+
+    private boolean tryParasitizeArtifact(ServerPlayer player) {
+        net.minecraft.world.item.ItemStack offhand = player.getOffhandItem();
+        if (!(offhand.getItem() instanceof de.jakob.lotm.beyonders.artifacts.SealedArtifactItem)) return false;
+        if (AbilityUtil.getTargetEntity(player, 8, 2) != null) return false;
+
+        net.minecraft.world.item.component.CustomData data = offhand.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
+        boolean already = data != null && data.copyTag().hasUUID(PARASITIZED_ARTIFACT_TAG)
+                && data.copyTag().getUUID(PARASITIZED_ARTIFACT_TAG).equals(player.getUUID());
+
+        net.minecraft.world.item.component.CustomData.update(net.minecraft.core.component.DataComponents.CUSTOM_DATA, offhand, tag -> {
+            if (already) tag.remove(PARASITIZED_ARTIFACT_TAG);
+            else tag.putUUID(PARASITIZED_ARTIFACT_TAG, player.getUUID());
+        });
+
+        player.level().playSound(null, player.blockPosition(), net.minecraft.sounds.SoundEvents.SCULK_CLICKING, net.minecraft.sounds.SoundSource.PLAYERS, 0.8f, 0.7f);
+        AbilityUtil.sendActionBar(player, Component.translatable(already
+                ? "ability.lotmcraft.parasitation.artifact_left" : "ability.lotmcraft.parasitation.artifact_entered").withColor(0x3240bf));
+        return true;
+    }
+
+    public static boolean isArtifactParasitizedBy(net.minecraft.world.item.ItemStack stack, Player player) {
+        net.minecraft.world.item.component.CustomData data = stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
+        if (data == null) return false;
+        var tag = data.copyTag();
+        return tag.hasUUID(PARASITIZED_ARTIFACT_TAG) && tag.getUUID(PARASITIZED_ARTIFACT_TAG).equals(player.getUUID());
+    }
+
     private void concealed(Level level, LivingEntity entity) {
         if (level.isClientSide) return;
         if (!(level instanceof ServerLevel serverLevel)) return;
         if (!(entity instanceof ServerPlayer player)) return;
 
-        // first reset concealment in all cases
         if (concealedMap.containsKey(player.getUUID())) {
             cancelConcealed(serverLevel, player);
             return;
@@ -235,7 +268,6 @@ public class ParasitationAbility extends SelectableAbility {
             return;
         }
 
-        // If currently controlling, switch to concealed
         if (controllingMap.containsKey(entity.getUUID())) {
             exitControl(serverLevel, player);
             LivingEntity currentHost = resolveHost(serverLevel, controllingMap.get(player.getUUID()));
@@ -275,6 +307,7 @@ public class ParasitationAbility extends SelectableAbility {
                 ParasitationComponent pc = host.getData(ModAttachments.PARASITE_COMPONENT);
                 pc.setParasited(false);
                 pc.setParasiteUUID(null);
+                DeceitHandler.onParasiteReleased(host);
             }
         }
         concealedMap.remove(serverPlayer.getUUID());
@@ -283,7 +316,6 @@ public class ParasitationAbility extends SelectableAbility {
         serverPlayer.setCamera(null);
     }
 
-    // to set the player as spectator when in concealment mode
     @SubscribeEvent
     public static void onPlayerTargetTick(PlayerTickEvent.Post event) {
         Player target = event.getEntity();
@@ -317,14 +349,12 @@ public class ParasitationAbility extends SelectableAbility {
         if (!(serverPlayer.level() instanceof ServerLevel serverLevel)) return;
 
         if (!ControllingUtils.isControlling(serverPlayer)) {
-            // Ended externally — clean up without calling reset again
             controllingMap.remove(serverPlayer.getUUID());
             controllingTimer.remove(serverPlayer.getUUID());
             controllingLowerSeq.remove(serverPlayer.getUUID());
             return;
         }
 
-        // Tick down timer for same/higher seq
         boolean lowerSeq = controllingLowerSeq.getOrDefault(serverPlayer.getUUID(), false);
         if (!lowerSeq) {
             int ticks = controllingTimer.getOrDefault(serverPlayer.getUUID(), 0) - 1;

@@ -2,8 +2,7 @@ package de.jakob.lotm.beyonders.abilities.sun;
 
 import de.jakob.lotm.beyonders.abilities.core.ToggleAbility;
 import de.jakob.lotm.util.BeyonderData;
-import de.jakob.lotm.util.helper.ParticleUtil;
-import net.minecraft.core.particles.DustParticleOptions;
+import de.jakob.lotm.util.helper.FxHandler;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
 import net.minecraft.server.level.ServerLevel;
@@ -12,12 +11,12 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
-import org.joml.Vector3f;
 
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public class HolyOathAbility extends ToggleAbility {
     public HolyOathAbility(String id) {
@@ -37,15 +36,16 @@ public class HolyOathAbility extends ToggleAbility {
         return new HashMap<>(Map.of("sun", 7));
     }
 
+    private static final Map<UUID, UUID> auras = new HashMap<>();
+
     @Override
     public void start(Level level, LivingEntity entity) {
+        if(!(level instanceof ServerLevel serverLevel))
+            return;
 
+        FxHandler.playOnBody(serverLevel, "holy_oath_start", entity);
+        FxHandler.cancelOnEntity(serverLevel, auras.put(entity.getUUID(), FxHandler.playOnBody(serverLevel, "holy_oath", entity)));
     }
-
-    DustParticleOptions dustOptions = new DustParticleOptions(
-            new Vector3f(255 / 255f, 180 / 255f, 66 / 255f),
-            2f
-    );
 
     @Override
     public void tick(Level level, LivingEntity entity) {
@@ -59,12 +59,11 @@ public class HolyOathAbility extends ToggleAbility {
                 ));
             }
 
-            stop(level, entity);
+            cancel((ServerLevel) level, entity);
 
             return;
         }
 
-        ParticleUtil.spawnParticles((ServerLevel) level, dustOptions, entity.getEyePosition().subtract(0, entity.getEyeHeight() / 2, 0), 3, .3, .6, .3, 0);
         entity.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 20 * 20, 1, false, false, false));
         entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 20 * 6, 2, false, false, false));
         entity.addEffect(new MobEffectInstance(MobEffects.HEALTH_BOOST, 20 * 6, 6, false, false, false));
@@ -73,6 +72,7 @@ public class HolyOathAbility extends ToggleAbility {
 
     @Override
     public void stop(Level level, LivingEntity entity) {
-
+        if(level instanceof ServerLevel serverLevel)
+            FxHandler.cancelOnEntity(serverLevel, auras.remove(entity.getUUID()));
     }
 }

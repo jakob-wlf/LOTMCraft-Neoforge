@@ -3,21 +3,19 @@ package de.jakob.lotm.beyonders.abilities.sun;
 import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.beyonders.abilities.core.AbilityUsedEvent;
 import de.jakob.lotm.damage.ModDamageTypes;
-import de.jakob.lotm.particle.ModParticles;
 import de.jakob.lotm.util.helper.AbilityUtil;
-import de.jakob.lotm.util.helper.ParticleUtil;
+import de.jakob.lotm.util.helper.FxHandler;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
-import org.joml.Vector3f;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -51,11 +49,6 @@ public class FireOfLightAbility extends Ability {
         return 50;
     }
 
-    DustParticleOptions dustOptions = new DustParticleOptions(
-            new Vector3f(255 / 255f, 180 / 255f, 66 / 255f),
-            2f
-    );
-
     @Override
     public void onAbilityUse(Level level, LivingEntity entity) {
         if(level.isClientSide)
@@ -65,8 +58,9 @@ public class FireOfLightAbility extends Ability {
         level.playSound(null, targetPos.x, targetPos.y, targetPos.z, SoundEvents.BLAZE_SHOOT, entity.getSoundSource(), 2.0f, .5f);
         level.playSound(null, targetPos.x, targetPos.y, targetPos.z, SoundEvents.BEACON_ACTIVATE, entity.getSoundSource(), .4f, .5f);
 
-        ParticleUtil.spawnParticles((ServerLevel) level, ModParticles.HOLY_FLAME.get(), targetPos, 140, .4, .04);
-        ParticleUtil.spawnParticles((ServerLevel) level, dustOptions, targetPos, 90, .75, 0);
+        ServerScheduler.scheduleDelayed(2, () -> {
+            FxHandler.play((ServerLevel) level, "fire_of_light", groundBelow(level, targetPos), Mth.clamp(multiplier(entity), 1, 3));
+        });
 
         int entitySeq = AbilityUtil.getSeqWithArt(entity, this);
 
@@ -87,5 +81,17 @@ public class FireOfLightAbility extends Ability {
 
         ServerScheduler.scheduleDelayed(25, () -> level.setBlockAndUpdate(BlockPos.containing(targetPos), Blocks.AIR.defaultBlockState()));
         NeoForge.EVENT_BUS.post(new AbilityUsedEvent((ServerLevel) level, targetPos, entity, this, interactionFlags, interactionRadius, interactionCacheTicks));
+    }
+
+    /** The pillar rises from the ground under the targeted spot when there is any close below it. */
+    private static Vec3 groundBelow(Level level, Vec3 pos) {
+        BlockPos.MutableBlockPos cursor = BlockPos.containing(pos).mutable();
+        for (int i = 0; i < 4; i++) {
+            if (!level.getBlockState(cursor.below()).getCollisionShape(level, cursor.below()).isEmpty()) {
+                return new Vec3(pos.x, cursor.getY(), pos.z);
+            }
+            cursor.move(0, -1, 0);
+        }
+        return pos.subtract(0, 1, 0);
     }
 }
