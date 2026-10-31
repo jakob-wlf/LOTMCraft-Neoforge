@@ -6,7 +6,7 @@
     "EntityAccessor",
     "MixinIngredient",
     "PlayerPhantomMixin",
-    "EntityPhantomMixin"
+    "EntityPhantomMixin",
     "ErrorItemNameMixin"
   ],
   "client": [

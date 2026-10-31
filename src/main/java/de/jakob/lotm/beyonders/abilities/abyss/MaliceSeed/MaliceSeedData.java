@@ -6,6 +6,8 @@ import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 public final class MaliceSeedData extends SavedData {
@@ -33,21 +35,26 @@ public final class MaliceSeedData extends SavedData {
                         int progress = seed.getInt("progress");
                         int casterSeq = seed.getInt("casterSeq");
                         if (phase < 1 || phase > 4 || progress < 0 || casterSeq < 0 || casterSeq > 10) continue;
-                        CompoundTag validSeed = seed.copy();
-                        validSeeds.put(casterKey, validSeed);
-                    } catch (IllegalArgumentException ignored) {
-                        // Ignore malformed caster UUIDs.
+                        validSeeds.put(casterKey, seed.copy());
                     }
+                    catch (IllegalArgumentException ignored) {}
                 }
                 if (!validSeeds.isEmpty()) data.identities.put(identityKey, validSeeds);
-            } catch (IllegalArgumentException ignored) {
-                // Ignore malformed identity UUIDs.
             }
+            catch (IllegalArgumentException ignored) {}
         }
         return data;
     }
-    public static MaliceSeedData get(MinecraftServer server) {
-        return server.overworld().getDataStorage().computeIfAbsent(new SavedData.Factory<>(MaliceSeedData::new, MaliceSeedData::load), DATA_KEY);
+    public static MaliceSeedData get(MinecraftServer server) {return server.overworld().getDataStorage().computeIfAbsent(new SavedData.Factory<>(MaliceSeedData::new, MaliceSeedData::load), DATA_KEY);}
+    public Set<UUID> identities() {
+        Set<UUID> out = new HashSet<>();
+        for (String key : identities.getAllKeys()) {
+            try {
+                out.add(UUID.fromString(key));
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+        return out;
     }
     public CompoundTag getSeeds(UUID identity) {
         if (identity == null) return new CompoundTag();

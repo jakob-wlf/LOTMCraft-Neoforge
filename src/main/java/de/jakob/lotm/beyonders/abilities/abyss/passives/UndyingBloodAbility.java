@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+
 public class UndyingBloodAbility extends PassiveAbility {
     public static float capacityFor(int sequence) {
         return switch (sequence) {
@@ -85,7 +86,7 @@ public class UndyingBloodAbility extends PassiveAbility {
     public void onPassiveAbilityRemoved(LivingEntity entity, ServerLevel serverLevel) {
         if (entity instanceof ServerPlayer player) {
             LAST_SYNC.remove(player.getUUID());
-            PacketDistributor.sendToPlayer(player, new BloodSovereignClient.SyncBlood(0f, 0f)); // hides the vial
+            PacketDistributor.sendToPlayer(player, new BloodSovereignClient.SyncBlood(0f, 0f));
         }
     }
     @Override
@@ -97,7 +98,7 @@ public class UndyingBloodAbility extends PassiveAbility {
     }
     //data
     static boolean hasBloodSovereign(LivingEntity entity) {
-        PassiveAbility ability = PassiveAbilityHandler.getById("curse_resistance_ability");
+        PassiveAbility ability = PassiveAbilityHandler.getById("undying_blood_ability");
         return ability != null && ability.shouldApplyTo(entity);
     }
     static float capacity(ServerPlayer player) {

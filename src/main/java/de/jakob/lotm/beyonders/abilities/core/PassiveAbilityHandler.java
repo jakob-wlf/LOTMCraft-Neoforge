@@ -97,11 +97,11 @@ public class PassiveAbilityHandler {
         passiveAbilities.add(new BloodlineShadowShiftAbility("bloodline_shadowshift_ability"));
         passiveAbilities.add(new BloodlineMindRotterAbility("bloodline_mind_rotter_ability"));
         passiveAbilities.add(new BloodlineFilthFlameSpiritAbility("bloodline_filth_flame_spirit_ability"));
-        passiveAbilities.add(new MentalResistanceAbility("mental_resistance_ability"));
+        passiveAbilities.add(new AbyssMentalResistanceAbility("abyss_mental_resistance_ability"));
         passiveAbilities.add(new DemonOfTheBodyAbility("demon_of_the_body_ability"));
         passiveAbilities.add(new WordImmunityAbility("word_immunity_abyss_ability"));
         passiveAbilities.add(new DomainOfBodyAbility("domain_of_body_ability"));
-        passiveAbilities.add(new UndyingBloodAbility("blood_sovereign_ability"));
+        passiveAbilities.add(new UndyingBloodAbility("undying_blood_ability"));
         passiveAbilities.add(new MaliceAuthorityAbility("malice_authority_ability"));
         passiveAbilities.add(new SinLordAbility("sin_lord_ability"));
 

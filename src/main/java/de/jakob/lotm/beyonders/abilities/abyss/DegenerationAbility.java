@@ -152,6 +152,7 @@ public class DegenerationAbility extends SelectableAbility {
     // Clones
     private static void spawnClone(ServerLevel level, LivingEntity original, long expireTick, boolean areaClone) {
         LivingEntity clone = createCloneEntity(level, original);
+        assert clone != null;
         resetMaliceIdentity(clone);
         clone.getPersistentData().putBoolean(CLONE_TAG, true);
         Vec3 pos = original.position().add((level.random.nextDouble() - 0.5) * 4, 0, (level.random.nextDouble() - 0.5) * 4);

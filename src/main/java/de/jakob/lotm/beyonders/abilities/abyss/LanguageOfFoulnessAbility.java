@@ -7,8 +7,6 @@ import de.jakob.lotm.beyonders.abilities.core.AbilityUseEvent;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.damage.ModDamageTypes;
 import de.jakob.lotm.effect.ModEffects;
-import de.jakob.lotm.network.PacketHandler;
-import de.jakob.lotm.network.packets.toServer.AbilitySelectionPacket;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.helper.AbilityUtil;
@@ -113,7 +111,7 @@ public class LanguageOfFoulnessAbility extends SelectableAbility {
     @Override
     protected void castSelectedAbility(Level level, LivingEntity entity, int abilityIndex) {
         if (!(level instanceof ServerLevel serverLevel)) return;
-        if (abilityIndex < 0 || abilityIndex >= getSequenceDependantAbilityNames(BeyonderData.getSequence(entity)).length) return;
+        if (abilityIndex < 0 || abilityIndex >= getSequenceDependantAbilityNames(AbilityUtil.getSeqWithArt(entity, this)).length) return;
 
         // Death remains single-target.
         if (abilityIndex == 2) {

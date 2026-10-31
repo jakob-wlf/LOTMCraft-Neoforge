@@ -172,11 +172,13 @@ public class DemonicAttributeAbility extends SelectableAbility {
         if (!purified) {
             AbilityUtil.addPotionEffectToNearbyEntities((ServerLevel) level, entity, 3, startPos, new MobEffectInstance(MobEffects.POISON, 20 * 8 * (int) Math.max(multiplier(entity) / 2, 1), 2, false, true));
         }
-        BlockState block = level.getBlockState(BlockPos.containing(startPos));
-        if (block.isAir()) {
-            level.setBlockAndUpdate(BlockPos.containing(startPos), Blocks.LIGHT.defaultBlockState());
+        BlockPos lightPos = BlockPos.containing(startPos);
+        if (level.getBlockState(lightPos).isAir()) {
+            level.setBlockAndUpdate(lightPos, Blocks.LIGHT.defaultBlockState());
+            ServerScheduler.scheduleDelayed(25, () -> {
+                if (level.getBlockState(lightPos).is(Blocks.LIGHT)) level.setBlockAndUpdate(lightPos, Blocks.AIR.defaultBlockState());
+            }, (ServerLevel) level, () -> AbilityUtil.getTimeInArea(entity, new Location(startPos, level)));
         }
-        ServerScheduler.scheduleDelayed(25, () -> level.setBlockAndUpdate(BlockPos.containing(startPos), Blocks.AIR.defaultBlockState()));
         NeoForge.EVENT_BUS.post(new AbilityUsedEvent((ServerLevel) level, startPos, entity, this, new String[]{"burning", "poison"}, 2.4f, 10));
     }
 
