@@ -83,7 +83,7 @@ public class MaliceSeedAbility extends SelectableAbility {
     @Override
     public Map<String, Integer> getRequirements() {return new HashMap<>(Map.of("abyss", 2));}
     @Override
-    public float getSpiritualityCost() {return 750;}
+    public float getSpiritualityCost() {return 1750;}
     @Override
     protected String[] getAllAbilityNames() {
         return new String[]{

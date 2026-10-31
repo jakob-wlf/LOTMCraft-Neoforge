@@ -29,6 +29,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.joml.Vector3f;
 
@@ -86,6 +87,7 @@ public class UndyingBloodAbility extends PassiveAbility {
     public void onPassiveAbilityRemoved(LivingEntity entity, ServerLevel serverLevel) {
         if (entity instanceof ServerPlayer player) {
             LAST_SYNC.remove(player.getUUID());
+            player.getPersistentData().remove(KEY);
             PacketDistributor.sendToPlayer(player, new BloodSovereignClient.SyncBlood(0f, 0f));
         }
     }
@@ -210,6 +212,13 @@ public class UndyingBloodAbility extends PassiveAbility {
             float gain = bloodGain(killer, dead);
             setBlood(killer, blood(killer) + gain);
             syncIfChanged(killer);
+        }
+        @SubscribeEvent
+        public static void onPlayerTick(PlayerTickEvent.Post event) {
+            if (!(event.getEntity() instanceof ServerPlayer player) || player.tickCount % 20 != 0) return;
+            if (!LAST_SYNC.containsKey(player.getUUID()) || hasBloodSovereign(player)) return;
+            LAST_SYNC.remove(player.getUUID());
+            PacketDistributor.sendToPlayer(player, new BloodSovereignClient.SyncBlood(0f, 0f));
         }
         @SubscribeEvent
         public static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {LAST_SYNC.remove(event.getEntity().getUUID());}
