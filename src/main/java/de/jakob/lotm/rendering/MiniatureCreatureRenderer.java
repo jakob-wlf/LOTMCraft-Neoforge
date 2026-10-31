@@ -37,7 +37,7 @@ public class MiniatureCreatureRenderer extends BlockEntityWithoutLevelRenderer {
         if (creature == null) return;
 
         boolean gui = context == ItemDisplayContext.GUI || context == ItemDisplayContext.FIXED;
-        float yaw = gui ? 150f : 180f;
+        float yaw = 360f;
         creature.setYRot(yaw);
         creature.yRotO = yaw;
         if (creature instanceof LivingEntity living) {
