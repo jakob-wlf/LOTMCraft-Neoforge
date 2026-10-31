@@ -63,6 +63,11 @@ public abstract class Ability {
     protected boolean shouldBeHidden = false;
     public int onHoldTickInverval = 5;
 
+    // Hold to cast
+    public boolean isHoldable = false;
+    public int holdTime = 0;
+    protected final HashMap<Integer, Integer> holdableSubAbilities = new HashMap<>();
+
     // Utility
     protected final Random random = new Random();
 
@@ -217,6 +222,36 @@ public abstract class Ability {
     }
 
     public void onHold(Level level, LivingEntity entity) {
+
+    }
+
+    /*
+    So basically but ig all of us can read code
+    isHoldable(80, 0); - 80 ability 0
+    isHoldable(120, 1); - 120 ability 1
+    isHoldable(40, 2, 3); - 40 ability 2 and 3
+     */
+    protected void isHoldable(int ticks, int... subAbilities) {
+        int time = Math.max(0, ticks);
+        if (subAbilities.length == 0) {
+            isHoldable = time > 0;
+            holdTime = time;
+            return;
+        }
+        for (int subAbility : subAbilities) {
+            if (time > 0) holdableSubAbilities.put(subAbility, time);
+            else holdableSubAbilities.remove(subAbility);
+        }
+    }
+
+    public int getHoldTime(LivingEntity entity, int subIndex) {
+        Integer ticks = holdableSubAbilities.get(subIndex);
+        if (ticks != null) return ticks;
+        return isHoldable ? holdTime : 0;
+    }
+
+    // Event to play effects while on hold, idk put animations in there
+    public void onHolding(ServerLevel level, LivingEntity entity, int subIndex, int ticks, int holdTime) {
 
     }
 

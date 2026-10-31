@@ -2,6 +2,7 @@ package de.jakob.lotm.beyonders.abilities.twilight_giant;
 
 import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.beyonders.abilities.core.Ability;
+import de.jakob.lotm.beyonders.abilities.core.AbilityHoldEvent;
 import de.jakob.lotm.beyonders.abilities.core.AbilityUseEvent;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.beyonders.abilities.death.DoorToTheUnderworldAbility;
@@ -288,6 +289,12 @@ public class TwilightAuthorityAbility extends SelectableAbility {
             return;
         }
         if (ability.getId().contains("twilight")) remember(level, caster);
+    }
+
+    @SubscribeEvent
+    public static void onHold(AbilityHoldEvent event) {
+        if (stopped(event.getEntity())) event.multiply(0.001f);
+        else if (slowed(event.getEntity())) event.multiply(SLOW_STEP);
     }
 
     @SubscribeEvent

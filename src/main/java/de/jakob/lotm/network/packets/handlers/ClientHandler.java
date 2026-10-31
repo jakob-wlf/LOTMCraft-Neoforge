@@ -76,6 +76,21 @@ public class ClientHandler {
     private static final ArrayList<Double> concealmentSpheres = new ArrayList<>();
     private static final HashSet<Integer> bareConcealment = new HashSet<>();
     private static final HashSet<Integer> concealedOthers = new HashSet<>();
+    private static float holdCharge;
+    private static int holdNeeded;
+
+    public static void setHoldCharge(float charge, int needed) {
+        holdCharge = charge;
+        holdNeeded = needed;
+    }
+
+    public static float holdCharge() {
+        return holdCharge;
+    }
+
+    public static int holdNeeded() {
+        return holdNeeded;
+    }
 
     private static final HashMap<UUID, EntityEffectExecutor> activeEffects = new HashMap<>();
     private static final HashMap<UUID, BlockEffectExecutor> activeBlockEffects = new HashMap<>();

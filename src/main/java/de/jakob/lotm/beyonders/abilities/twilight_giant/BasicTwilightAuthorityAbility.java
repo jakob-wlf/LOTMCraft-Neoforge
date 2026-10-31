@@ -15,8 +15,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
@@ -43,7 +41,6 @@ import java.util.UUID;
 @EventBusSubscriber(modid = LOTMCraft.MOD_ID)
 public class BasicTwilightAuthorityAbility extends SelectableAbility {
 
-    private static final int REBORN_TICKS = 100;
     private static final int GRATEFUL_INTERVAL = 20;
     private static final float GRATEFUL_SPIRITUALITY = 200;
     private static final float GRATEFUL_YEARS = 5f;
@@ -56,7 +53,6 @@ public class BasicTwilightAuthorityAbility extends SelectableAbility {
     private static final int IMBUE_CHECK_INTERVAL = 100;
     private static final String IMBUE_TAG = "lotm_twilight_imbued_until";
 
-    private static final Map<UUID, Integer> rebirths = new HashMap<>();
     private static final Set<UUID> gratefulDead = new HashSet<>();
     private static final Set<UUID> imbuers = new HashSet<>();
 
@@ -67,6 +63,7 @@ public class BasicTwilightAuthorityAbility extends SelectableAbility {
         dynamicSpirituality = new LinkedList<>(List.of(12000f, 8000f, 5000f));
         hasDynamicCooldown = true;
         dynamicCooldown = new LinkedList<>(List.of(20, 40, 60));
+        isHoldable(60, 0);
     }
 
     @Override
@@ -92,21 +89,19 @@ public class BasicTwilightAuthorityAbility extends SelectableAbility {
     protected void castSelectedAbility(Level level, LivingEntity entity, int selectedAbility) {
         if (!(level instanceof ServerLevel serverLevel) || !(entity instanceof ServerPlayer player)) return;
         switch (selectedAbility) {
-            case 0 -> toggleRebirth(player);
+            case 0 -> reborn(serverLevel, player);
             case 1 -> toggleGratefulDead(player);
             default -> imbue(serverLevel, player);
         }
     }
 
-    private static void toggleRebirth(ServerPlayer player) {
-        if (rebirths.remove(player.getUUID()) != null) {
-            BeyonderData.incrementSpirituality(player, 5000);
-            bar(player, "ability.lotmcraft.basic_twilight_authority.reborn_stopped");
-            return;
-        }
-        rebirths.put(player.getUUID(), 0);
-        bar(player, "ability.lotmcraft.basic_twilight_authority.reborn_started");
-        player.level().playSound(null, player.blockPosition(), SoundEvents.BEACON_AMBIENT, player.getSoundSource(), 1.5f, 0.5f);
+    @Override
+    public void onHolding(ServerLevel level, LivingEntity entity, int subIndex, int ticks, int holdTime) {
+        if (subIndex != 0) return;
+        float fraction = ticks / (float) holdTime;
+        int count = 2 + (int) (fraction * 12);
+        level.sendParticles(TwilightAging.TWILIGHT_DUST, entity.getX(), entity.getY(0.5), entity.getZ(), count, 0.4, 0.9, 0.4, 0.03 + fraction * 0.1);
+        level.sendParticles(TwilightAging.ASH_DUST, entity.getX(), entity.getY(0.8), entity.getZ(), count, 0.3, 0.6, 0.3, 0.06);
     }
 
     private static void toggleGratefulDead(ServerPlayer player) {
@@ -140,29 +135,12 @@ public class BasicTwilightAuthorityAbility extends SelectableAbility {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         UUID id = player.getUUID();
         if (!player.isAlive()) {
-            rebirths.remove(id);
             gratefulDead.remove(id);
             return;
         }
         ServerLevel level = player.serverLevel();
-        Integer progress = rebirths.get(id);
-        if (progress != null) tickRebirth(level, player, progress + 1);
         if (gratefulDead.contains(id) && player.tickCount % GRATEFUL_INTERVAL == 0) tickGratefulDead(level, player);
         if (imbuers.contains(id) && player.tickCount % IMBUE_CHECK_INTERVAL == 0) clearExpired(level, player);
-    }
-
-    private static void tickRebirth(ServerLevel level, ServerPlayer player, int progress) {
-        float fraction = progress / (float) REBORN_TICKS;
-        int count = 2 + (int) (fraction * 12);
-        level.sendParticles(TwilightAging.TWILIGHT_DUST, player.getX(), player.getY(0.5), player.getZ(), count, 0.4, 0.9, 0.4, 0.03 + fraction * 0.1);
-        level.sendParticles(TwilightAging.ASH_DUST, player.getX(), player.getY(0.8), player.getZ(), count, 0.3, 0.6, 0.3, 0.06);
-        player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 10, (int) (fraction * 4), false, false));
-        if (progress < REBORN_TICKS) {
-            rebirths.put(player.getUUID(), progress);
-            return;
-        }
-        rebirths.remove(player.getUUID());
-        reborn(level, player);
     }
 
     private static void reborn(ServerLevel level, ServerPlayer player) {

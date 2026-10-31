@@ -47,6 +47,12 @@ public class PacketHandler {
         );
 
         registrar.playToClient(
+                HoldCastProgressPacket.TYPE,
+                HoldCastProgressPacket.STREAM_CODEC,
+                HoldCastProgressPacket::handle
+        );
+
+        registrar.playToClient(
                 SyncBeyonderDataPacket.TYPE,
                 SyncBeyonderDataPacket.STREAM_CODEC,
                 SyncBeyonderDataPacket::handle
@@ -882,6 +888,12 @@ public class PacketHandler {
                 UpdateSelectedAbilityPacket.TYPE,
                 UpdateSelectedAbilityPacket.STREAM_CODEC,
                 UpdateSelectedAbilityPacket::handle
+        );
+
+        registrar.playToServer(
+                HoldAbilityPacket.TYPE,
+                HoldAbilityPacket.STREAM_CODEC,
+                HoldAbilityPacket::handle
         );
 
         registrar.playToServer(

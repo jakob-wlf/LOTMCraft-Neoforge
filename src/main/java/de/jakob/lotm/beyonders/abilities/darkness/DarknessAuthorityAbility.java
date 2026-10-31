@@ -43,6 +43,8 @@ public class DarknessAuthorityAbility extends SelectableAbility {
         super(id, 20);
         canBeUsedByNPC = false;
         canBeShared = false;
+        isHoldable(80, 0);
+        isHoldable(120, 1);
     }
 
     @Override

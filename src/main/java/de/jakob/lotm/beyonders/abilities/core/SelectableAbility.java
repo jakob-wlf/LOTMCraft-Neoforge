@@ -15,7 +15,6 @@ public abstract class SelectableAbility extends Ability {
 
     protected final HashMap<UUID, Integer> selectedAbilities = new HashMap<>();
     protected final HashMap<UUID, Integer> castedSubAbility = new HashMap<>();
-
     public SelectableAbility(String id, float cooldown, String... interactionFlags) {
         super(id, cooldown, interactionFlags);
     }
@@ -59,6 +58,11 @@ public abstract class SelectableAbility extends Ability {
     }
 
     protected abstract void castSelectedAbility(Level level, LivingEntity entity, int selectedAbility);
+
+    @Override
+    public int getHoldTime(LivingEntity entity, int subIndex) {
+        return super.getHoldTime(entity, subIndex >= 0 ? subIndex : getSelectedAbilityIndex(entity.getUUID()));
+    }
 
     public void addSubAbilityOverride(LivingEntity entity, int selectedAbility) {
         castedSubAbility.put(entity.getUUID(), selectedAbility);
