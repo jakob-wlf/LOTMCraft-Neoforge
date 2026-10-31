@@ -91,8 +91,8 @@ public class PlayerMap extends SavedData {
 
         if (!contains(entity)) put(entity);
 
-        map.compute(entity.getUUID(), (k, data) ->
-                StoredData.builder.copyFrom(data).uniqueness(pathway).build());
+        var data = map.get(entity.getUUID());
+        map.put(entity.getUUID(), StoredData.builder.copyFrom(data).uniqueness(pathway).build());
 
         setDirty();
     }
@@ -104,7 +104,8 @@ public class PlayerMap extends SavedData {
     }
 
     public void addProphecy(UUID entity, Prophecy prophecy){
-        if(!map.containsKey(entity)) map.put(entity, StoredData.builder.build());
+        // Trojan Horse of Destiny senses prophecies that are woven around them
+        de.jakob.lotm.beyonders.abilities.error.handler.FateHandler.onProphecyAdded(entity, prophecy);
 
         var list = map.get(entity).prophecies();
         list.add(prophecy);
@@ -146,10 +147,7 @@ public class PlayerMap extends SavedData {
         String name = player.getGameProfile().getName();
 
         UUID inMapId = getKeyByName(name);
-        if(inMapId == null){
-            put(player);
-            return;
-        }
+        if(inMapId == null) return;
 
         if(!inMapId.equals(player.getUUID())){
             var data = map.get(inMapId);
@@ -303,9 +301,7 @@ public class PlayerMap extends SavedData {
         for (var obj : map.values()) {
             if (obj.pathway().equals(path) && obj.sequence() == seq) {
                 res++;
-                if (obj.sequence() == 1 || obj.sequence() == 0) {
-                    res += obj.charStack()[seq];
-                }
+                res += obj.charStack()[seq];
             }
         }
         return res;
@@ -381,8 +377,7 @@ public class PlayerMap extends SavedData {
 
     public static PlayerMap get(ServerLevel level) {
         LOTMCraft.LOGGER.info("Loading beyonderMap");
-        return level.getServer().overworld()
-                .getDataStorage().computeIfAbsent(FACTORY, NBT_BEYONDER_MAP_CLASS);
+        return level.getServer().overworld().getDataStorage().computeIfAbsent(FACTORY, NBT_BEYONDER_MAP_CLASS);
     }
 
     public void setLevel(ServerLevel level){

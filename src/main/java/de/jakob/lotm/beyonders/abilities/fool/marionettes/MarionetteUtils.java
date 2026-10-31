@@ -102,6 +102,10 @@ public class MarionetteUtils {
             return false;
         }
 
+        if (de.jakob.lotm.beyonders.abilities.error.StealConnectionAbility.isThreadImmune(entity)) {
+            return false;
+        }
+
         component.setMarionette(true);
         component.setControllerUUID(controller.getStringUUID());
         component.setCurrentMode(MarionetteComponent.MarionetteMode.FOLLOW);

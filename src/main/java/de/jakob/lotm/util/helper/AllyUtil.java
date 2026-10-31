@@ -174,6 +174,17 @@ public class AllyUtil {
         return ServantsAbility.bound(first, second) || ProxyAbility.bound(first, second);
     }
 
+    public static void addAllyOneWay(LivingEntity entity, LivingEntity ally) {
+        if (entity == null || ally == null) return;
+
+        AllyComponent comp = entity.getData(ModAttachments.ALLY_COMPONENT.get());
+        entity.setData(ModAttachments.ALLY_COMPONENT.get(), comp.addAlly(ally.getUUID(), ally.getDisplayName().getString(), ally instanceof Player));
+
+        if (entity instanceof ServerPlayer player) {
+            syncAllyData(player);
+        }
+    }
+
     public static void removeAllyOneWay(LivingEntity entity, UUID allyUUID) {
         if (entity == null || allyUUID == null) return;
         if (forced(entity.getUUID(), allyUUID)) return;

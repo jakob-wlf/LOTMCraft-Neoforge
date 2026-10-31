@@ -80,17 +80,14 @@ public class BeyonderDataTickHandler {
             return;
         }
 
-        // Tick cooldowns
         AbilityCooldownComponent component = livingEntity.getData(ModAttachments.COOLDOWN_COMPONENT);
-        component.tick();
+        de.jakob.lotm.beyonders.abilities.error.handler.TimeHandler.tickCooldowns(livingEntity, component);
 
-        //Virtual Personas heal
         if(livingEntity instanceof ServerPlayer player) {
             VirtualPersonaComponent virtualPersonaComponent = player.getData(ModAttachments.VIRTUAL_PERSONAS);
             virtualPersonaComponent.heal(player);
         }
 
-        // Tick flight cooldown
         DisabledFlightComponent disabledFlightComponent = livingEntity.getData(ModAttachments.FLIGHT_DISABLE_COMPONENT);
         if(disabledFlightComponent.getCooldownTicks() > 0) {
             disabledFlightComponent.setCooldownTicks(disabledFlightComponent.getCooldownTicks() - 1);

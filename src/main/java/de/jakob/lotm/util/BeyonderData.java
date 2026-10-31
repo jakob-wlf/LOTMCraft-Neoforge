@@ -780,6 +780,8 @@ public class BeyonderData {
         float current = getDigestionProgress(player);
         if(accountForDigestionRate) {
             amount *= (player.level().getGameRules().getInt(ModGameRules.DIGESTION_RATE) / 10f);
+            // Worm of Time: a player whose time was stolen digests slower
+            if(amount > 0) amount *= de.jakob.lotm.beyonders.abilities.error.handler.TimeHandler.getProcessMultiplier(player);
         }
         float newAmount = Math.min(1.0f, current + amount);
 

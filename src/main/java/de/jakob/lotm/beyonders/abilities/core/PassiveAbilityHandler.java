@@ -20,8 +20,7 @@ import de.jakob.lotm.beyonders.abilities.demoness.passives.PhysicalEnhancementsD
 import de.jakob.lotm.beyonders.abilities.door.passives.PhysicalEnhancementsDoorAbility;
 import de.jakob.lotm.beyonders.abilities.door.passives.SpiritWorldAwarenessAbility;
 import de.jakob.lotm.beyonders.abilities.door.passives.VoidImmunityAbility;
-import de.jakob.lotm.beyonders.abilities.error.passives.PassiveTheftAbility;
-import de.jakob.lotm.beyonders.abilities.error.passives.PhysicalEnhancementsErrorAbility;
+import de.jakob.lotm.beyonders.abilities.error.passives.*;
 import de.jakob.lotm.beyonders.abilities.fool.passives.*;
 import de.jakob.lotm.beyonders.abilities.justiciar.passives.ChaosHuntingAbility;
 import de.jakob.lotm.beyonders.abilities.justiciar.passives.EnhancedMentalAttributesAbility;
@@ -115,7 +114,14 @@ public class PassiveAbilityHandler {
         passiveAbilities.add(new ConcealmentSenseAbility("concealment_sense_ability"));
 
         // Error
-        passiveAbilities.add(new PassiveTheftAbility("passive_theft_ability"));
+        passiveAbilities.add(new AgileHandsAbility("agile_hands_ability"));
+        passiveAbilities.add(new CombatProficiencyAbility("combat_proficiency_ability"));
+        passiveAbilities.add(new SuperiorObservationAbility("superior_observation_ability"));
+        passiveAbilities.add(new SwindlerCharmAbility("swindler_charm_ability"));
+        passiveAbilities.add(new QuickReactionAbility("quick_reaction_ability"));
+        passiveAbilities.add(new MentalResistanceAbility("mental_resistance_ability"));
+        passiveAbilities.add(new FateAbility("fate_ability"));
+        passiveAbilities.add(new LuckSenseAbility("luck_sense_ability"));
 
         // Demoness
         passiveAbilities.add(new FeatherFallAbility("feather_fall_ability"));

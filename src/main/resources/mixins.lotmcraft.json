@@ -5,10 +5,17 @@
     "mixins": [
     "EntityAccessor",
     "MixinIngredient",
+    "ErrorItemNameMixin",
+    "MixinIngredient",
     "MercuryPushMixin",
     "SignConcealMixin"
   ],
   "client": [
+    "EntityGlowMixin",
+    "ErrorItemModelMixin",
+    "ErrorInventoryScreenMixin",
+    "ErrorInvisibilityMixin",
+    "ErrorParticleMixin",
     "EntityGlowMixin",
     "ConcealmentRenderMixin",
     "ConcealmentParticleMixin"

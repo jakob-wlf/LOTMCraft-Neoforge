@@ -35,6 +35,12 @@ public class PacketHandler {
 
     private static void registerClientPackets(PayloadRegistrar registrar) {
         registrar.playToClient(
+                de.jakob.lotm.network.packets.error.ErrorSyncPacket.TYPE,
+                de.jakob.lotm.network.packets.error.ErrorSyncPacket.STREAM_CODEC,
+                de.jakob.lotm.network.packets.error.ErrorSyncPacket::handle
+        );
+
+        registrar.playToClient(
                 CameraShakePacket.TYPE,
                 CameraShakePacket.STREAM_CODEC,
                 CameraShakePacket::handle
@@ -650,6 +656,12 @@ public class PacketHandler {
     private static void registerServerPackets(PayloadRegistrar registrar) {
 
         registrar.playToServer(
+                de.jakob.lotm.network.packets.error.ErrorActionPacket.TYPE,
+                de.jakob.lotm.network.packets.error.ErrorActionPacket.STREAM_CODEC,
+                de.jakob.lotm.network.packets.error.ErrorActionPacket::handle
+        );
+
+        registrar.playToServer(
                 WhipSlashPayload.TYPE,
                 WhipSlashPayload.STREAM_CODEC,
                 WhipSlashPayload::handle
@@ -1097,10 +1109,12 @@ public class PacketHandler {
         float digestionProgress = BeyonderData.getDigestionProgress(player);
         int[] charStacks = BeyonderData.getCharStacks(player);
         int cowardWormAmount = BeyonderData.getCowardWormAmount(player);
+        String pledgedSefirot = BeyonderData.pledgedSefirot(player);
+        boolean hasPatron = BeyonderData.hasPlayerPatron(player);
 
         String[] history = BeyonderData.getPathwayHistory(player);
 
-        SyncBeyonderDataPacket packet = new SyncBeyonderDataPacket(player.getUUID(), pathway, sequence, spirituality, griefingEnabled, digestionProgress, history, charStacks, cowardWormAmount, BeyonderData.pledgedSefirot(player), BeyonderData.hasPlayerPatron(player));
+        SyncBeyonderDataPacket packet = new SyncBeyonderDataPacket(player.getUUID(), pathway, sequence, spirituality, griefingEnabled, digestionProgress, history, charStacks, cowardWormAmount, pledgedSefirot, hasPatron);
         sendToPlayer(player, packet);
     }
 

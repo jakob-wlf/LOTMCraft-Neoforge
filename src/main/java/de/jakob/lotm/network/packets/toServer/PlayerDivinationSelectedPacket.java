@@ -134,6 +134,8 @@ public record PlayerDivinationSelectedPacket(UUID selectedPlayerUuid, PlayerSele
 
         MetaAwarenessAbility.onDivined(player, targetPlayer);
 
+        if (de.jakob.lotm.beyonders.abilities.error.handler.DeceitHandler.handleDivination(player, targetPlayer)) return;
+
         if (targetPlayer == null || !(player.level().dimension() == targetPlayer.level().dimension())) {
             player.sendSystemMessage(Component.literal("§cPlayer not found"));
             return;

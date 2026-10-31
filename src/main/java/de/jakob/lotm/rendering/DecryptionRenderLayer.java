@@ -31,25 +31,6 @@ public class DecryptionRenderLayer<T extends LivingEntity, M extends EntityModel
     public void render(PoseStack poseStack, MultiBufferSource buffer, int packedLight,
                        T entity, float limbSwing, float limbSwingAmount, float partialTicks,
                        float ageInTicks, float netHeadYaw, float headPitch) {
-
-        Player player = Minecraft.getInstance().player;
-        if(!activeDecryption.contains(player.getUUID())) {
-            return;
-        }
-
-        VertexConsumer vertexConsumer = buffer.getBuffer(RenderType.outline(
-                ResourceLocation.withDefaultNamespace("textures/misc/white.png")
-        ));
-
-        int grayColor = packColor(.05f, .875f, .3f, 1);
-
-        this.getParentModel().renderToBuffer(
-                poseStack,
-                vertexConsumer,
-                packedLight,
-                OverlayTexture.NO_OVERLAY,
-                grayColor
-        );
     }
 
     private int packColor(float r, float g, float b, float a) {
