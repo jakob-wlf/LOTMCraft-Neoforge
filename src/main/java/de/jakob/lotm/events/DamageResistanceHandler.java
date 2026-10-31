@@ -37,7 +37,6 @@ public class DamageResistanceHandler {
         boolean entityIsBeyonder = BeyonderData.isBeyonder(entity);
         float damage = event.getAmount();
 
-        // Attacker bonus/penalty based on sequence difference
         if (sourceIsBeyonder) {
             int sourceSeq = AuthorityResistanceManager.getFromBuffer(livingSource);
 
@@ -60,7 +59,6 @@ public class DamageResistanceHandler {
             }
         }
 
-        // Defender reductions
         if (entityIsBeyonder) {
             int seq = BeyonderData.getSequence(entity);
             boolean angelImmunity = entity.level().getGameRules().getBoolean(ModGameRules.ANGEL_DAMAGE_IMMUNITY);
@@ -72,7 +70,7 @@ public class DamageResistanceHandler {
                 default -> 1.0f;
             };
 
-            boolean sequenceReductionApplies = !sourceIsBeyonder || BeyonderData.getSequence(livingSource) > seq;
+            boolean sequenceReductionApplies = !sourceIsBeyonder || BeyonderData.getSequence(livingSource) > seq + 2;
             if (!ModDamageTypes.isModDamage(source) && damage < Float.MAX_VALUE / 2 && sequenceReductionApplies) {
                 damage *= mult;
             }
@@ -82,7 +80,6 @@ public class DamageResistanceHandler {
 
         event.setAmount(damage);
 
-        // Reset i-frames when different mod damage types hit in succession
         var storedDamageType = damageMap.get(entity.getUUID());
         if (storedDamageType != null
                 && ModDamageTypes.isModDamage(source)

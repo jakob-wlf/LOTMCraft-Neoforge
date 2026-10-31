@@ -333,6 +333,20 @@ public class AbilityHandler {
         abilities.add(new FateSiphoningAbility("fate_siphoning_ability"));
         abilities.add(new ConceptualTheftAbility("conceptual_theft_ability"));
         abilities.add(new TimeManipulationAbility("time_manipulation_ability"));
+        abilities.add(new PickpocketAbility("pickpocket_ability"));
+        abilities.add(new EloquenceAbility("eloquence_ability"));
+        abilities.add(new SuperiorObservationFocusAbility("superior_observation_focus_ability"));
+        abilities.add(new StealYourselfAbility("steal_yourself_ability"));
+        abilities.add(new TreasureHunterAbility("treasure_hunter_ability"));
+        abilities.add(new DeceiveMindsAbility("deceive_minds_ability"));
+        abilities.add(new DeceiveWorldAbility("deceive_world_ability"));
+        abilities.add(new DeceiveConnectionAbility("deceive_connection_ability"));
+        abilities.add(new TamperFateAbility("tamper_fate_ability"));
+        abilities.add(new StealFateAbility("steal_fate_ability"));
+        abilities.add(new StealCharacteristicAbility("steal_characteristic_ability"));
+        abilities.add(new StealConnectionAbility("steal_connection_ability"));
+        abilities.add(new StealAuthorityAbility("steal_authority_ability"));
+        abilities.add(new StealUniquenessAbility("steal_uniqueness_ability"));
 
         // DEATH PATHWAY
         abilities.add(new EyeOfDeathAbility("eye_of_death_ability"));

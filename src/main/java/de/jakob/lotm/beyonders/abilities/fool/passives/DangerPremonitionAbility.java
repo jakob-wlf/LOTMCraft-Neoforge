@@ -60,6 +60,8 @@ public class DangerPremonitionAbility extends PassiveAbility {
             AllyComponent allyComponent = entity.getData(ModAttachments.ALLY_COMPONENT);
             if (allyComponent.isAlly(threat.getUUID())) continue;
 
+            if (de.jakob.lotm.beyonders.abilities.error.handler.DeceitHandler.isHiddenFromIntuition(serverPlayer, threat)) continue;
+
             if (ToggleAbility.getActiveAbilitiesForEntity(threat).contains((ToggleAbility) LOTMCraft.abilityHandler.getById("psychological_invisibility_ability"))) return;
 
             if (threat instanceof ServerPlayer threatServer) {
@@ -228,6 +230,8 @@ public class DangerPremonitionAbility extends PassiveAbility {
 
             AllyComponent allyComponent = event.getEntity().getData(ModAttachments.ALLY_COMPONENT);
             if (allyComponent.isAlly(entity.getUUID())) continue;
+
+            if (de.jakob.lotm.beyonders.abilities.error.handler.DeceitHandler.isHiddenFromIntuition(serverPlayer, event.getEntity())) continue;
 
             if (event.getEntity() instanceof ServerPlayer threatServer) {
                 if (DivinationUtil.getConcealmentPower(threatServer) > DivinationUtil.getDivinationPower(serverPlayer) + 4) continue;

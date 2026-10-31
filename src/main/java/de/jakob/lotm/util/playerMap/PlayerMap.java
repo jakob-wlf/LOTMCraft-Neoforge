@@ -104,6 +104,9 @@ public class PlayerMap extends SavedData {
     }
 
     public void addProphecy(UUID entity, Prophecy prophecy){
+        // Trojan Horse of Destiny senses prophecies that are woven around them
+        de.jakob.lotm.beyonders.abilities.error.handler.FateHandler.onProphecyAdded(entity, prophecy);
+
         var list = map.get(entity).prophecies();
         list.add(prophecy);
 
