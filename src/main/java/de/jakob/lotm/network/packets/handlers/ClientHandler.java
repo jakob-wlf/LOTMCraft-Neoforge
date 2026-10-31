@@ -374,6 +374,7 @@ public class ClientHandler {
     public static void handleAllyPacket(SyncAllyDataPacket packet) {
         if (Minecraft.getInstance().player != null) {
             AllyComponent newComponent = new AllyComponent(packet.allies(), packet.requests());
+            newComponent = de.jakob.lotm.rendering.error.ErrorClientHandler.withFakeAllies(newComponent);
             Minecraft.getInstance().player.setData(ModAttachments.ALLY_COMPONENT.get(), newComponent);
         }
     }
@@ -427,6 +428,8 @@ public class ClientHandler {
     public static void useAbility(UseAbilityPacket packet) {
         ClientLevel level = Minecraft.getInstance().level;
         if (level == null) return;
+
+        de.jakob.lotm.beyonders.abilities.error.handler.ErrorClientFlags.lastOwnAbilityUse = level.getGameTime();
 
         Entity entity = level.getEntity(packet.entityId());
         if(!(entity instanceof LivingEntity living)) {

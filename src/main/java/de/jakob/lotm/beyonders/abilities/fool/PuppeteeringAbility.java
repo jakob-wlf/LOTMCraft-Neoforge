@@ -8,6 +8,7 @@ import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.beyonders.abilities.core.ToggleAbility;
 import de.jakob.lotm.beyonders.abilities.demoness.MirrorSubstituteAbility;
 import de.jakob.lotm.beyonders.abilities.door.DoorSubstitutionAbility;
+import de.jakob.lotm.beyonders.abilities.error.StealConnectionAbility;
 import de.jakob.lotm.beyonders.abilities.fool.marionettes.MarionetteUtils;
 import de.jakob.lotm.beyonders.abilities.visionary.handlers.VisionaryHandler;
 import de.jakob.lotm.dimension.ModDimensions;
@@ -170,6 +171,8 @@ public class PuppeteeringAbility extends SelectableAbility {
     }
 
     private int calculatePuppetTime(LivingEntity caster, LivingEntity target, int multiplier) {
+        if (StealConnectionAbility.isThreadImmune(target)) return -1;
+
         int sequence = AbilityUtil.getSeqWithArt(caster, this);
         int targetSequence = BeyonderData.getSequence(target);
         int time = getManipulationTimeBySequenceAndSequenceDifference(sequence, targetSequence) * multiplier;

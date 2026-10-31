@@ -210,20 +210,33 @@ public final class HudWidgets {
         int w = 4 + icon + 3 + textW + 5;
         int h = LUCK_CHIP_H;
 
-        int rim = HudTheme.withAlpha(HudTheme.BRASS, alpha);
-        int rimDim = HudTheme.withAlpha(HudTheme.darken(HudTheme.BRASS, 0.45f), alpha);
-        g.fill(x, y, x + w, y + h, rimDim);
-        g.fill(x + 1, y + 1, x + w - 1, y + h - 1, HudTheme.withAlpha(0xFF0B0A0D, 0.85f * alpha));
-        g.fill(x + 1, y, x + w - 1, y + 1, rim);
-        g.fill(x + 1, y + h - 1, x + w - 1, y + h, rim);
-        g.fill(x, y + 1, x + 1, y + h - 1, rim);
-        g.fill(x + w - 1, y + 1, x + w, y + h - 1, rim);
+        int luckColor = HudTheme.luckColor(luck);
+
+        int[] s = HudTheme.size(HudTheme.LUCK_CHIP);
+        int tw = s[0], th = s[1];
+        int capL = 16, capR = 4;
+        setTint(g, HudTheme.withAlpha(0xFFFFFFFF, alpha));
+        RenderSystem.enableBlend();
+        part(g, HudTheme.LUCK_CHIP, x, y, capL, h, 0, 0, capL, th, tw, th);
+        part(g, HudTheme.LUCK_CHIP, x + capL, y, w - capL - capR, h, capL, 0, tw - capL - capR, th, tw, th);
+        part(g, HudTheme.LUCK_CHIP, x + w - capR, y, capR, h, tw - capR, 0, capR, th, tw, th);
+        resetTint(g);
+
+        float pulse = HudTheme.pulse(time, 0.1f);
+        g.fill(x + 3, y + 3, x + 14, y + h - 3, HudTheme.withAlpha(luckColor, (0.10f + 0.08f * pulse) * alpha));
 
         int bob = Math.round((float) Math.sin(time * 0.12f));
         blitTinted(g, HudTheme.LUCK_CLOVER, x + 3, y + (h - icon) / 2 + bob, icon, icon,
                 HudTheme.withAlpha(0xFFFFFFFF, alpha));
 
-        int color = HudTheme.withAlpha(HudTheme.luckColor(luck), alpha);
+        float glint = HudTheme.frac(time * 0.01f);
+        if (glint < 0.15f) {
+            int gx = x + 3 + Math.round(glint / 0.15f * (icon - 1));
+            float fade = (float) Math.sin(glint / 0.15f * Math.PI);
+            g.fill(gx, y + 3, gx + 1, y + h - 3, HudTheme.withAlpha(0xFFFFFFFF, 0.35f * fade * alpha));
+        }
+
+        int color = HudTheme.withAlpha(luckColor, alpha);
         if (alpha > 0.1f) {
             g.drawString(font, text, x + 4 + icon + 3, y + (h - font.lineHeight) / 2 + 1, color, true);
         }

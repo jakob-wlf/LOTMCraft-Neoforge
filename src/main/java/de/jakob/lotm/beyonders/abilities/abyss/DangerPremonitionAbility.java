@@ -71,6 +71,7 @@ public class DangerPremonitionAbility extends ToggleAbility {
         AbilityUtil.getNearbyEntities(entity, serverLevel, entity.position(), range)
                 .stream()
                 .filter(t -> isThreat(entity, t, mySeq))
+                .filter(t -> !de.jakob.lotm.beyonders.abilities.error.handler.DeceitHandler.isHiddenFromIntuition(entity, t))
                 .forEach(threat -> {
                     UUID tid = threat.getUUID();
 

@@ -34,6 +34,12 @@ public class PacketHandler {
 
     private static void registerClientPackets(PayloadRegistrar registrar) {
         registrar.playToClient(
+                de.jakob.lotm.network.packets.error.ErrorSyncPacket.TYPE,
+                de.jakob.lotm.network.packets.error.ErrorSyncPacket.STREAM_CODEC,
+                de.jakob.lotm.network.packets.error.ErrorSyncPacket::handle
+        );
+
+        registrar.playToClient(
                 SyncBeyonderDataPacket.TYPE,
                 SyncBeyonderDataPacket.STREAM_CODEC,
                 SyncBeyonderDataPacket::handle
@@ -605,6 +611,12 @@ public class PacketHandler {
     }
 
     private static void registerServerPackets(PayloadRegistrar registrar) {
+
+        registrar.playToServer(
+                de.jakob.lotm.network.packets.error.ErrorActionPacket.TYPE,
+                de.jakob.lotm.network.packets.error.ErrorActionPacket.STREAM_CODEC,
+                de.jakob.lotm.network.packets.error.ErrorActionPacket::handle
+        );
 
         registrar.playToServer(
                 WhipSlashPayload.TYPE,

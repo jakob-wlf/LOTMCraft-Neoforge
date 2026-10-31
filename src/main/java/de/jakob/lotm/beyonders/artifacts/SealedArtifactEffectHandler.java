@@ -55,7 +55,8 @@ public class SealedArtifactEffectHandler {
         for (ItemStack stack : player.getInventory().items) {
             if (stack.getItem() instanceof SealedArtifactItem) {
                 SealedArtifactData data = stack.get(ModDataComponents.SEALED_ARTIFACT_DATA);
-                if (data != null) {
+                if (data != null && (!de.jakob.lotm.beyonders.abilities.error.ParasitationAbility.isArtifactParasitizedBy(stack, player)
+                        || player.tickCount % 4 == 0)) {
                     applyInventoryEffect(player, data);
                 }
             }
@@ -66,6 +67,12 @@ public class SealedArtifactEffectHandler {
     private static void applyHandNegativeEffect(Player player, ItemStack stack, boolean inMainHand) {
         SealedArtifactData data = stack.get(ModDataComponents.SEALED_ARTIFACT_DATA);
         if (data == null || data.negativeEffect() == null) {
+            return;
+        }
+
+        // Worms of a Trojan Horse living inside the artifact keep most of its backlash away from their host
+        if (de.jakob.lotm.beyonders.abilities.error.ParasitationAbility.isArtifactParasitizedBy(stack, player)
+                && player.tickCount % 4 != 0) {
             return;
         }
 
@@ -80,6 +87,11 @@ public class SealedArtifactEffectHandler {
     private static void applyHotBarNegativeEffect(Player player, ItemStack stack) {
         SealedArtifactData data = stack.get(ModDataComponents.SEALED_ARTIFACT_DATA);
         if (data == null || data.negativeEffect() == null) {
+            return;
+        }
+
+        if (de.jakob.lotm.beyonders.abilities.error.ParasitationAbility.isArtifactParasitizedBy(stack, player)
+                && player.tickCount % 4 != 0) {
             return;
         }
 
