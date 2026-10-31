@@ -17,8 +17,10 @@ import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
@@ -111,16 +113,22 @@ public class BloodlineCorroderAbility extends SelectableAbility {
         }
         BlockPos lightPos = BlockPos.containing(startPos);
         if (level.getBlockState(lightPos).isAir()) {level.setBlockAndUpdate(lightPos, Blocks.LIGHT.defaultBlockState());}
-        ServerScheduler.scheduleDelayed(25, () -> {if (level.getBlockState(lightPos).is(Blocks.LIGHT)) {level.setBlockAndUpdate(lightPos, Blocks.AIR.defaultBlockState());}});
+        ServerScheduler.scheduleDelayed(25, () -> {
+            if (level.getBlockState(lightPos).is(Blocks.LIGHT)) level.setBlockAndUpdate(lightPos, Blocks.AIR.defaultBlockState());
+        }, level, () -> AbilityUtil.getTimeInArea(entity, new Location(startPos, level)));
         NeoForge.EVENT_BUS.post(new AbilityUsedEvent(level, startPos, entity, this, interactionFlags, 2.4f, interactionCacheTicks));
     }
     //Dissolving Mist
     private void castDissolvingMist(ServerLevel level, LivingEntity entity) {
+        level.playSound(null, entity.blockPosition(), SoundEvents.BREWING_STAND_BREW, SoundSource.PLAYERS, 1.5f, 0.6f);
         ServerScheduler.scheduleForDuration(0, 20, (int) (MIST_DURATION_TICKS * multiplier(entity)), () -> {
             if (entity.level().isClientSide) return;
             Location currentLoc = new Location(entity.position(), entity.level());
             int seq = AbilityUtil.getSeqWithArt(entity, this);
-            if (InteractionHandler.isInteractionPossible(currentLoc, "purification", seq) || InteractionHandler.isInteractionPossible(currentLoc, "cleansing", seq)) {return;}
+            if (InteractionHandler.isInteractionPossible(currentLoc, "purification", seq) || InteractionHandler.isInteractionPossible(currentLoc, "cleansing", seq)) {
+                AbilityUtil.sendActionBar(entity, Component.translatable("ability.lotmcraft.corroder_ability.mist_purified"));
+                return;
+            }
             ServerLevel serverLevel = (ServerLevel) entity.level();
             long gameTime = serverLevel.getGameTime();
             ParticleUtil.spawnParticles(serverLevel, mistDust, entity.position().add(0, 1, 0), 200, MIST_RADIUS * 0.6, 0.02);

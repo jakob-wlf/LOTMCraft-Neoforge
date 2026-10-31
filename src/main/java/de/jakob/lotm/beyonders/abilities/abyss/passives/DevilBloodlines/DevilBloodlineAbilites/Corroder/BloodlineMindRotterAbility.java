@@ -66,12 +66,13 @@ public class BloodlineMindRotterAbility extends PassiveAbility {
         long last = lastRetaliation.getOrDefault(invader.getUUID(), 0L);
         if (now - last < RETALIATION_COOLDOWN_TICKS) return;
         lastRetaliation.put(invader.getUUID(), now);
+        if (lastRetaliation.size() > 64) lastRetaliation.values().removeIf(t -> now - t > 200);
         float damage = (float) (DamageLookup.lookupDamage(5, RETALIATION_DAMAGE_SCALE) * POISON_DAMAGE_MULTIPLIER);
         // Deal corrosion damage.
         invader.hurt(ModDamageTypes.source(level, ModDamageTypes.CORROSION, victim), damage);
         // Apply Nausea IV for 6 seconds.
         invader.addEffect(new MobEffectInstance(MobEffects.CONFUSION, RETALIATION_NAUSEA_TICKS, 3));
         ParticleUtil.spawnParticles(level, ROT_DUST,invader.getEyePosition(), 60, 0.5, 0.02);
-        AbilityUtil.sendActionBar(invader, Component.literal("Their mind is rotting, and it spreads to yours.").withColor(0x2f6b2f));
+        AbilityUtil.sendActionBar(invader, Component.translatable("ability.lotmcraft.mind_rotter.retaliate").withColor(0x2f6b2f));
     }
 }

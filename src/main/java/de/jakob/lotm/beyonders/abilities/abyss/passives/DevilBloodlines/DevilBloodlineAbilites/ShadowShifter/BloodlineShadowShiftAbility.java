@@ -15,11 +15,13 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -33,12 +35,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @EventBusSubscriber(modid = LOTMCraft.MOD_ID)
 public class BloodlineShadowShiftAbility extends PassiveAbility {
-
     private static final double SHADOW_SHIFT_DISTANCE = 100.0D;
-
     // Activates when a hit leaves the user at 20% HP or lower.
     private static final float HEALTH_THRESHOLD = 0.20F;
-
     // 10 min cooldown.
     private static final long COOLDOWN = 20L * 600L;
     // Shadow clone survives for 1 min.
@@ -46,9 +45,7 @@ public class BloodlineShadowShiftAbility extends PassiveAbility {
     private static final Map<UUID, Long> cooldowns = new ConcurrentHashMap<>();
     private static final DustParticleOptions SHADOW_DUST = new DustParticleOptions(new Vector3f(0.05F, 0.0F, 0.08F), 2.0F);
     private static final DustParticleOptions WISP_DUST = new DustParticleOptions(new Vector3f(0.25F, 0.0F, 0.35F), 1.2F);
-
     public BloodlineShadowShiftAbility(String id) {super(id);}
-
     @Override
     public Map<String, Integer> getRequirements() {
         return new HashMap<>(Map.of("abyss", 6));
@@ -62,7 +59,6 @@ public class BloodlineShadowShiftAbility extends PassiveAbility {
         if (entity instanceof AvatarEntity) return false;
         return DevilBloodlineAbility.hasBloodline(entity, DevilBloodlineAbility.Bloodline.SHADOW_SHIFTER);
     }
-
     @Override
     public void tick(Level level, LivingEntity entity) {
     }
@@ -77,7 +73,6 @@ public class BloodlineShadowShiftAbility extends PassiveAbility {
         if (!hasShadowShiftBloodline(entity)) return;
         tryShadowShift(level, entity);
     }
-
     private static void tryShadowShift(ServerLevel level, LivingEntity entity) {
         float maxHealth = entity.getMaxHealth();
         if (maxHealth <= 0) {return;}
@@ -88,9 +83,10 @@ public class BloodlineShadowShiftAbility extends PassiveAbility {
         long cooldownUntil = cooldowns.getOrDefault(uuid, 0L);
         if (gameTime < cooldownUntil) {return;}
         performShadowShift(level, entity);
+        if (!performShadowShift(level, entity)) return;
         cooldowns.put(uuid, gameTime + COOLDOWN);
     }
-    private static void performShadowShift(ServerLevel level, LivingEntity entity) {
+    private static boolean performShadowShift(ServerLevel level, LivingEntity entity) {
         Vec3 originPos = entity.position();
         // Calculate escape direction.
         Vec3 lookDir = entity.getLookAngle();
@@ -101,6 +97,7 @@ public class BloodlineShadowShiftAbility extends PassiveAbility {
         // 100 block escape.
         Vec3 desiredEscapePos = originPos.add(escapeDir.x * SHADOW_SHIFT_DISTANCE, 0, escapeDir.z * SHADOW_SHIFT_DISTANCE);
         Vec3 escapePos = findSafePosition(level, desiredEscapePos);
+        if (escapePos == null) return false;
         // Create shadow clone.
         String pathway = BeyonderData.getPathway(entity);
         int sequence = BeyonderData.getSequence(entity);
@@ -130,6 +127,7 @@ public class BloodlineShadowShiftAbility extends PassiveAbility {
         // Shadow clone lifetime.
         ServerScheduler.scheduleDelayed((int) CLONE_DURATION, () -> destroyClone(level, entity, clone), level);
         AbilityUtil.sendActionBar(entity, Component.translatable("ability.lotmcraft.shadow_shift.activated").withColor(0x1A0026));
+        return true;
     }
 
     private static void destroyClone(ServerLevel level, LivingEntity owner, AvatarEntity clone) {
@@ -140,25 +138,18 @@ public class BloodlineShadowShiftAbility extends PassiveAbility {
         level.playSound(null, clonePos.x, clonePos.y, clonePos.z, SoundEvents.WITHER_AMBIENT, owner.getSoundSource(), 1.2F, 1.5F);
         clone.discard();
     }
-    private static Vec3 findSafePosition(ServerLevel level, Vec3 desiredPos) {
-        BlockPos desiredBlock = BlockPos.containing(desiredPos);
-        // Exact location is safe.
-        if (isSafePosition(level, desiredBlock)) {return centerOf(desiredBlock);}
-        // Search around the destination.
-        for (int radius = 1; radius <= 8; radius++) {
-            for (int dx = -radius; dx <= radius; dx++) {
+    private static Vec3 findSafePosition(ServerLevel level, Vec3 desired) {
+        level.getChunk(Mth.floor(desired.x) >> 4, Mth.floor(desired.z) >> 4); // one load per 10 min
+        for (int radius = 0; radius <= 8; radius++)
+            for (int dx = -radius; dx <= radius; dx++)
                 for (int dz = -radius; dz <= radius; dz++) {
-                    BlockPos candidate = desiredBlock.offset(dx, 0, dz);
-                    if (isSafePosition(level, candidate)) {return centerOf(candidate);
-                    }
+                    if (Math.max(Math.abs(dx), Math.abs(dz)) != radius) continue;
+                    int x = Mth.floor(desired.x) + dx, z = Mth.floor(desired.z) + dz;
+                    BlockPos feet = new BlockPos(x, level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z), z);
+                    if (isSafePosition(level, feet)) return centerOf(feet);
                 }
-            }
-        }
-        // Fallback to the original destination.
-        return desiredPos;
+        return null;
     }
-    private static boolean isSafePosition(ServerLevel level, BlockPos pos) {return level.getBlockState(pos).isAir() && level.getBlockState(pos.above()).isAir() && !level.getBlockState(pos.below()).isAir();}
-    private static Vec3 centerOf(BlockPos pos) {
-        return new Vec3(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D);
-    }
+    private static boolean isSafePosition(ServerLevel level, BlockPos pos) {return level.getBlockState(pos).isAir() && level.getBlockState(pos.above()).isAir() && level.getBlockState(pos.below()).blocksMotion() && level.getFluidState(pos.below()).isEmpty();}
+    private static Vec3 centerOf(BlockPos pos) {return new Vec3(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D);}
 }

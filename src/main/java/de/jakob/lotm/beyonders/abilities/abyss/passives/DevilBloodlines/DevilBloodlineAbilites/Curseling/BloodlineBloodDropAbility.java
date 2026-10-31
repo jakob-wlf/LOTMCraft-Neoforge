@@ -12,6 +12,7 @@ import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -46,7 +47,7 @@ public class BloodlineBloodDropAbility extends ToggleAbility {
     public void start(Level level, LivingEntity entity) {
         if (level.isClientSide()) return;
         entity.getPersistentData().putBoolean(ACTIVE_TAG, true);
-        if (entity instanceof ServerPlayer player) {player.displayClientMessage(Component.literal("Blood drop: ON"), true);}
+        if (entity instanceof ServerPlayer player) {player.displayClientMessage(Component.translatable("ability.lotmcraft.blood_drop.on"),true);}
     }
     @Override
     public void tick(Level level, LivingEntity entity) {
@@ -56,20 +57,23 @@ public class BloodlineBloodDropAbility extends ToggleAbility {
         if (level.isClientSide()) return;
         entity.getPersistentData().remove(ACTIVE_TAG);
         if (entity instanceof ServerPlayer player) {
-            player.displayClientMessage(Component.literal("Blood drop: OFF"), true);
+            player.displayClientMessage(Component.literal("ability.lotmcraft.blood_drop.off"), true);
         }
     }
     @SubscribeEvent
     public static void onLivingHurt(LivingDamageEvent.Post event) {
         if (!(event.getSource().getEntity() instanceof LivingEntity attacker)) return;
-        if (attacker.level().isClientSide()) return;
+        if (attacker.level().isClientSide() || event.getNewDamage() <= 0) return;
         if (!attacker.getPersistentData().getBoolean(ACTIVE_TAG)) return;
-        if (!BloodlineCurselingAbility.isValidCurseling(attacker)) return;
         LivingEntity victim = event.getEntity();
         if (RANDOM.nextDouble() < DROP_CHANCE && attacker.distanceTo(victim) < DROP_RANGE) {
             ItemStack blood = new ItemStack(ModItems.BLOOD.get());
             blood.set(ModDataComponents.BLOOD_OWNER, victim.getUUID().toString());
             victim.spawnAtLocation(blood);
         }
+    }
+    @SubscribeEvent
+    public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+        event.getEntity().getPersistentData().remove(ACTIVE_TAG);
     }
 }

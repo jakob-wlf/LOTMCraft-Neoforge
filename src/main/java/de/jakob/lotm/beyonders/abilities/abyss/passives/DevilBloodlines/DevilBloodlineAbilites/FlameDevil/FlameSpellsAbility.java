@@ -15,6 +15,7 @@ import de.jakob.lotm.util.helper.ParticleUtil;
 import de.jakob.lotm.util.helper.VectorUtil;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -85,8 +86,10 @@ public class FlameSpellsAbility extends SelectableAbility {
             e.hurt(ModDamageTypes.source(level, ModDamageTypes.FIRE, entity), (float) (DamageLookup.lookupDamage(6, .875) *
                     multiplier(entity))* BloodlineFilthFlameSpiritAbility.getFireDamageMultiplier(entity));
             e.setRemainingFireTicks(20 * 3);
-            Vec3 knockBack = new Vec3(e.position().subtract(startPos).normalize().x, .75, e.position().subtract(startPos).normalize().z).normalize().scale(.5);
-            e.setDeltaMovement(knockBack);
+            Vec3 away = e.position().subtract(startPos);
+            if (away.lengthSqr() < 1.0E-4) away = new Vec3(0, 0, 1);
+            Vec3 dir = away.normalize();
+            e.setDeltaMovement(new Vec3(dir.x, .75, dir.z).normalize().scale(.5));
         });
 
         ParticleUtil.spawnParticles((ServerLevel) level, ParticleTypes.FLAME, startPos.add(0, 1, 0), 600, .75, 1.25, .75, .025);
@@ -99,19 +102,19 @@ public class FlameSpellsAbility extends SelectableAbility {
     }
 
     private void spawnFallingBlocks(Level level, Vec3 startPos, BlockPos b, boolean griefing) {
-        if(random.nextInt(2) != 0)
-            return;
-
+        if (random.nextInt(2) != 0) return;
         BlockState state = level.getBlockState(b);
         BlockState above = level.getBlockState(b.above());
-        if(state.getCollisionShape(level, b).isEmpty() || !above.getCollisionShape(level, b.above()).isEmpty()) return;
-
+        if (state.getCollisionShape(level, b).isEmpty() || !above.getCollisionShape(level, b.above()).isEmpty()) return;
+        if (!griefing || state.getDestroySpeed(level, b) < 0 || level.getBlockEntity(b) != null) {
+            ParticleUtil.spawnParticles((ServerLevel) level, new BlockParticleOption(ParticleTypes.BLOCK, state), Vec3.atCenterOf(b.above()), 10, .3, .05);
+            return;
+        }
         Vec3 vectorFromCenter = new Vec3(b.getX() + 0.5 - startPos.x, 0, b.getZ() + 0.5 - startPos.z).normalize();
-        Vec3 movement = (new Vec3(vectorFromCenter.x, 1, vectorFromCenter.z)).normalize().scale(.75);
+        Vec3 movement = new Vec3(vectorFromCenter.x, 1, vectorFromCenter.z).normalize().scale(.75);
         FallingBlockEntity block = FallingBlockEntity.fall(level, b.above(), state);
         block.setDeltaMovement(movement);
-        if(!griefing || state.getDestroySpeed(level, b) < 0) block.disableDrop();
-        else level.setBlockAndUpdate(b, Blocks.AIR.defaultBlockState());
+        level.setBlockAndUpdate(b, Blocks.AIR.defaultBlockState());
         block.hurtMarked = true;
     }
 
@@ -119,7 +122,7 @@ public class FlameSpellsAbility extends SelectableAbility {
         if (level.isClientSide) return;
         ServerLevel serverLevel = (ServerLevel) level;
         Vec3 castPos = entity.getEyePosition();
-        boolean dealsFilth = BeyonderData.getSequence(entity) <= 5;
+        boolean dealsFilth = AbilityUtil.getSeqWithArt(entity, this) <= 5;
         for (int i = 0; i < 3; i++) {
             final int index = i;
             ServerScheduler.scheduleDelayed(i * 5, () -> shootSulfurFireball(serverLevel, entity, index, dealsFilth), serverLevel, () -> AbilityUtil.getTimeInArea(entity, new Location(castPos, serverLevel)));

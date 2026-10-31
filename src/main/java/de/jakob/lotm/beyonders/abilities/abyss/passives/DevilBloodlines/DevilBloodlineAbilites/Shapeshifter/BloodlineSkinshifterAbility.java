@@ -3,7 +3,7 @@ package de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBl
 import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbility;
-import de.jakob.lotm.beyonders.abilities.core.ToggleAbility; // ASSUMPTION: adjust to your toggle base class
+import de.jakob.lotm.beyonders.abilities.core.ToggleAbility;
 import de.jakob.lotm.entity.custom.BeyonderNPCEntity;
 import de.jakob.lotm.item.ModItems;
 import de.jakob.lotm.util.BeyonderData;
@@ -23,6 +23,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 import java.util.HashMap;
@@ -77,7 +78,7 @@ public class BloodlineSkinshifterAbility extends ToggleAbility {
     public void start(Level level, LivingEntity entity) {
         if (level.isClientSide()) return;
         entity.getPersistentData().putBoolean(ACTIVE_TAG, true);
-        if (entity instanceof ServerPlayer player) {player.displayClientMessage(Component.literal("Skin harvesting: ON"), true);}
+        if (entity instanceof ServerPlayer player) {player.displayClientMessage(Component.translatable("ability.lotmcraft.skin_harvest.on"), true);}
     }
     @Override
     public void tick(Level level, LivingEntity entity) {
@@ -86,11 +87,9 @@ public class BloodlineSkinshifterAbility extends ToggleAbility {
     public void stop(Level level, LivingEntity entity) {
         if (level.isClientSide()) return;
         entity.getPersistentData().remove(ACTIVE_TAG);
-        if (entity instanceof ServerPlayer player) {player.displayClientMessage(Component.literal("Skin harvesting: OFF"), true);}
+        if (entity instanceof ServerPlayer player) {player.displayClientMessage(Component.translatable("ability.lotmcraft.skin_harvest.off"), true);}
     }
-
     //Skin mask drops
-
     @SubscribeEvent
     public static void onLivingDrops(LivingDropsEvent event) {
         LivingEntity victim = event.getEntity();
@@ -99,7 +98,6 @@ public class BloodlineSkinshifterAbility extends ToggleAbility {
         if (!isNpc && !MASK_VICTIMS.contains(victim.getType())) return;
         if (!(event.getSource().getEntity() instanceof LivingEntity killer)) return;
         if (!killer.getPersistentData().getBoolean(ACTIVE_TAG)) return;
-        if (!isValidShapeshifter(killer)) return;
         ItemStack mask = SkinMaskItem.create(ModItems.SKIN_MASK.get(), victim, isUpgradedShapeshifter(killer));
         event.getDrops().add(new ItemEntity(victim.level(), victim.getX(), victim.getY(), victim.getZ(), mask));
     }
@@ -131,9 +129,13 @@ public class BloodlineSkinshifterAbility extends ToggleAbility {
         data.remove(MASK_UPGRADED_TAG);
         ShapeShiftingUtil.resetShape(player);
         player.level().playSound(null, player.blockPosition(), SoundEvents.ITEM_BREAK, SoundSource.PLAYERS, 1.0f, 1.0f);
-        player.displayClientMessage(Component.literal("Your skin mask shatters!"), true);
+        player.displayClientMessage(Component.translatable("ability.lotmcraft.skin_mask.shattered"), true);
     }
     public static boolean isUpgradedShapeshifter(LivingEntity entity) {
         return isValidShapeshifter(entity) && BeyonderData.getSequence(entity) <= SpiritDisguiseUtil.UPGRADE_SEQUENCE;
+    }
+    @SubscribeEvent
+    public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+        event.getEntity().getPersistentData().remove(ACTIVE_TAG);
     }
 }

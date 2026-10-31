@@ -9,6 +9,7 @@ import de.jakob.lotm.entity.custom.AvatarEntity;
 import de.jakob.lotm.item.ModItems;
 import de.jakob.lotm.particle.ModParticles;
 import de.jakob.lotm.util.BeyonderData;
+import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.helper.AbilityUtil;
 import de.jakob.lotm.util.helper.DamageLookup;
 import de.jakob.lotm.util.helper.ParticleUtil;
@@ -96,16 +97,16 @@ public class SwordOfLavaAbility extends Ability {
         // Using the ability again dismisses the sword
         if (hasLavaSword(player)) {
             removeLavaSwords(player);
-            player.displayClientMessage(Component.literal("The lava sword cools and fades.").withColor(0xE25822), true);
+            player.displayClientMessage(Component.translatable("ability.lotmcraft.sword_of_lava.dismissed").withColor(0xE25822), true);
             return;
         }
         int slot = getEmptyHotbarSlot(player);
         if (slot < 0) {
-            player.displayClientMessage(Component.literal("You need an empty slot in your hotbar.").withColor(0xE25822), true);
+            player.displayClientMessage(Component.translatable("ability.lotmcraft.sword_of_lava.no_slot").withColor(0xE25822), true);
             return;
         }
         ItemStack sword = new ItemStack(ModItems.LAVA_SWORD.get());
-        sword.set(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.builder().add(Attributes.ATTACK_DAMAGE, new AttributeModifier(ResourceLocation.fromNamespaceAndPath(LOTMCraft.MOD_ID, "lava_sword_damage"), getSwordDamage(BeyonderData.getSequence(player)), AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND).build());
+        sword.set(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.builder().add(Attributes.ATTACK_DAMAGE, new AttributeModifier(ResourceLocation.fromNamespaceAndPath(LOTMCraft.MOD_ID, "lava_sword_damage"), getSwordDamage(AbilityUtil.getSeqWithArt(player, this)), AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND).build());
         player.getInventory().setItem(slot, sword);
         if (!player.hasInfiniteMaterials()) {BeyonderData.reduceSpirituality(player, CONJURE_COST);}
         level.playSound(null, player.blockPosition(), SoundEvents.BLAZE_SHOOT, SoundSource.PLAYERS, 2.0f, 0.5f);
@@ -150,7 +151,7 @@ public class SwordOfLavaAbility extends Ability {
         AtomicReference<UUID> taskRef = new AtomicReference<>();
         UUID taskId = ServerScheduler.scheduleForDuration(0, 1, PROJECTILE_MAX_TICKS, () -> {
             boolean finished = projectileTick(level, owner, position, forward, sweepAxis, damage, seq, griefing, alreadyHit);
-            if (finished && taskRef.get() != null) {ServerScheduler.cancel(taskRef.get());}}, () -> {}, level);
+            if (finished && taskRef.get() != null) {ServerScheduler.cancel(taskRef.get());}}, () -> {}, level, () -> AbilityUtil.getTimeInArea(owner, new Location(owner.position(), level)));
         taskRef.set(taskId);
     }
     private boolean projectileTick(ServerLevel level, Player owner, Vec3[] position, Vec3 forward, Vec3 sweepAxis, double damage, int seq, boolean griefing, Set<UUID> alreadyHit) {

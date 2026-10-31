@@ -27,6 +27,7 @@ import net.minecraft.world.level.Level;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class BloodlineCurselingAbility extends Ability {
@@ -44,17 +45,14 @@ public class BloodlineCurselingAbility extends Ability {
         canBeUsedByNPC = false;
         autoClear = false;
     }
-
     @Override
     public Map<String, Integer> getRequirements() {
         return new HashMap<>(Map.of("abyss", 6));
     }
-
     @Override
     public float getSpiritualityCost() {
         return 300;
     }
-
     @Override
     public boolean meetsBloodlineRequirement(LivingEntity entity) {
         return hasCurselingBloodline(entity);
@@ -70,30 +68,28 @@ public class BloodlineCurselingAbility extends Ability {
     }
     @Override
     public void onAbilityUse(Level level, LivingEntity entity) {
-        if (!(level instanceof ServerLevel serverLevel)) return;
-        if (!(entity instanceof ServerPlayer player)) return;
+        if (!(level instanceof ServerLevel serverLevel) || !(entity instanceof ServerPlayer player)) return;
         ItemStack offHandItem = player.getItemInHand(InteractionHand.OFF_HAND);
         if (!offHandItem.is(ModItems.BLOOD)) {
             AbilityUtil.sendActionBar(entity, Component.translatable("ability.lotmcraft.curse.no_blood").withColor(0x6d32a8));
             return;
         }
-        String ownerStr = offHandItem.getOrDefault(ModDataComponents.BLOOD_OWNER, "");
-        UUID targetUUID = ownerStr.isEmpty() ? null : UUID.fromString(ownerStr);
-        if (targetUUID == null) {
+        UUID targetUUID = null;
+        try {
+            String ownerStr = offHandItem.getOrDefault(ModDataComponents.BLOOD_OWNER, "");
+            if (!ownerStr.isEmpty()) targetUUID = UUID.fromString(ownerStr);
+        } catch (IllegalArgumentException ignored) {}
+        LivingEntity found = null;
+        if (targetUUID != null) for (ServerLevel l : serverLevel.getServer().getAllLevels()) if (l.getEntity(targetUUID) instanceof LivingEntity le) { found = le; break; }
+        if (found == null) {
             AbilityUtil.sendActionBar(entity, Component.translatable("ability.lotmcraft.curse.no_target").withColor(0x6d32a8));
             offHandItem.consume(1, player);
             return;
         }
-        Entity target = serverLevel.getEntity(targetUUID);
-        if (!(target instanceof LivingEntity livingTarget)) {
-            AbilityUtil.sendActionBar(entity, Component.translatable("ability.lotmcraft.curse.no_target").withColor(0x6d32a8));
-            offHandItem.consume(1, player);
-            return;
-        }
+        final LivingEntity cursed = found;
         int entitySeq = AbilityUtil.getSeqWithArt(entity, this);
-        int livingTargetSeq = BeyonderData.getSequence(livingTarget);
-        // Cursing someone much stronger backfires
-        if (AbilityUtil.isTargetSignificantlyStronger(entitySeq, livingTargetSeq)) {
+        int targetSeq = BeyonderData.isBeyonder(cursed) ? BeyonderData.getSequence(cursed) : 10;
+        if (AbilityUtil.isTargetSignificantlyStronger(entitySeq, targetSeq)) {
             entity.addEffect(new MobEffectInstance(ModEffects.LOOSING_CONTROL, 20 * 5, 3));
             entity.hurt(ModDamageTypes.source(entity.level(), ModDamageTypes.CURSE), 10);
             return;
@@ -101,30 +97,20 @@ public class BloodlineCurselingAbility extends Ability {
         AbilityUtil.sendActionBar(entity, Component.translatable("ability.lotmcraft.curse.cursed_target").withColor(0x6d32a8));
         offHandItem.consume(1, player);
         int curseDuration = CURSE_BASE_TICKS * (int) Math.max(multiplier(entity), 1);
-        AtomicReference<UUID> taskIdRef = new AtomicReference<>(null);
+        AtomicReference<UUID> taskIdRef = new AtomicReference<>();
+        AtomicBoolean stopped = new AtomicBoolean(false);
+        Runnable stop = () -> { stopped.set(true); UUID id = taskIdRef.get(); if (id != null) ServerScheduler.cancel(id); };
         UUID taskId = ServerScheduler.scheduleForDuration(0, CURSE_INTERVAL_TICKS, curseDuration, () -> {
-            if (livingTarget.isDeadOrDying()) {
-                ServerScheduler.cancel(taskIdRef.get());
+            if (stopped.get()) return;
+            if (cursed.isDeadOrDying() || InteractionHandler.isInteractionPossibleForEntity(new Location(cursed.position(), cursed.level()), "cleansing", entitySeq, entity)) {
+                stop.run();
                 return;
             }
-            // The curse gets cleansed
-            if (InteractionHandler.isInteractionPossibleForEntity(new Location(target.position(), target.level()), "cleansing", entitySeq, entity)) {
-                ServerScheduler.cancel(taskIdRef.get());
-                return;
-            }
-            // Drain spirituality (beyonders only)
-            if (BeyonderData.isBeyonder(livingTarget)) {
-                float spirit = BeyonderData.getSpirituality(livingTarget);
-                BeyonderData.setSpirituality(livingTarget, Math.max(0f, spirit - SPIRIT_DRAIN));
-            }
-            // Drain sanity
-            var sanity = livingTarget.getData(ModAttachments.SANITY_COMPONENT.get());
-            sanity.setSanityAndSync(Math.max(0f, sanity.getSanity() - SANITY_DRAIN), livingTarget);
-
-            ParticleUtil.spawnParticles(serverLevel, ModParticles.BLACK_FLAME.get(),
-                    livingTarget.position().add(0, livingTarget.getEyeHeight() / 2, 0),
-                    60, .4, livingTarget.getEyeHeight() / 2, .4, 0.01);
-        }, () -> clearArtifactScaling(entity), serverLevel);
+            if (BeyonderData.isBeyonder(cursed)) BeyonderData.setSpirituality(cursed, Math.max(0f, BeyonderData.getSpirituality(cursed) - SPIRIT_DRAIN));
+            var sanity = cursed.getData(ModAttachments.SANITY_COMPONENT.get());
+            sanity.setSanityAndSync(Math.max(0f, sanity.getSanity() - SANITY_DRAIN), cursed);
+            if (cursed.level() instanceof ServerLevel cl) {ParticleUtil.spawnParticles(cl, ModParticles.BLACK_FLAME.get(), cursed.position().add(0, cursed.getEyeHeight() / 2, 0), 60, .4, cursed.getEyeHeight() / 2, .4, 0.01);}
+        }, () -> clearArtifactScaling(entity), serverLevel, () -> AbilityUtil.getTimeInArea(entity, new Location(entity.position(), serverLevel)));
         taskIdRef.set(taskId);
     }
 }

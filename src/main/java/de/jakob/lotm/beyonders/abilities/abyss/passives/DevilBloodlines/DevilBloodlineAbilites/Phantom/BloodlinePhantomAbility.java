@@ -16,7 +16,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.AABB;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -32,6 +32,9 @@ import java.util.Map;
 @EventBusSubscriber(modid = LOTMCraft.MOD_ID)
 public class BloodlinePhantomAbility extends ToggleAbility {
     private static final int TOGGLE_COOLDOWN_TICKS = 20 * 60;
+    private static final int WALL_BLINDNESS_AMP = 10;
+    private static final int MAX_SAFE_SPOT_CHECKS = 800;
+
     private static BloodlinePhantomAbility instance;
     public BloodlinePhantomAbility(String id) {
         super(id);
@@ -70,19 +73,23 @@ public class BloodlinePhantomAbility extends ToggleAbility {
     @Override
     public void tick(Level level, LivingEntity entity) {
         if (level.isClientSide()) return;
-        // Restore the form if the toggle is still on but the attachment was lost (e.g. after relogging)
-        if (!isInPhantomForm(entity)) {PhantomFormAttachment.setGhost(entity, true);}
-        entity.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 40, 0, false, false, false));
+        if (!isInPhantomForm(entity)) PhantomFormAttachment.setGhost(entity, true);
+        MobEffectInstance inv = entity.getEffect(MobEffects.INVISIBILITY);
+        if (inv == null || inv.getDuration() < 20) entity.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 60, 0, false, false, false));
         entity.fallDistance = 0;
-        boolean insideWall = !level.noCollision(entity);
-        if (insideWall) entity.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 40, 10, false, false, false));
-        else entity.removeEffect(MobEffects.BLINDNESS);
+        MobEffectInstance blind = entity.getEffect(MobEffects.BLINDNESS);
+        if (!level.noCollision(entity)) {
+            if (blind == null || blind.getDuration() < 20) entity.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 40, WALL_BLINDNESS_AMP, false, false, false));
+        } else if (blind != null && blind.getAmplifier() == WALL_BLINDNESS_AMP) {
+            entity.removeEffect(MobEffects.BLINDNESS); // only the one this ability applied
+        }
     }
     @Override
     public void stop(Level level, LivingEntity entity) {
         if (level.isClientSide()) return;
         endGhostForm(entity);
         applyToggleCooldown(entity);
+        entity.removeEffect(MobEffects.BLINDNESS);
         if (entity instanceof ServerPlayer player) {player.displayClientMessage(Component.translatable("ability.lotmcraft.wraith_ability.deactivated").withColor(0xBFA7FF), true);}
     }
     private static void endGhostForm(LivingEntity entity) {
@@ -98,14 +105,16 @@ public class BloodlinePhantomAbility extends ToggleAbility {
         if (level.noCollision(player)) return;
         Vec3 origin = player.position();
         int[] verticalOrder = {0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6, -6, 8, -8, 10, -10};
+        int checks = 0;
+        search:
         for (int radius = 0; radius <= 8; radius++) {
             for (int dy : verticalOrder) {
                 for (int dx = -radius; dx <= radius; dx++) {
                     for (int dz = -radius; dz <= radius; dz++) {
                         if (Math.max(Math.abs(dx), Math.abs(dz)) != radius) continue;
+                        if (++checks > MAX_SAFE_SPOT_CHECKS) break search;
                         Vec3 candidate = new Vec3(Math.floor(origin.x) + dx + 0.5, Math.floor(origin.y) + dy, Math.floor(origin.z) + dz + 0.5);
-                        AABB box = player.getDimensions(player.getPose()).makeBoundingBox(candidate);
-                        if (level.noCollision(player, box)) {
+                        if (level.noCollision(player, player.getDimensions(player.getPose()).makeBoundingBox(candidate))) {
                             player.teleportTo(candidate.x, candidate.y, candidate.z);
                             player.fallDistance = 0;
                             return;
@@ -113,6 +122,11 @@ public class BloodlinePhantomAbility extends ToggleAbility {
                     }
                 }
             }
+        }
+        if (!level.dimensionType().hasCeiling()) {
+            int x = player.getBlockX(), z = player.getBlockZ();
+            player.teleportTo(x + 0.5, level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z), z + 0.5);
+            player.fallDistance = 0;
         }
     }
     private static boolean isBeyonderAbilityDamage(DamageSource source) {return source.typeHolder().unwrapKey().map(key -> key.location().getNamespace().equals(LOTMCraft.MOD_ID)).orElse(false);}

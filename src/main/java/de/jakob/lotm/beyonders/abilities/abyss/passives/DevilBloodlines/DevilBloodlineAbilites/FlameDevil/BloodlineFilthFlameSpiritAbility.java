@@ -66,6 +66,7 @@ public class BloodlineFilthFlameSpiritAbility extends PassiveAbility {
         long last = lastRetaliation.getOrDefault(invader.getUUID(), 0L);
         if (now - last >= RETALIATION_COOLDOWN_TICKS) {
             lastRetaliation.put(invader.getUUID(), now);
+            if (lastRetaliation.size() > 64) lastRetaliation.values().removeIf(t -> now - t > 200);
             retaliate(level, invader, victim);
         }
         return true;
@@ -76,6 +77,6 @@ public class BloodlineFilthFlameSpiritAbility extends PassiveAbility {
         invader.setRemainingFireTicks(RETALIATION_BURN_TICKS);
         ParticleUtil.spawnParticles(level, FILTH_DUST, invader.getEyePosition(), 60, 0.5, 0.02);
         ParticleUtil.spawnParticles(level, ParticleTypes.FLAME, invader.getEyePosition(), 25, 0.4, 0.04);
-        AbilityUtil.sendActionBar(invader, Component.literal("Their spirit burns, and the filth sticks to yours.").withColor(0xFFa3070c));
+        AbilityUtil.sendActionBar(invader, Component.translatable("ability.lotmcraft.filth_flame_spirit.retaliate").withColor(0xFFa3070c));
     }
 }
