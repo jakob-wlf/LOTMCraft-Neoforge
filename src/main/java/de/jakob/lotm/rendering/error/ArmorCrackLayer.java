@@ -23,9 +23,6 @@ import net.neoforged.api.distmarker.OnlyIn;
 
 import java.util.List;
 
-/**
- * Cryptologist's Superior Observation: worn armor shows its remaining durability as cracks (within 20 blocks).
- */
 @OnlyIn(Dist.CLIENT)
 public class ArmorCrackLayer<T extends LivingEntity, M extends EntityModel<T>> extends RenderLayer<T, M> {
 

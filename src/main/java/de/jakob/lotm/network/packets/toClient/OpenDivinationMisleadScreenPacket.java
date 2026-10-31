@@ -1,8 +1,7 @@
 package de.jakob.lotm.network.packets.toClient;
 
 import de.jakob.lotm.LOTMCraft;
-import de.jakob.lotm.gui.custom.divination_mislead.DivinationMisleadScreen;
-import net.minecraft.client.Minecraft;
+import de.jakob.lotm.network.packets.handlers.ClientHandler;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -37,7 +36,7 @@ public record OpenDivinationMisleadScreenPacket(List<String> lines) implements C
     public static void handle(OpenDivinationMisleadScreenPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (context.flow().getReceptionSide().isClient()) {
-                Minecraft.getInstance().setScreen(new DivinationMisleadScreen(packet.lines()));
+                ClientHandler.openDivinationMisleadScreen(packet.lines());
             }
         });
     }
