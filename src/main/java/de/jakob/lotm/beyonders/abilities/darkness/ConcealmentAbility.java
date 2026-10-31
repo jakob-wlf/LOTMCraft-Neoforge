@@ -676,6 +676,49 @@ public class ConcealmentAbility extends SelectableAbility {
         return null;
     }
 
+    public static void dispel(ServerLevel level, Vec3 center, double radius, int casterSequence) {
+        boolean changed = false;
+        var veilsLeft = veils.iterator();
+        while (veilsLeft.hasNext()) {
+            Veil veil = veilsLeft.next();
+            if (!veil.dimension.equals(level.dimension()) || veil.casterSeq < casterSequence) continue;
+            double dx = veil.x - center.x;
+            double dz = veil.z - center.z;
+            double reach = radius + veil.radius;
+            if (dx * dx + dz * dz > reach * reach) continue;
+            veilsLeft.remove();
+            changed = true;
+        }
+        var secretsLeft = secrets.iterator();
+        while (secretsLeft.hasNext()) {
+            Secret secret = secretsLeft.next();
+            if (!secret.dimension.equals(level.dimension()) || secret.casterSeq < casterSequence) continue;
+            if (secret.casterSeq > 0) {
+                double dx = secret.x - center.x;
+                double dz = secret.z - center.z;
+                int reach = secret.casterSeq == 1 ? SECRET_REACH_SEQ1 : SECRET_REACH;
+                if (dx * dx + dz * dz > (radius + reach) * (radius + reach)) continue;
+            }
+            secretsLeft.remove();
+            changed = true;
+        }
+        long time = level.getServer().overworld().getGameTime();
+        AABB area = new AABB(center.x - radius, level.getMinBuildHeight(), center.z - radius, center.x + radius, level.getMaxBuildHeight(), center.z + radius);
+        for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, area, entity -> {
+            double dx = entity.getX() - center.x;
+            double dz = entity.getZ() - center.z;
+            return dx * dx + dz * dz <= radius * radius;
+        })) {
+            if (peaceful.contains(entity.getUUID()) && BeyonderData.getSequence(entity) >= casterSequence) endPeace(entity);
+            Mark mark = concealedOthers.get(entity.getUUID());
+            if (mark == null || time >= mark.until || mark.casterSeq < casterSequence) continue;
+            concealedOthers.remove(entity.getUUID());
+            if (entity instanceof ServerPlayer player) player.getData(ModAttachments.FOG_COMPONENT.get()).clearFog(player);
+            changed = true;
+        }
+        if (changed) syncVeils(level.getServer());
+    }
+
     private static void clearOthers(LivingEntity target) {
         concealedOthers.remove(target.getUUID());
         if (target instanceof ServerPlayer player) {
