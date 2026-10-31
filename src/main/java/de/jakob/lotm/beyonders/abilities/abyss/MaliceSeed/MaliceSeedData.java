@@ -49,10 +49,8 @@ public final class MaliceSeedData extends SavedData {
     public Set<UUID> identities() {
         Set<UUID> out = new HashSet<>();
         for (String key : identities.getAllKeys()) {
-            try {
-                out.add(UUID.fromString(key));
-            } catch (IllegalArgumentException ignored) {
-            }
+            try {out.add(UUID.fromString(key));}
+            catch (IllegalArgumentException ignored) {}
         }
         return out;
     }
