@@ -4,17 +4,17 @@ import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.beyonders.abilities.core.AbilityUsedEvent;
 import de.jakob.lotm.beyonders.abilities.core.interaction.InteractionHandler;
 import de.jakob.lotm.damage.ModDamageTypes;
-import de.jakob.lotm.particle.ModParticles;
 import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.helper.AbilityUtil;
 import de.jakob.lotm.util.helper.DamageLookup;
+import de.jakob.lotm.util.helper.FxHandler;
 import de.jakob.lotm.util.helper.ParticleUtil;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
@@ -23,7 +23,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
-import org.joml.Vector3f;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -48,10 +47,6 @@ public class PoisonousFlameAbility extends Ability {
         return 12;
     }
 
-    private final DustParticleOptions dustOptions = new DustParticleOptions(
-            new Vector3f(35 / 255f, 168 / 255f, 102 / 255f), 1f
-    );
-
     @Override
     public void onAbilityUse(Level level, LivingEntity entity) {
         if(level.isClientSide)
@@ -68,32 +63,11 @@ public class PoisonousFlameAbility extends Ability {
             return;
         }
 
-        ParticleUtil.drawParticleLine(
-                (ServerLevel) level,
-                ParticleTypes.SMOKE,
-                startPos,
-                entity.getLookAngle().normalize(),
-                2,
-                .5, 23, .4
-        );
-
-        ParticleUtil.drawParticleLine(
-                (ServerLevel) level,
-                ModParticles.GREEN_FLAME.get(),
-                startPos,
-                entity.getLookAngle().normalize(),
-                2,
-                .5, 35, .4
-        );
-
-        ParticleUtil.drawParticleLine(
-                (ServerLevel) level,
-                dustOptions,
-                startPos,
-                entity.getLookAngle().normalize(),
-                2,
-                .5, 23, .4
-        );
+        ServerScheduler.scheduleDelayed(4, () -> {
+            Vec3 look = entity.getLookAngle().normalize();
+            FxHandler.play((ServerLevel) level, "poisonous_flame", entity.getEyePosition().subtract(0, .25, 0).add(look.scale(.5)),
+                    Mth.clamp(multiplier(entity), 1, 3), FxHandler.pointing(look));
+        });
 
         // Purification neutralizes the poison effect
         Location flameLoc = new Location(startPos, level);

@@ -3,12 +3,10 @@ package de.jakob.lotm.beyonders.abilities.mother;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.effect.ModEffects;
 import de.jakob.lotm.util.helper.AbilityUtil;
-import de.jakob.lotm.util.helper.RingEffectManager;
-import net.minecraft.core.Holder;
+import de.jakob.lotm.util.helper.FxHandler;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
@@ -20,7 +18,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-//TODO: Rework effects using geckolib
 public class CleansingAbility extends SelectableAbility {
     public CleansingAbility(String id) {
         super(id, 14, "cleansing");
@@ -64,12 +61,13 @@ public class CleansingAbility extends SelectableAbility {
         if(level.isClientSide)
             return;
 
-        RingEffectManager.createRingForAll(entity.getEyePosition().subtract(0, .4, 0), 8, 60, 122 / 255f, 235 / 255f, 124 / 255f, 1, 1f, .75f, (ServerLevel) level);
+        FxHandler.play((ServerLevel) level, "cleansing_wave", entity.position().add(0, .05, 0), 1);
 
         level.playSound(null, entity.position().x, entity.position().y, entity.position().z, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 1, 1);
 
         for(LivingEntity e : AbilityUtil.getNearbyEntities(entity, (ServerLevel) level, entity.position(), 6, false, true)) {
             cleanEntity(e);
+            FxHandler.playOnBody((ServerLevel) level, "cleansing", e);
         }
     }
 
@@ -77,7 +75,7 @@ public class CleansingAbility extends SelectableAbility {
         if(level.isClientSide)
             return;
 
-        RingEffectManager.createRingForAll(entity.getEyePosition().subtract(0, .4, 0), 2, 60, 122 / 255f, 235 / 255f, 124 / 255f, 1, .5f, .75f, (ServerLevel) level);
+        FxHandler.playOnBody((ServerLevel) level, "cleansing", entity);
 
         level.playSound(null, entity.position().x, entity.position().y, entity.position().z, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 1, 1);
         

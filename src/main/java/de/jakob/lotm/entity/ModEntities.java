@@ -365,6 +365,13 @@ public class ModEntities {
                     .updateInterval(1)
                     .build("lightning"));
 
+    public static final Supplier<EntityType<TendrilEntity>> TENDRIL =
+            ENTITY_TYPES.register("tendril", () -> EntityType.Builder.<TendrilEntity>of(TendrilEntity::new, MobCategory.MISC)
+                    .sized(0.1f, 0.1f)
+                    .clientTrackingRange(8)
+                    .updateInterval(1)
+                    .build("tendril"));
+
     public static final Supplier<EntityType<StrongLightningEntity>> STRONG_LIGHTNING =
             ENTITY_TYPES.register("strong_lightning", () -> EntityType.Builder.<StrongLightningEntity>of(StrongLightningEntity::new, MobCategory.MISC)
                     .sized(0.1f, 0.1f)

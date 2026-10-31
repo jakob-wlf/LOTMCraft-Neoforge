@@ -1,0 +1,26 @@
+{
+  "order": 20,
+  "title": "guide.lotmcraft.ingredients.title",
+  "icon": "lotmcraft:ingredient_encyclopedia",
+  "color": "#4F6E22",
+  "quote": "guide.lotmcraft.ingredients.quote",
+  "elements": [
+    "guide.lotmcraft.ingredients.intro",
+    { "type": "heading", "text": "guide.lotmcraft.ingredients.encyclopedia_heading" },
+    "guide.lotmcraft.ingredients.encyclopedia",
+    { "type": "crafting", "recipe": "lotmcraft:ingredient_encyclopedia", "caption": "guide.lotmcraft.ingredients.encyclopedia_caption" },
+    { "type": "note", "style": "tip", "text": "guide.lotmcraft.ingredients.encyclopedia_tip" },
+    { "type": "heading", "text": "guide.lotmcraft.ingredients.recipes_heading" },
+    "guide.lotmcraft.ingredients.recipes",
+    { "type": "model", "item": ["lotmcraft:seer", "lotmcraft:apprentice", "lotmcraft:marauder"], "height": 48 },
+    { "type": "heading", "text": "guide.lotmcraft.ingredients.characteristics_heading" },
+    "guide.lotmcraft.ingredients.characteristics",
+    {
+      "type": "items",
+      "items": ["lotmcraft:seer_characteristic", "lotmcraft:apprentice_characteristic", "lotmcraft:marauder_characteristic",
+                "lotmcraft:spectator_characteristic", "lotmcraft:hunter_characteristic", "lotmcraft:sleepless_characteristic"],
+      "caption": "guide.lotmcraft.ingredients.characteristics_caption"
+    },
+    { "type": "link", "chapter": "brewing", "text": "guide.lotmcraft.ingredients.link" }
+  ]
+}

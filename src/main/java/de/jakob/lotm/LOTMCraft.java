@@ -80,6 +80,7 @@ import de.jakob.lotm.entity.client.ability_entities.twilight_giant.twilight_visu
 import de.jakob.lotm.entity.client.ability_entities.twilight_giant.twilight_visual.TwilightDomeRenderer;
 import de.jakob.lotm.entity.client.ability_entities.twilight_giant.twilight_visual.TwilightSlashRenderer;
 import de.jakob.lotm.entity.client.ability_entities.tyrant_pathway.lightning.LightningRenderer;
+import de.jakob.lotm.entity.client.ability_entities.tendril.TendrilRenderer;
 import de.jakob.lotm.entity.client.ability_entities.tyrant_pathway.lightning_branch.LightningBranchRenderer;
 import de.jakob.lotm.entity.client.projectiles.fireball.FireballRenderer;
 import de.jakob.lotm.entity.client.projectiles.flaming_spear.FlamingSpearProjectileRenderer;
@@ -140,7 +141,6 @@ import de.jakob.lotm.beyonders.potions.BeyonderCharacteristicItemHandler;
 import de.jakob.lotm.beyonders.potions.PotionItemHandler;
 import de.jakob.lotm.beyonders.potions.PotionRecipeItemHandler;
 import de.jakob.lotm.beyonders.quest.QuestRegistry;
-import de.jakob.lotm.rendering.GuidingBookRenderer;
 import de.jakob.lotm.beyonders.rituals.RitualManager;
 import de.jakob.lotm.sound.ModSounds;
 import de.jakob.lotm.structure.ModStructures;
@@ -315,6 +315,7 @@ public class LOTMCraft
             EntityRenderers.register(ModEntities.FROST_SPEAR.get(), FrostSpearProjectileRenderer::new);
             EntityRenderers.register(ModEntities.ELECTRIC_SHOCK.get(), ElectricShockRenderer::new);
             EntityRenderers.register(ModEntities.LIGHTNING.get(), LightningRenderer::new);
+            EntityRenderers.register(ModEntities.TENDRIL.get(), TendrilRenderer::new);
             EntityRenderers.register(ModEntities.STRONG_LIGHTNING.get(), StrongLightningRenderer::new);
             EntityRenderers.register(ModEntities.TRAVELERS_DOOR.get(), TravelersDoorRenderer::new);
             EntityRenderers.register(ModEntities.APPRENTICE_BOOK.get(), ApprenticeBookRenderer::new);
@@ -385,8 +386,6 @@ public class LOTMCraft
             EntityRenderers.register(ModEntities.STONE_GOLEM.get(), StoneGolemRenderer::new);
             EntityRenderers.register(ModEntities.HEADLESS_BRIDE.get(), HeadlessBrideRenderer::new);
 
-
-            GuidingBookRenderer.loadPages(LOTMCraft.MOD_ID);
 
             event.enqueueWork(() -> {
                 ItemBlockRenderTypes.setRenderLayer(ModBlocks.MYSTICAL_RING.get(), RenderType.cutout());

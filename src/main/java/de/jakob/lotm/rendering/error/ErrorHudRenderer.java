@@ -194,46 +194,120 @@ public final class ErrorHudRenderer {
         if (entity == null) return;
 
         List<ItemStack> items = ErrorClientState.treasureItems;
+        var font = mc.font;
+        String name = ErrorClientState.treasureName;
+        String value = String.format("%,d ◆", ErrorClientState.treasureValue);
+        int valueColor = tierColor(ErrorClientState.treasureValue / Math.max(1, items.size()));
+
+        int pad = 6;
+        int slot = 18;
         int columns = Math.max(1, Math.min(8, items.size()));
         int rows = Math.max(1, (items.size() + 7) / 8);
-        int panelWidth = Math.max(110, columns * 18 + 10);
-        int panelHeight = 28 + rows * 18 + 4;
+        int headerHeight = 18;
+        int panelWidth = Math.max(Math.max(120, font.width(name) + font.width(value) + pad * 2 + 12), columns * slot + pad * 2);
+        int panelHeight = headerHeight + 4 + (items.isEmpty() ? 12 : rows * slot) + pad;
 
         float[] screen = ErrorWorldRenderer.project(entity.getPosition(partial).add(0, entity.getBbHeight() * 0.75, 0), width, height);
         int x;
         int y;
         if (screen != null) {
-            x = (int) screen[0] + 24;
+            x = (int) screen[0] + 28;
             y = (int) screen[1] - panelHeight / 2;
         } else {
             x = width - panelWidth - 8;
             y = height / 2 - panelHeight / 2;
         }
-        x = Math.max(4, Math.min(width - panelWidth - 4, x));
-        y = Math.max(4, Math.min(height - panelHeight - 4, y));
+        x = Math.max(6, Math.min(width - panelWidth - 6, x));
+        y = Math.max(6, Math.min(height - panelHeight - 6, y));
 
-        graphics.fill(x, y, x + panelWidth, y + panelHeight, 0xC0100C1E);
-        graphics.fill(x, y, x + panelWidth, y + 1, 0xFFC8A040);
-        graphics.fill(x, y + panelHeight - 1, x + panelWidth, y + panelHeight, 0xFFC8A040);
-        graphics.fill(x, y, x + 1, y + panelHeight, 0xFFC8A040);
-        graphics.fill(x + panelWidth - 1, y, x + panelWidth, y + panelHeight, 0xFFC8A040);
+        // Leader line from the mob to the panel
+        if (screen != null) {
+            int sx = (int) screen[0];
+            int sy = (int) screen[1];
+            if (sx + 6 < x && sy > y + 2 && sy < y + panelHeight - 2) {
+                hGradient(graphics, sx + 4, x - 1, sy, 0x20C8A040, 0xA0C8A040);
+                graphics.fill(sx - 1, sy - 2, sx + 2, sy + 3, 0xFFE8C468);
+                graphics.fill(sx - 2, sy - 1, sx + 3, sy + 2, 0xFFE8C468);
+                graphics.fill(sx, sy, sx + 1, sy + 1, 0xFFFFF4D0);
+            }
+        }
 
-        graphics.drawString(mc.font, ErrorClientState.treasureName, x + 5, y + 4, 0xFFF0E6C8, false);
-        graphics.drawString(mc.font, "≈ " + ErrorClientState.treasureValue + " ◆", x + 5, y + 15, 0xFFE8C058, false);
+        int x2 = x + panelWidth;
+        int y2 = y + panelHeight;
 
+        // Body: dark outer rim, gradient fill, gilded inner frame
+        graphics.fill(x - 1, y - 1, x2 + 1, y2 + 1, 0xE0050409);
+        graphics.fillGradient(x, y, x2, y2, 0xE81C1630, 0xE80A0814);
+        graphics.fillGradient(x + 1, y + 1, x2 - 1, y + headerHeight, 0x38E0B050, 0x08E0B050);
+        graphics.fill(x, y, x2, y + 1, 0xFFE8C468);
+        graphics.fill(x, y2 - 1, x2, y2, 0xFF7A5C22);
+        graphics.fillGradient(x, y + 1, x + 1, y2 - 1, 0xFFE8C468, 0xFF7A5C22);
+        graphics.fillGradient(x2 - 1, y + 1, x2, y2 - 1, 0xFFE8C468, 0xFF7A5C22);
+
+        // Corner studs
+        int stud = 0xFFF4D888;
+        graphics.fill(x - 2, y - 2, x + 2, y + 2, stud);
+        graphics.fill(x2 - 2, y - 2, x2 + 2, y + 2, stud);
+        graphics.fill(x - 2, y2 - 2, x + 2, y2 + 2, 0xFFB08A3A);
+        graphics.fill(x2 - 2, y2 - 2, x2 + 2, y2 + 2, 0xFFB08A3A);
+
+        // Header
+        graphics.drawString(font, name, x + pad, y + 5, 0xFFF4EAD0, true);
+        graphics.drawString(font, value, x2 - pad - font.width(value), y + 5, valueColor, true);
+
+        // Divider fading out towards the edges
+        int mid = x + panelWidth / 2;
+        hGradient(graphics, x + pad, mid, y + headerHeight, 0x00C8A040, 0xC0C8A040);
+        hGradient(graphics, mid, x2 - pad, y + headerHeight, 0xC0C8A040, 0x00C8A040);
+
+        int gridY = y + headerHeight + 4;
         if (items.isEmpty()) {
-            graphics.drawString(mc.font, "—", x + 5, y + 28, 0xFF908870, false);
+            graphics.drawCenteredString(font, "—", mid, gridY + 1, 0xFF7A7264);
             return;
         }
 
+        int gridX = x + (panelWidth - columns * slot) / 2;
         for (int i = 0; i < items.size(); i++) {
-            int ix = x + 5 + (i % 8) * 18;
-            int iy = y + 27 + (i / 8) * 18;
-            int value = i < ErrorClientState.treasureItemValues.size() ? ErrorClientState.treasureItemValues.get(i) : 0;
-            if (value >= 300) graphics.fill(ix - 1, iy - 1, ix + 17, iy + 17, 0x70E0A030);
-            else if (value >= 60) graphics.fill(ix - 1, iy - 1, ix + 17, iy + 17, 0x4080A0E0);
-            graphics.renderItem(items.get(i), ix, iy);
-            graphics.renderItemDecorations(mc.font, items.get(i), ix, iy);
+            int sx = gridX + (i % 8) * slot;
+            int sy = gridY + (i / 8) * slot;
+            int itemValue = i < ErrorClientState.treasureItemValues.size() ? ErrorClientState.treasureItemValues.get(i) : 0;
+            drawSlot(graphics, sx, sy, itemValue);
+            graphics.renderItem(items.get(i), sx + 1, sy + 1);
+            graphics.renderItemDecorations(font, items.get(i), sx + 1, sy + 1);
+        }
+    }
+
+    private static int tierColor(int value) {
+        if (value >= 300) return 0xFFFFC94A;
+        if (value >= 60) return 0xFF9CC4FF;
+        return 0xFFD8CCB0;
+    }
+
+    private static void drawSlot(GuiGraphics graphics, int x, int y, int value) {
+        // Recessed slot: dark top-left, light bottom-right
+        graphics.fill(x, y, x + 18, y + 18, 0x90000000);
+        graphics.fill(x, y, x + 17, y + 1, 0xA0000000);
+        graphics.fill(x, y, x + 1, y + 17, 0xA0000000);
+        graphics.fill(x + 1, y + 17, x + 18, y + 18, 0x30FFFFFF);
+        graphics.fill(x + 17, y + 1, x + 18, y + 18, 0x30FFFFFF);
+
+        if (value < 60) return;
+        int border = value >= 300 ? 0xD0F0B040 : 0xB07AA8F0;
+        int glow = value >= 300 ? 0x50E0A030 : 0x386A98E0;
+        graphics.fillGradient(x + 1, y + 1, x + 17, y + 17, 0x00000000, glow);
+        graphics.fill(x, y, x + 18, y + 1, border);
+        graphics.fill(x, y + 17, x + 18, y + 18, border);
+        graphics.fill(x, y + 1, x + 1, y + 17, border);
+        graphics.fill(x + 17, y + 1, x + 18, y + 17, border);
+    }
+
+    private static void hGradient(GuiGraphics graphics, int x1, int x2, int y, int from, int to) {
+        int w = x2 - x1;
+        if (w <= 0) return;
+        for (int i = 0; i < w; i++) {
+            float t = i / (float) w;
+            int a = (int) Mth.lerp(t, from >>> 24, to >>> 24);
+            graphics.fill(x1 + i, y, x1 + i + 1, y + 1, (a << 24) | (from & 0xFFFFFF));
         }
     }
 

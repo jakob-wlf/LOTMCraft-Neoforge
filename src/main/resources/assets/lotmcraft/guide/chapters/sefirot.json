@@ -1,0 +1,19 @@
+{
+  "order": 80,
+  "title": "guide.lotmcraft.sefirot.title",
+  "icon": "minecraft:ender_eye",
+  "color": "#3A3A4E",
+  "quote": "guide.lotmcraft.sefirot.quote",
+  "elements": [
+    "guide.lotmcraft.sefirot.intro",
+    "guide.lotmcraft.sefirot.known",
+    { "type": "heading", "text": "guide.lotmcraft.sefirot.castle_heading" },
+    "guide.lotmcraft.sefirot.castle",
+    { "type": "heading", "text": "guide.lotmcraft.sefirot.hive_heading" },
+    "guide.lotmcraft.sefirot.hive",
+    { "type": "heading", "text": "guide.lotmcraft.sefirot.claim_heading" },
+    { "type": "redacted", "lines": 5 },
+    "guide.lotmcraft.sefirot.enter",
+    { "type": "note", "style": "lore", "text": "guide.lotmcraft.sefirot.lore" }
+  ]
+}

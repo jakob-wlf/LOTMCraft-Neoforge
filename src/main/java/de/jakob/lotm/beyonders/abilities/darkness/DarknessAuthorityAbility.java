@@ -36,7 +36,7 @@ public class DarknessAuthorityAbility extends SelectableAbility {
     private static final DustParticleOptions DUST = new DustParticleOptions(new Vector3f(0.02f, 0.01f, 0.04f), 1.6f);
 
     public DarknessAuthorityAbility(String id) {
-        super(id, 8);
+        super(id, 20);
         canBeUsedByNPC = false;
         canBeShared = false;
     }
@@ -71,9 +71,7 @@ public class DarknessAuthorityAbility extends SelectableAbility {
     }
 
     private void pour(ServerLevel level, ServerPlayer player, boolean destination) {
-        LivingEntity looked = AbilityUtil.getTargetEntity(player, 24, 2);
-        Vec3 pos = looked != null ? looked.position() : player.getEyePosition().add(player.getLookAngle().scale(12));
-        DarknessPourEntity pour = new DarknessPourEntity(level, pos.x, pos.y, pos.z, player, destination);
+        DarknessPourEntity pour = new DarknessPourEntity(level, player.getX(), player.getY(), player.getZ(), player, destination);
         level.addFreshEntity(pour);
         bar(player, destination ? "All things meet their destination." : "Darkness pours.");
     }

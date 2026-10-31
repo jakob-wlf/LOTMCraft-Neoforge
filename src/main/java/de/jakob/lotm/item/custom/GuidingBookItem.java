@@ -1,6 +1,6 @@
 package de.jakob.lotm.item.custom;
 
-import de.jakob.lotm.rendering.GuidingBookRenderer;
+import de.jakob.lotm.gui.custom.guide.GuideBookClient;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
@@ -9,7 +9,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 public class GuidingBookItem extends Item {
-    
+
     public GuidingBookItem(Properties properties) {
         super(properties);
     }
@@ -17,8 +17,8 @@ public class GuidingBookItem extends Item {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         if (level.isClientSide) {
-            GuidingBookRenderer.nextPage();
+            GuideBookClient.open();
         }
-        return InteractionResultHolder.success(player.getItemInHand(hand));
+        return InteractionResultHolder.sidedSuccess(player.getItemInHand(hand), level.isClientSide);
     }
 }
