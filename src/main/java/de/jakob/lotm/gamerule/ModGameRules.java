@@ -1,6 +1,7 @@
 package de.jakob.lotm.gamerule;
 
 import de.jakob.lotm.beyonders.acting.ActingCapHelper;
+import de.jakob.lotm.beyonders.sefirah.SefirahHandler;
 import de.jakob.lotm.network.PacketHandler;
 import de.jakob.lotm.network.packets.toClient.SyncGriefingGamerulePacket;
 import de.jakob.lotm.network.packets.toClient.SyncPreLoadGamerulePacket;
@@ -23,6 +24,7 @@ public class ModGameRules {
     public static GameRules.Key<GameRules.BooleanValue> SEQUENCE_DIMENSION_LOCK;
     public static GameRules.Key<GameRules.BooleanValue> PRE_LOAD_EFFECTS;
     public static GameRules.Key<GameRules.BooleanValue> ANGEL_DAMAGE_IMMUNITY;
+    public static GameRules.Key<GameRules.BooleanValue> ALLOW_SEFIROT;
 
     public static GameRules.Key<GameRules.IntegerValue> MAX_ALLY_COUNT;
 
@@ -50,6 +52,19 @@ public class ModGameRules {
                 "angelDamageImmunity",
                 GameRules.Category.MISC,
                 GameRules.BooleanValue.create(true)
+        );
+
+        ALLOW_SEFIROT = GameRules.register(
+                "allowsefirot",
+                GameRules.Category.MISC,
+                GameRules.BooleanValue.create(true, (server, value) -> {
+                    if (value.get()) return;
+                    for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                        if (SefirahHandler.isInSefirot(player)) {
+                            SefirahHandler.leaveSefirah(player, true);
+                        }
+                    }
+                })
         );
 
         DISABLE_FLIGHT_IN_COMBAT = GameRules.register(

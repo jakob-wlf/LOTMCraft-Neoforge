@@ -60,6 +60,11 @@ public class BroodHiveEventHandler {
             return;
         }
 
+        if (!SefirahHandler.isSefirotAllowed(serverPlayer)) {
+            AbilityUtil.sendActionBar(serverPlayer, Component.translatable("lotm.sefirot.disabled").withColor(BeyonderData.pathwayInfos.get("moon").color()));
+            return;
+        }
+
         if (SefirahHandler.hasSefirot(serverPlayer)) {
             AbilityUtil.sendActionBar(serverPlayer, Component.translatable("lotm.sefirot.conflicting_sefirah").withColor(BeyonderData.pathwayInfos.get("moon").color()));
             return;

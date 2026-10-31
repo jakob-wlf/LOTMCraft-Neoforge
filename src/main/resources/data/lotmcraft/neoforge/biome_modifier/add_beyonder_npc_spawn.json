@@ -1,5 +1,6 @@
 {
-  "type": "neoforge:add_spawns",
+  "type": "lotmcraft:configurable_add_spawns",
+  "spawn_group": "beyonder",
   "biomes": "#c:is_overworld",
   "spawners": [
     {

@@ -67,6 +67,11 @@ public class SefirahCastleEventHandler {
             return;
         }
 
+        if (!SefirahHandler.isSefirotAllowed(event.getPlayer())) {
+            AbilityUtil.sendActionBar(event.getPlayer(), Component.translatable("lotm.sefirot.disabled").withColor(0x942de3));
+            return;
+        }
+
         if (SefirahHandler.hasSefirot(event.getPlayer())) {
             AbilityUtil.sendActionBar(event.getPlayer(), Component.translatable("lotm.sefirot.conflicting_sefirah").withColor(0x942de3));
             return;

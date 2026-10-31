@@ -1,5 +1,6 @@
 package de.jakob.lotm.beyonders.sefirah;
 
+import de.jakob.lotm.gamerule.ModGameRules;
 import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.attachments.SefirotData;
@@ -232,7 +233,16 @@ public class SefirahHandler {
         }
     }
 
+    public static boolean isSefirotAllowed(ServerPlayer player) {
+        return player.server.getGameRules().getBoolean(ModGameRules.ALLOW_SEFIROT);
+    }
+
     public static void teleportToSefirot(ServerPlayer player, String sefirot, boolean playTeleportEffect) {
+        if(!isSefirotAllowed(player)) {
+            AbilityUtil.sendActionBar(player, Component.translatable("lotm.sefirot.disabled").withColor(0x942de3));
+            return;
+        }
+
         SefirotData sefirotData = SefirotData.get(player.server);
 
         // Set return location

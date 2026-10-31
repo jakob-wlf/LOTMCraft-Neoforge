@@ -446,9 +446,14 @@ public class BeyonderData {
         return Math.max(0, spirituality);
     }
 
+    public static float getSpiritualityCostMultiplier() {
+        return Config.SPIRITUALITY_COST_MULTIPLIER.get().floatValue();
+    }
+
     public static void reduceSpirituality(LivingEntity entity, float amount) {
         if(!(entity instanceof Player))
             return;
+        amount *= getSpiritualityCostMultiplier();
         float current = getSpirituality(entity);
         entity.getData(ModAttachments.BEYONDER_COMPONENT).setSpirituality(Math.max(0, current - amount));
 

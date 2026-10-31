@@ -96,6 +96,7 @@ import de.jakob.lotm.entity.client.spirits.spirit_bane.SpiritBaneRenderer;
 import de.jakob.lotm.entity.client.spirits.translucent_wizard.SpiritTranslucentWizardRenderer;
 import de.jakob.lotm.entity.client.stone_golem.StoneGolemRenderer;
 import de.jakob.lotm.gamerule.ModGameRules;
+import de.jakob.lotm.entity.spawning.ModBiomeModifiers;
 import de.jakob.lotm.gui.ModMenuTypes;
 import de.jakob.lotm.gui.custom.ability_wheel.AbilityWheelScreen;
 import de.jakob.lotm.gui.custom.artifact_wheel.ArtifactWheelScreen;
@@ -234,6 +235,7 @@ public class LOTMCraft
         ModEffects.register(modEventBus);
         ModSounds.register(modEventBus);
         ModLootModifiers.register(modEventBus);
+        ModBiomeModifiers.register(modEventBus);
         ModVillagers.register(modEventBus);
         ModBlocks.register(modEventBus);
         ModBlockEntities.register(modEventBus);
