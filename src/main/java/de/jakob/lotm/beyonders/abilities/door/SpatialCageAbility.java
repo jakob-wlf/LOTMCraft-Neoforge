@@ -3,16 +3,16 @@ package de.jakob.lotm.beyonders.abilities.door;
 import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.attachments.BlockExpiryData;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
-import de.jakob.lotm.particle.ModParticles;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.helper.AbilityUtil;
-import de.jakob.lotm.util.helper.ParticleUtil;
+import de.jakob.lotm.util.helper.FxHandler;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
@@ -23,7 +23,6 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import org.joml.Vector3f;
 
 import java.util.*;
 
@@ -70,18 +69,26 @@ public class SpatialCageAbility extends SelectableAbility {
     }
 
     private void createSpatialCage(LivingEntity entity, Level level, Vec3 targetLoc, boolean openFront, Direction frontDirection) {
-        SpatialCage cage = new SpatialCage((ServerLevel) level, targetLoc, openFront, 5, new ArrayList<>(), frontDirection, entity.getUUID());
+        ServerLevel serverLevel = (ServerLevel) level;
+        Vec3 center = BlockPos.containing(targetLoc).getCenter();
+        UUID effectId = openFront
+                ? FxHandler.playCancellable(serverLevel, "spatial_cage_open", center, 1, FxHandler.yawTowards(Vec3.atLowerCornerOf(frontDirection.getNormal())))
+                : FxHandler.playCancellable(serverLevel, "spatial_cage", center, 1);
+
+        SpatialCage cage = new SpatialCage(serverLevel, targetLoc, openFront, 5, new ArrayList<>(), frontDirection, entity.getUUID(), center, effectId);
         cage.createCage();
         activeCages.computeIfAbsent(entity.getUUID(), k -> new HashSet<>()).add(cage);
 
+        level.playSound(null, center.x, center.y, center.z, SoundEvents.BEACON_DEACTIVATE, SoundSource.PLAYERS, 2f, .5f);
+        ServerScheduler.scheduleDelayed(18, () -> level.playSound(null, center.x, center.y, center.z, SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, .5f, 1.6f), serverLevel);
+
         ServerScheduler.scheduleForDuration(0, 1,  openFront ? 20 * 20 : 20 * 10, () -> {
             cage.updateCage();
-            cage.addParticles();
             cage.addSlownessToEntities();
-        }, cage::removeCage, (ServerLevel) level, () -> AbilityUtil.getTimeInArea(entity, new Location(targetLoc, level)));
+        }, cage::removeCage, serverLevel, () -> AbilityUtil.getTimeInArea(entity, new Location(targetLoc, level)));
     }
 
-    private record SpatialCage(ServerLevel level, Vec3 position, boolean isFrontOpen, int radius, List<BlockPos> barrierBlocks, Direction frontDirection, UUID owner) {
+    private record SpatialCage(ServerLevel level, Vec3 position, boolean isFrontOpen, int radius, List<BlockPos> barrierBlocks, Direction frontDirection, UUID owner, Vec3 center, UUID effectId) {
         void createCage() {
             List<BlockPos> barrierBlocks = new ArrayList<>();
 
@@ -129,11 +136,22 @@ public class SpatialCageAbility extends SelectableAbility {
         }
 
         void removeCage() {
+            if (!activeCages.getOrDefault(owner, new HashSet<>()).remove(this)) {
+                return;
+            }
+
             for (BlockPos pos : barrierBlocks) {
                 level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
             }
-            activeCages.getOrDefault(owner, new HashSet<>()).remove(this);
 
+            FxHandler.cancel(level, effectId);
+            if (isFrontOpen) {
+                FxHandler.play(level, "spatial_cage_open_collapse", center, 1, FxHandler.yawTowards(Vec3.atLowerCornerOf(frontDirection.getNormal())));
+            } else {
+                FxHandler.play(level, "spatial_cage_collapse", center, 1);
+            }
+            level.playSound(null, center.x, center.y, center.z, SoundEvents.AMETHYST_CLUSTER_BREAK, SoundSource.PLAYERS, 2f, .7f);
+            level.playSound(null, center.x, center.y, center.z, SoundEvents.GLASS_BREAK, SoundSource.PLAYERS, 1f, .6f);
         }
 
         void updateCage() {
@@ -143,16 +161,6 @@ public class SpatialCageAbility extends SelectableAbility {
                 }
                 level.setBlockAndUpdate(pos, Blocks.BARRIER.defaultBlockState());
                 BlockExpiryData.get(level).schedule(level, pos, 20 * 60);
-            }
-        }
-
-        void addParticles() {
-            for (BlockPos pos : barrierBlocks) {
-                if(!level.getBlockState(pos).is(Blocks.BARRIER)) {
-                    continue;
-                }
-                if(level.getRandom().nextInt(5) == 0) ParticleUtil.spawnParticles(level, ModParticles.STAR.get(), pos.getCenter(), 1, .55, 0);
-                if(level.getRandom().nextInt(3) == 0) ParticleUtil.spawnParticles(level, new DustParticleOptions(new Vector3f(0, 0, 0), 5f), pos.getCenter(), 1, .55, 0);
             }
         }
 
@@ -169,7 +177,7 @@ public class SpatialCageAbility extends SelectableAbility {
     public static void onPlayerLeave(PlayerEvent.PlayerLoggedOutEvent event) {
         UUID playerUUID = event.getEntity().getUUID();
         if (activeCages.containsKey(playerUUID)) {
-            for (SpatialCage cage : activeCages.get(playerUUID)) {
+            for (SpatialCage cage : new ArrayList<>(activeCages.get(playerUUID))) {
                 if(cage != null)
                     cage.removeCage();
             }

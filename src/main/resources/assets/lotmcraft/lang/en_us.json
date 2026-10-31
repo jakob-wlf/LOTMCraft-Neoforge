@@ -896,7 +896,7 @@
   "lotmcraft.blink_afterimage_ability": "Blink Afterimages",
   "lotmcraft.blink_afterimage_ability.description": "When activated an afterimage will be left behind each time you blink, and will attack your opponent with recorded abilities. Will consume a Worm of Stars. ",
   "lotmcraft.door_transfiguration_ability": "Door Transfiguration",
-  "lotmcraft.door_transfiguration_ability.description": "Transform into illusory doors to avoid incoming damage",
+  "lotmcraft.door_transfiguration_ability.description": "Whenever you are hit, slip through an illusory door and reappear a few blocks away. The door left behind bursts into starlight, harming everything around it",
   "lotmcraft.secret_keeping_ability": "Secret Keeping",
   "lotmcraft.secret_keeping_ability.description": "Grant yourself and your nearby allies a certain level of concealment against divination.",
   "lotmcraft.space_concealment_ability": "Space Concealment",
