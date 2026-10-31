@@ -16,7 +16,7 @@ import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 @EventBusSubscriber(modid = LOTMCraft.MOD_ID, value = Dist.CLIENT)
 public class FxPreloader {
 
-    private static final String[] heavyEffects = new String[]{"space_fragmentation", "space_time_storm", "flamevortex", "inferno", "ice_age"};
+    private static final String[] heavyEffects = new String[]{"space_fragmentation", "space_time_storm", "flamevortex", "inferno", "ice_age", "flame_cage"};
 
     @SubscribeEvent
     public static void onRegisterReloadListeners(RegisterClientReloadListenersEvent event) {

@@ -4,10 +4,8 @@ import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.helper.AbilityUtil;
-import de.jakob.lotm.util.helper.ParticleUtil;
-import de.jakob.lotm.util.helper.RingEffectManager;
+import de.jakob.lotm.util.helper.FxHandler;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -18,6 +16,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public class GodSaysItsEffectiveAbility extends Ability {
     public GodSaysItsEffectiveAbility(String id) {
@@ -44,11 +43,12 @@ public class GodSaysItsEffectiveAbility extends Ability {
 
         level.playSound(null, entity.position().x, entity.position().y, entity.position().z, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 1, 1);
         BeyonderData.addModifier(entity, "notary_buff", 1.15);
-        ServerScheduler.scheduleForDuration(0, 35, 20 * 20, () -> {
-            ParticleUtil.spawnParticles((ServerLevel) level, ParticleTypes.END_ROD, entity.getEyePosition().subtract(0, .4, 0), 25, 5, 0);
-            RingEffectManager.createRingForAll(entity.getEyePosition().subtract(0, .4, 0), 6, 20 * 2, 252 / 255f, 173 /255f, 3 / 255f, .65f, .5f, 1f, .5f, true, (ServerLevel) level);
-        }, () -> {
+        ServerLevel serverLevel = (ServerLevel) level;
+        FxHandler.play(serverLevel, "notary_proclaim", entity.position().add(0, .05, 0), 1);
+        UUID blessing = FxHandler.playOnBody(serverLevel, "notary_blessing", entity);
+        ServerScheduler.scheduleDelayed(20 * 20, () -> {
             BeyonderData.removeModifier(entity, "notary_buff");
-        }, (ServerLevel) level, () -> AbilityUtil.getTimeInArea(entity, new Location(entity.position(), level)));
+            FxHandler.cancelOnEntity(serverLevel, blessing);
+        }, serverLevel, () -> AbilityUtil.getTimeInArea(entity, new Location(entity.position(), level)));
     }
 }
