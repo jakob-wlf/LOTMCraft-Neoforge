@@ -38,12 +38,6 @@ public class DeceiveWorldAbility extends SelectableAbility {
 
     public DeceiveWorldAbility(String id) {
         super(id, 8);
-        canBeUsedByNPC = false;
-        canBeCopied = false;
-        canBeReplicated = false;
-        canBeShared = false;
-        canBeUsedInArtifact = false;
-
         hasDynamicCooldown = true;
         dynamicCooldown = new LinkedList<>(List.of(3, 4, 6, 8));
 

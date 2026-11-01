@@ -34,13 +34,6 @@ public class StealCharacteristicAbility extends SelectableAbility {
 
     public StealCharacteristicAbility(String id) {
         super(id, 20);
-        canBeUsedByNPC = false;
-        canBeCopied = false;
-        canBeReplicated = false;
-        canBeShared = false;
-        canBeUsedInArtifact = false;
-        cannotBeStolen = true;
-
         hasDynamicCooldown = true;
         dynamicCooldown = new LinkedList<>(List.of(10, 15, 20));
 

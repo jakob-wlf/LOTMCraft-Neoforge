@@ -49,8 +49,6 @@ public class LoopHoleCreationAbility extends SelectableAbility {
     public LoopHoleCreationAbility(String id) {
         super(id, 16f);
         autoClear = false;
-        canBeShared = false;
-
         hasDynamicCooldown = true;
         dynamicCooldown = new LinkedList<>(List.of(7, 13, 16));
 

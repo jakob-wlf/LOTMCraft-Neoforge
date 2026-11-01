@@ -20,11 +20,6 @@ public class StealYourselfAbility extends Ability {
 
     public StealYourselfAbility(String id) {
         super(id, 6);
-        canBeUsedByNPC = true;
-        canBeCopied = false;
-        canBeReplicated = false;
-        canBeShared = false;
-
         hasDynamicCooldown = true;
         dynamicCooldown = new LinkedList<>(List.of(2, 2, 3, 3, 4, 5, 6));
 

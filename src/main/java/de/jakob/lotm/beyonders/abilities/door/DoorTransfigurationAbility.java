@@ -157,7 +157,6 @@ public class DoorTransfigurationAbility extends ToggleAbility {
         }, level);
     }
 
-    /** A free spot 3-6 blocks away, preferably on the ground and away from the attacker. */
     private static Vec3 findTeleportLoc(LivingEntity entity, Entity attacker) {
         Level level = entity.level();
         RandomSource random = entity.getRandom();

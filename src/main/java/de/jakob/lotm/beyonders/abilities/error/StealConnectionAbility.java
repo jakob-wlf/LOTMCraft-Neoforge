@@ -32,11 +32,6 @@ public class StealConnectionAbility extends SelectableAbility {
 
     public StealConnectionAbility(String id) {
         super(id, 12);
-        canBeUsedByNPC = false;
-        canBeCopied = false;
-        canBeReplicated = false;
-        canBeShared = false;
-
         hasDynamicCooldown = true;
         dynamicCooldown = new LinkedList<>(List.of(6, 9, 12));
 

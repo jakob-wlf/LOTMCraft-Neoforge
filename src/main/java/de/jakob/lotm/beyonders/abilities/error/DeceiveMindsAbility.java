@@ -26,11 +26,6 @@ public class DeceiveMindsAbility extends SelectableAbility {
 
     public DeceiveMindsAbility(String id) {
         super(id, 2);
-        canBeUsedByNPC = false;
-        canBeCopied = false;
-        canBeReplicated = false;
-        canBeShared = false;
-        canBeUsedInArtifact = false;
         autoClear = false;
 
         hasDynamicSpirituality = true;

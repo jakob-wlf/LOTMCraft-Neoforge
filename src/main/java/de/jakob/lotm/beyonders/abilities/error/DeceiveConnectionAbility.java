@@ -21,10 +21,6 @@ public class DeceiveConnectionAbility extends SelectableAbility {
 
     public DeceiveConnectionAbility(String id) {
         super(id, 3);
-        canBeUsedByNPC = false;
-        canBeCopied = false;
-        canBeReplicated = false;
-        canBeShared = false;
         canBeUsedInArtifact = false;
 
         hasDynamicSpirituality = true;
