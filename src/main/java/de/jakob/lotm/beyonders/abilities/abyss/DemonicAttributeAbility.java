@@ -1,5 +1,6 @@
 package de.jakob.lotm.beyonders.abilities.abyss;
 
+import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.beyonders.abilities.core.AbilityUsedEvent;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.beyonders.abilities.core.interaction.InteractionHandler;
@@ -24,7 +25,6 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
 import org.joml.Vector3f;
@@ -37,12 +37,9 @@ import static de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.D
 
 public class DemonicAttributeAbility extends SelectableAbility {
     // 1 = Toxic Smoke, 2 = Poisonous Flame, 3 = Curse, 4 = Sink Into Ground
-    private static final int[][] POOL_PAIRS = {
-            {1, 2}, {1, 3}, {1, 4}, {2, 3}, {2, 4}, {3, 4}
-    };
-    private final Map<UUID, int[]> unlockedAbilities = new HashMap<>();
     private static final DustParticleOptions SMOKE_DUST = new DustParticleOptions(new Vector3f(35 / 255f, 168 / 255f, 102 / 255f), 3f);
     private static final DustParticleOptions FLAME_DUST = new DustParticleOptions(new Vector3f(35 / 255f, 168 / 255f, 102 / 255f), 1f);
+
     public DemonicAttributeAbility(String id) {
         super(id, 7);
         postsUsedAbilityEventManually = true;
@@ -66,49 +63,73 @@ public class DemonicAttributeAbility extends SelectableAbility {
                 "ability.lotmcraft.demonic_attribute.curse",
                 "ability.lotmcraft.demonic_attribute.sink_into_ground"};
     }
-    private int[] getUnlockedPair(LivingEntity entity) {
-        UUID uuid = entity.getUUID();
-        long combinedSeed = uuid.getMostSignificantBits() ^ Long.rotateLeft(uuid.getLeastSignificantBits(), 32);
-        Random random = new Random(combinedSeed);
-        return POOL_PAIRS[random.nextInt(POOL_PAIRS.length)];
+    private int getPairId(LivingEntity entity) {
+        var component = entity.getData(ModAttachments.DEMONIC_ATTRIBUTE_COMPONENT.get());
+        if (component.hasPair()) {return component.getPairId();}
+        if (!(entity.level() instanceof ServerLevel serverLevel)) {return 1;}
+        long seed = serverLevel.getSeed() ^ entity.getUUID().getMostSignificantBits() ^ entity.getUUID().getLeastSignificantBits();
+        int pairId = new Random(seed).nextInt(6) + 1;
+        component.setPairId(pairId);
+        return pairId;
     }
-    public boolean isSubAbilityUnlocked(LivingEntity entity, int index) {
-        if (index == 0) return true;
-        if (index < 0 || index >= getAllAbilityNames().length) return false;
-
+    private String[] getUnlockedAbilityNames(LivingEntity entity) {
+        getPairId(entity);
         int[] pair = getUnlockedPair(entity);
-        return index == pair[0] || index == pair[1];
+        String[] all = getAllAbilityNames();
+        return new String[]{all[0], all[pair[0]], all[pair[1]]};
     }
     @Override
-    public void nextAbility(LivingEntity entity) {
-        cycleToUnlocked(entity, 1);
-    }
-    @Override
-    public void previousAbility(LivingEntity entity) {
-        cycleToUnlocked(entity, -1);
-    }
-    private void cycleToUnlocked(LivingEntity entity, int step) {
-        int length = getAllAbilityNames().length;
-        if (length == 0) return;
+    public String getSelectedAbility(LivingEntity entity) {
+        String[] names = getUnlockedAbilityNames(entity);
         int selected = selectedAbilities.getOrDefault(entity.getUUID(), 0);
-        for (int i = 0; i < length; i++) {
-            selected = Math.floorMod(selected + step, length);
-            if (isSubAbilityUnlocked(entity, selected)) break;
+        if (selected < 0 || selected >= names.length) {
+            selected = 0;
+            selectedAbilities.put(entity.getUUID(), 0);
         }
+        return names[selected];
+    }
+    private int[] getUnlockedPair(LivingEntity entity) {
+        return switch (getPairId(entity)) {
+            case 1 -> new int[]{1, 2};
+            case 2 -> new int[]{1, 3};
+            case 3 -> new int[]{1, 4};
+            case 4 -> new int[]{2, 3};
+            case 5 -> new int[]{2, 4};
+            case 6 -> new int[]{3, 4};
+            default -> new int[]{1, 1};
+        };
+    }
+    @Override
+    public void nextAbility(LivingEntity entity) {cycleAbility(entity, 1);}
+    @Override
+    public void previousAbility(LivingEntity entity) {cycleAbility(entity, -1);}
+    private void cycleAbility(LivingEntity entity, int step) {
+        int selected = selectedAbilities.getOrDefault(entity.getUUID(), 0);
+        selected = Math.floorMod(selected + step, 3);
         selectedAbilities.put(entity.getUUID(), selected);
         PacketHandler.sendToServer(new AbilitySelectionPacket(getId(), selected));
     }
+
     @Override
     protected void castSelectedAbility(Level level, LivingEntity entity, int abilityIndex) {
-        if(!(level instanceof ServerLevel serverLevel)) {return;}
+        if (!(level instanceof ServerLevel serverLevel)) return;
         if (level.isClientSide) return;
-        if (!isSubAbilityUnlocked(entity, abilityIndex)) return;
+        int[] pair = getUnlockedPair(entity);
         switch (abilityIndex) {
-            case 0 -> Slow(level, entity,serverLevel);
+            case 0 -> Slow(level, entity, serverLevel);
+            case 1 -> castSubAbility(level, entity, pair[0]);
+            case 2 -> castSubAbility(level, entity, pair[1]);
+            default -> System.out.println("[DEMONIC] INVALID INDEX!");
+        }
+    }
+
+    private void castSubAbility(Level level, LivingEntity entity, int actualIndex) {
+        switch (actualIndex) {
             case 1 -> toxicSmoke(level, entity);
             case 2 -> poisonousFlame(level, entity);
             case 3 -> curse(level, entity);
             case 4 -> sinkIntoGround(level, entity);
+            default -> System.out.println("[DEMONIC] UNKNOWN SUB-ABILITY: " + actualIndex);
         }
     }
     // 0: slow

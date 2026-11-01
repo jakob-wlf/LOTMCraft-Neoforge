@@ -348,6 +348,12 @@ public class ModAttachments {
                     .copyOnDeath()
                     .build()
     );
+    public static final Supplier<AttachmentType<DemonicAttributeComponent>> DEMONIC_ATTRIBUTE_COMPONENT = ATTACHMENT_TYPES.register(
+            "demonic_attribute_component",
+            () -> AttachmentType.serializable(DemonicAttributeComponent::new)
+                            .sync(DemonicAttributeComponent.STREAM_CODEC)
+                            .build()
+    );
 
 
 
