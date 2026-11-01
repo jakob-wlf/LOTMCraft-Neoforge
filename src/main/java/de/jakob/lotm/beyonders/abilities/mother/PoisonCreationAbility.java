@@ -48,7 +48,7 @@ public class PoisonCreationAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{"ability.lotmcraft.poison_creation.area", "ability.lotmcraft.poison_creation.threads"};
     }
 

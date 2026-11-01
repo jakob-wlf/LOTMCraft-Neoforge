@@ -78,7 +78,7 @@ public class WaterManipulationAbility extends SelectableAbility {
     }
 
     @Override
-    public String[] getAbilityNames() {
+    public String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.water_manipulation.water_bolt",
                 "ability.lotmcraft.water_manipulation.aqueous_light",

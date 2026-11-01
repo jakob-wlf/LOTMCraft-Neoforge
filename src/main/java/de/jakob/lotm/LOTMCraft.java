@@ -69,6 +69,7 @@ import de.jakob.lotm.entity.client.ability_entities.justiciar_pathway.ancient_co
 import de.jakob.lotm.entity.client.ability_entities.justiciar_pathway.judgment_sword.JudgmentSwordRenderer;
 import de.jakob.lotm.entity.client.ability_entities.sun_pathway.justice_sword.JusticeSwordRenderer;
 import de.jakob.lotm.entity.client.ability_entities.tyrant_pathway.lightning.LightningRenderer;
+import de.jakob.lotm.entity.client.ability_entities.tendril.TendrilRenderer;
 import de.jakob.lotm.entity.client.ability_entities.tyrant_pathway.lightning_branch.LightningBranchRenderer;
 import de.jakob.lotm.entity.client.projectiles.fireball.FireballRenderer;
 import de.jakob.lotm.entity.client.projectiles.flaming_spear.FlamingSpearProjectileRenderer;
@@ -93,6 +94,7 @@ import de.jakob.lotm.entity.client.spirits.spirit_bane.SpiritBaneRenderer;
 import de.jakob.lotm.entity.client.spirits.translucent_wizard.SpiritTranslucentWizardRenderer;
 import de.jakob.lotm.entity.client.stone_golem.StoneGolemRenderer;
 import de.jakob.lotm.gamerule.ModGameRules;
+import de.jakob.lotm.entity.spawning.ModBiomeModifiers;
 import de.jakob.lotm.gui.ModMenuTypes;
 import de.jakob.lotm.gui.custom.ability_wheel.AbilityWheelScreen;
 import de.jakob.lotm.gui.custom.artifact_wheel.ArtifactWheelScreen;
@@ -103,14 +105,20 @@ import de.jakob.lotm.gui.custom.encyclopedia.IngredientEncyclopediaScreen;
 import de.jakob.lotm.gui.custom.flaming_jump.FlamingJumpScreen;
 import de.jakob.lotm.gui.custom.introspect.IntrospectScreen;
 import de.jakob.lotm.gui.custom.honorific_names.HonorificNamesScreen;
+import de.jakob.lotm.gui.custom.justice_selection.JusticePrincipleScreen;
 import de.jakob.lotm.gui.custom.marionettes.MarionetteControlScreen;
 import de.jakob.lotm.gui.custom.mass_puppeteering.MassPuppeteeringScreen;
+import de.jakob.lotm.gui.custom.notarization.ConfirmMenu;
+import de.jakob.lotm.gui.custom.notarization.ConfirmScreen;
+import de.jakob.lotm.gui.custom.notarization.ContractMenu;
+import de.jakob.lotm.gui.custom.notarization.ContractScreen;
 import de.jakob.lotm.gui.custom.pathway_selection.PathwaySelectionScreen;
 import de.jakob.lotm.gui.custom.recipe.RecipeScreen;
 import de.jakob.lotm.gui.custom.ritualistic_table.RitualScreen;
 import de.jakob.lotm.gui.custom.sefirah.SefirahScreen;
 import de.jakob.lotm.gui.custom.trades.BeyonderTradeScreen;
 import de.jakob.lotm.gui.custom.historical_void.HistoricalVoidScreen;
+import de.jakob.lotm.item.ModArmorMaterials;
 import de.jakob.lotm.item.ModCreativeModTabs;
 import de.jakob.lotm.item.ModIngredients;
 import de.jakob.lotm.item.ModItems;
@@ -121,7 +129,6 @@ import de.jakob.lotm.beyonders.potions.BeyonderCharacteristicItemHandler;
 import de.jakob.lotm.beyonders.potions.PotionItemHandler;
 import de.jakob.lotm.beyonders.potions.PotionRecipeItemHandler;
 import de.jakob.lotm.beyonders.quest.QuestRegistry;
-import de.jakob.lotm.rendering.GuidingBookRenderer;
 import de.jakob.lotm.beyonders.rituals.RitualManager;
 import de.jakob.lotm.sound.ModSounds;
 import de.jakob.lotm.structure.ModStructures;
@@ -217,6 +224,7 @@ public class LOTMCraft
         ModEffects.register(modEventBus);
         ModSounds.register(modEventBus);
         ModLootModifiers.register(modEventBus);
+        ModBiomeModifiers.register(modEventBus);
         ModVillagers.register(modEventBus);
         ModBlocks.register(modEventBus);
         ModBlockEntities.register(modEventBus);
@@ -227,6 +235,7 @@ public class LOTMCraft
         ModAttachments.register(modEventBus);
         ModDimensions.register(modEventBus);
         ModGameRules.register();
+        ModArmorMaterials.register(modEventBus);
 
         SpiritPatchSetup.init(modEventBus);
 
@@ -286,6 +295,7 @@ public class LOTMCraft
             EntityRenderers.register(ModEntities.FROST_SPEAR.get(), FrostSpearProjectileRenderer::new);
             EntityRenderers.register(ModEntities.ELECTRIC_SHOCK.get(), ElectricShockRenderer::new);
             EntityRenderers.register(ModEntities.LIGHTNING.get(), LightningRenderer::new);
+            EntityRenderers.register(ModEntities.TENDRIL.get(), TendrilRenderer::new);
             EntityRenderers.register(ModEntities.STRONG_LIGHTNING.get(), StrongLightningRenderer::new);
             EntityRenderers.register(ModEntities.TRAVELERS_DOOR.get(), TravelersDoorRenderer::new);
             EntityRenderers.register(ModEntities.APPRENTICE_BOOK.get(), ApprenticeBookRenderer::new);
@@ -355,8 +365,6 @@ public class LOTMCraft
             EntityRenderers.register(ModEntities.HEADLESS_BRIDE.get(), HeadlessBrideRenderer::new);
 
 
-            GuidingBookRenderer.loadPages(LOTMCraft.MOD_ID);
-
             event.enqueueWork(() -> {
                 ItemBlockRenderTypes.setRenderLayer(ModBlocks.MYSTICAL_RING.get(), RenderType.cutout());
 
@@ -416,6 +424,9 @@ public class LOTMCraft
             event.register(ModMenuTypes.MASS_PUPPETEERING_MENU.get(), MassPuppeteeringScreen::new);
             event.register(ModMenuTypes.PATHWAY_SELECTION.get(), PathwaySelectionScreen::new);
             event.register(ModMenuTypes.INGREDIENT_ENCYCLOPEDIA.get(), IngredientEncyclopediaScreen::new);
+            event.register(ModMenuTypes.CONTRACT.get(), ContractScreen::new);
+            event.register(ModMenuTypes.CONFIRM_CONTRACT.get(), ConfirmScreen::new);
+            event.register(ModMenuTypes.JUSTICE_PRINCIPLES.get(), JusticePrincipleScreen::new);
         }
 
         @SubscribeEvent

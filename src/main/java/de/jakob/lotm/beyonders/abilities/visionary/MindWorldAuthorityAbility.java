@@ -68,7 +68,7 @@ public class MindWorldAuthorityAbility extends SelectableAbility {
     );
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.mind_world_authority_ability.envisioning",
                 "ability.lotmcraft.mind_world_authority_ability.seal_mind_world",

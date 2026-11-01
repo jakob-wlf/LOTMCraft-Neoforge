@@ -1,21 +1,34 @@
 package de.jakob.lotm.beyonders.abilities.error;
 
+import de.jakob.lotm.LOTMCraft;
+import de.jakob.lotm.attachments.CopiedAbilityComponent;
 import de.jakob.lotm.attachments.ModAttachments;
+import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
+import de.jakob.lotm.beyonders.abilities.error.handler.ConceptStorage;
+import de.jakob.lotm.beyonders.abilities.error.handler.ErrorUtil;
 import de.jakob.lotm.beyonders.abilities.error.handler.TheftHandler;
-import de.jakob.lotm.network.PacketHandler;
-import de.jakob.lotm.network.packets.toServer.AbilitySelectionPacket;
+import de.jakob.lotm.beyonders.abilities.error.handler.TimeHandler;
 import de.jakob.lotm.rendering.effectRendering.EffectIds;
 import de.jakob.lotm.rendering.effectRendering.EffectManager;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.helper.AbilityUtil;
+import de.jakob.lotm.util.helper.AllyUtil;
+import de.jakob.lotm.util.helper.CopiedAbilityHelper;
+import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.item.PrimedTnt;
 import net.minecraft.world.entity.player.Player;
@@ -33,6 +46,9 @@ import net.neoforged.neoforge.capabilities.Capabilities;
 import java.util.*;
 
 public class GiftAbility extends SelectableAbility {
+
+    private static final Map<UUID, Long> openMenus = new java.util.concurrent.ConcurrentHashMap<>();
+
     public GiftAbility(String id) {
         super(id, 1f);
         canBeUsedByNPC = false;
@@ -56,10 +72,10 @@ public class GiftAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.gift_ability.item",
-                "ability.lotmcraft.gift_ability.distance",
+                "ability.lotmcraft.gift_ability.menu",
                 "ability.lotmcraft.gift_ability.health",
                 "ability.lotmcraft.gift_ability.digestion",
                 "ability.lotmcraft.gift_ability.luck"
@@ -67,65 +83,220 @@ public class GiftAbility extends SelectableAbility {
     }
 
     @Override
-    public void nextAbility(LivingEntity entity){
-        if(getAbilityNames().length == 0)
-            return;
-
-        if(!selectedAbilities.containsKey(entity.getUUID())) {
-            selectedAbilities.put(entity.getUUID(), 0);
-        }
-
-        int selectedAbility = selectedAbilities.get(entity.getUUID());
-        int entitySeq = AbilityUtil.getSeqWithArt(entity, this);
-
-        selectedAbility++;
-        if(selectedAbility >= getAbilityNames().length) {
-            selectedAbility = 0;
-        }
-
-        if((entitySeq > 5 && selectedAbility >= 1)
-                || (entitySeq > 1 && selectedAbility >= 3)){
-            selectedAbility = 0;
-        }
-
-        selectedAbilities.put(entity.getUUID(), selectedAbility);
-        PacketHandler.sendToServer(new AbilitySelectionPacket(getId(), selectedAbility));
-    }
-
-    @Override
-    public void previousAbility(LivingEntity entity){
-        if(getAbilityNames().length == 0)
-            return;
-
-        if(!selectedAbilities.containsKey(entity.getUUID())) {
-            selectedAbilities.put(entity.getUUID(), 0);
-        }
-
-        int selectedAbility = selectedAbilities.get(entity.getUUID());
-        selectedAbility--;
-        if(selectedAbility <= -1) {
-            selectedAbility = getAbilityNames().length - 1;
-        }
-
-        int entitySeq = AbilityUtil.getSeqWithArt(entity, this);
-        if((entitySeq > 5 && selectedAbility >= 1)
-                || (entitySeq > 1 && selectedAbility >= 3)){
-            selectedAbility = 0;
-        }
-
-        selectedAbilities.put(entity.getUUID(), selectedAbility);
-        PacketHandler.sendToServer(new AbilitySelectionPacket(getId(), selectedAbility));
+    public String[] getSequenceDependantAbilityNames(int sequence) {
+        String[] all = getAllAbilityNames();
+        if (sequence >= 6) return Arrays.copyOf(all, 2);
+        if (sequence >= 2) return Arrays.copyOf(all, 3);
+        return all;
     }
 
     @Override
     protected void castSelectedAbility(Level level, LivingEntity entity, int selectedAbility) {
         switch(selectedAbility){
             case 0 -> giftItem(level, entity);
-            case 1 -> giftDistance(level, entity);
+            case 1 -> openGiftingMenu(level, entity);
             case 2 -> giftHealth(level, entity);
             case 3 -> giftDigestion(level, entity);
             case 4 -> giftLuck(level, entity);
         }
+    }
+
+    private void openGiftingMenu(Level level, LivingEntity entity) {
+        if (!(entity instanceof ServerPlayer player)) {
+            if (entity instanceof Player player && level.isClientSide) {
+                player.playSound(SoundEvents.BELL_RESONATE, 1, 1);
+            }
+            return;
+        }
+
+        CompoundTag data = new CompoundTag();
+
+        ListTag concepts = new ListTag();
+        for (Map.Entry<ConceptStorage.Concept, Integer> entry : ConceptStorage.getAll(player).entrySet()) {
+            CompoundTag tag = new CompoundTag();
+            tag.putString("id", entry.getKey().id);
+            tag.putInt("amount", entry.getValue());
+            tag.putString("unit", entry.getKey().unit);
+            concepts.add(tag);
+        }
+        data.put("concepts", concepts);
+
+        ListTag effects = new ListTag();
+        List<MobEffectInstance> storedEffects = ConceptStorage.getEffects(player);
+        for (int i = 0; i < storedEffects.size(); i++) {
+            MobEffectInstance effect = storedEffects.get(i);
+            CompoundTag tag = new CompoundTag();
+            tag.putInt("index", i);
+            tag.putString("name", effect.getEffect().value().getDisplayName().getString());
+            tag.putInt("amplifier", effect.getAmplifier());
+            tag.putInt("seconds", effect.getDuration() / 20);
+            effects.add(tag);
+        }
+        data.put("effects", effects);
+
+        ListTag abilities = new ListTag();
+        CopiedAbilityComponent copied = player.getData(ModAttachments.COPIED_ABILITY_COMPONENT);
+        for (int i = 0; i < copied.size(); i++) {
+            CopiedAbilityComponent.CopiedAbilityData ability = copied.getAbility(i);
+            if (ability == null || !"stolen".equals(ability.copyType())) continue;
+            CompoundTag tag = new CompoundTag();
+            tag.putInt("index", i);
+            tag.putString("id", ability.abilityId());
+            tag.putInt("uses", ability.remainingUses());
+            abilities.add(tag);
+        }
+        data.put("abilities", abilities);
+
+        openMenus.put(player.getUUID(), player.serverLevel().getGameTime() + 20 * 60);
+        ErrorUtil.send(player, "gift_menu", data);
+    }
+
+    private int getGiftDistance(LivingEntity entity) {
+        int seq = AbilityUtil.getSeqWithArt(entity, this);
+        return (int) (Math.clamp(1L << (9 - seq), 10, 200) * multiplier(entity));
+    }
+
+    public void giftFromMenu(ServerPlayer player, String kind, String id, int index) {
+        ServerLevel level = player.serverLevel();
+        Long until = openMenus.remove(player.getUUID());
+        if (until == null || until < level.getGameTime()) return;
+
+        LivingEntity target = AbilityUtil.getTargetEntity(player, getGiftDistance(player), 2, true, true);
+
+        if (target == null) {
+            AbilityUtil.sendActionBar(player, Component.translatable("ability.lotmcraft.gift.no_target").withColor(0x6d32a8));
+            return;
+        }
+
+        boolean success = switch (kind) {
+            case "concept" -> giftConcept(level, player, target, ConceptStorage.Concept.byId(id));
+            case "effect" -> giftEffect(player, target, index);
+            case "ability" -> giftStolenAbility(player, target, index);
+            default -> false;
+        };
+
+        if (!success) {
+            AbilityUtil.sendActionBar(player, Component.translatable("ability.lotmcraft.gift.failed").withColor(0x6d32a8));
+            return;
+        }
+
+        EffectManager.playEffect(EffectIds.GIFTING_PARTICLES, target.getX(), target.getY() + target.getBbHeight() / 2, target.getZ(), player, player);
+        AbilityUtil.sendActionBar(player, Component.translatable("ability.lotmcraft.gift.success", target.getName()).withColor(0x6d32a8));
+    }
+
+    private boolean giftConcept(ServerLevel level, ServerPlayer player, LivingEntity target, ConceptStorage.Concept concept) {
+        if (concept == null) return false;
+        boolean friendly = AllyUtil.areAllies(player, target);
+
+        switch (concept) {
+            case DISTANCE -> {
+                int distance = (int) TheftHandler.getDistancePerSeq(AbilityUtil.getSeqWithArt(player, this));
+                int taken = ConceptStorage.take(player, concept, distance);
+                if (taken <= 0) return false;
+                pushAlongLook(level, player, target, taken);
+            }
+            case MOVEMENT -> {
+                int seconds = ConceptStorage.take(player, concept, 30);
+                if (seconds <= 0) return false;
+                if (friendly) {
+                    target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, seconds * 20, 2, false, true, true));
+                    target.addEffect(new MobEffectInstance(MobEffects.JUMP, seconds * 20, 1, false, true, true));
+                } else {
+                    Random random = new Random();
+                    ServerScheduler.scheduleForDuration(0, 10, seconds * 20, () -> {
+                        if (!target.isAlive()) return;
+                        Vec3 push = new Vec3(random.nextDouble() - 0.5, 0.15, random.nextDouble() - 0.5).normalize().scale(0.7);
+                        target.setDeltaMovement(push);
+                        target.hurtMarked = true;
+                    }, level);
+                }
+            }
+            case SIGHT -> {
+                int seconds = ConceptStorage.take(player, concept, 30);
+                if (seconds <= 0) return false;
+                if (friendly) {
+                    target.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, seconds * 20, 0, false, true, true));
+                    AbilityUtil.getNearbyEntities(target, level, target.position(), 24).forEach(e -> {
+                        if (!AllyUtil.areAllies(target, e)) e.addEffect(new MobEffectInstance(MobEffects.GLOWING, seconds * 20, 0, false, false, false));
+                    });
+                } else {
+                    target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, seconds * 20, 0, false, true, true));
+                    target.addEffect(new MobEffectInstance(MobEffects.DARKNESS, seconds * 20, 0, false, true, true));
+                }
+            }
+            case THOUGHTS -> {
+                int seconds = ConceptStorage.take(player, concept, 20);
+                if (seconds <= 0) return false;
+                if (friendly) {
+                    target.getData(ModAttachments.COOLDOWN_COMPONENT).addToAll(-seconds * 20);
+                } else {
+                    AbilityUtil.sealAllTargetAbilities(player, target, "gifted_thoughts", seconds * 20);
+                    target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, seconds * 20, 2, false, true, true));
+                    if (target instanceof Mob mob) mob.setTarget(null);
+                }
+            }
+            case FIRE -> {
+                int seconds = ConceptStorage.take(player, concept, 60);
+                if (seconds <= 0) return false;
+                target.setRemainingFireTicks(target.getRemainingFireTicks() + seconds * 20);
+            }
+            case FROST -> {
+                int seconds = ConceptStorage.take(player, concept, 60);
+                if (seconds <= 0) return false;
+                target.setTicksFrozen(target.getTicksRequiredToFreeze() + seconds * 20);
+                target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, seconds * 20, 3, false, true, true));
+            }
+            case TIME -> {
+                int seconds = ConceptStorage.take(player, concept, 60);
+                if (seconds <= 0) return false;
+                boolean restored = TimeHandler.giftTime(target, seconds * 20);
+                TimeHandler.notifyGift(player, target, restored);
+            }
+            case VITALITY -> {
+                int health = ConceptStorage.take(player, concept, (int) target.getMaxHealth());
+                if (health <= 0) return false;
+                target.heal(health);
+            }
+        }
+        return true;
+    }
+
+    private boolean giftEffect(ServerPlayer player, LivingEntity target, int index) {
+        MobEffectInstance effect = ConceptStorage.takeEffect(player, index);
+        if (effect == null) return false;
+        target.addEffect(new MobEffectInstance(effect));
+        return true;
+    }
+
+    private boolean giftStolenAbility(ServerPlayer player, LivingEntity target, int index) {
+        CopiedAbilityComponent copied = player.getData(ModAttachments.COPIED_ABILITY_COMPONENT);
+        CopiedAbilityComponent.CopiedAbilityData data = copied.getAbility(index);
+        if (data == null || !"stolen".equals(data.copyType())) return false;
+
+        if (target instanceof ServerPlayer targetPlayer) {
+            CopiedAbilityHelper.addAbility(targetPlayer, new CopiedAbilityComponent.CopiedAbilityData(
+                    data.abilityId(), "gifted", data.remainingUses(), player.getUUID().toString()));
+        } else {
+            Ability ability = LOTMCraft.abilityHandler.getById(data.abilityId());
+            if (ability == null || !(target.level() instanceof ServerLevel serverLevel)) return false;
+            ability.useAbility(serverLevel, target, false, false, false, true);
+        }
+        CopiedAbilityHelper.removeAbilityIndex(player, index);
+        return true;
+    }
+
+    private void pushAlongLook(Level level, LivingEntity entity, LivingEntity target, int distance) {
+        Vec3 eyePos = entity.getEyePosition();
+        Vec3 lookVec = entity.getLookAngle();
+        Vec3 reach = eyePos.add(lookVec.scale(distance));
+
+        BlockHitResult hitResult = level.clip(new ClipContext(eyePos, reach, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity));
+
+        Vec3 finalPos = hitResult.getType() != HitResult.Type.MISS
+                ? hitResult.getLocation().subtract(lookVec.scale(0.5))
+                : reach;
+
+        target.teleportTo(finalPos.x, finalPos.y, finalPos.z);
     }
 
     private void giftLuck(Level level, LivingEntity entity){
@@ -140,17 +311,6 @@ public class GiftAbility extends SelectableAbility {
 
         if(target == null) {
             AbilityUtil.sendActionBar(entity, Component.translatable("ability.lotmcraft.gift.no_target").withColor(0x6d32a8));
-            return;
-        }
-
-        if(!BeyonderData.isBeyonder(target) || !(target instanceof ServerPlayer targetPlayer)){
-            AbilityUtil.sendActionBar(entity, Component.translatable("ability.lotmcraft.gift.failed").withColor(0x6d32a8));
-            return;
-        }
-
-        float targetDigestion = BeyonderData.getDigestionProgress(targetPlayer);
-        if(targetDigestion == 1.0f){
-            AbilityUtil.sendActionBar(entity, Component.translatable("ability.lotmcraft.gift.failed").withColor(0x6d32a8));
             return;
         }
 
@@ -237,65 +397,6 @@ public class GiftAbility extends SelectableAbility {
         entity.setHealth(currentHealth - healthToGift);
     }
 
-    private void giftDistance(Level level, LivingEntity entity){
-        if(!(entity instanceof ServerPlayer player)) {
-            if(entity instanceof Player player && entity.level().isClientSide) {
-                player.playSound(SoundEvents.BELL_RESONATE, 1, 1);
-            }
-            return;
-        }
-
-        LivingEntity target = AbilityUtil.getTargetEntity(entity, baseDistance, 2, true, true);
-
-        if(target == null) {
-            AbilityUtil.sendActionBar(entity, Component.translatable("ability.lotmcraft.gift.no_target").withColor(0x6d32a8));
-            return;
-        }
-
-        int entitySeq = AbilityUtil.getSeqWithArt(entity, this);
-        int distance = (int) TheftHandler.getDistancePerSeq(entitySeq);
-
-        if(!MundaneConceptualTheft.stolenDistanceMap.containsKey(entity.getUUID())){
-            AbilityUtil.sendActionBar(entity, Component.translatable("ability.lotmcraft.gift.failed").withColor(0x6d32a8));
-            return;
-        }
-
-        int storedDistance = MundaneConceptualTheft.stolenDistanceMap.get(entity.getUUID());
-
-        if(storedDistance - distance < 0){
-            AbilityUtil.sendActionBar(entity, Component.translatable("ability.lotmcraft.gift.failed").withColor(0x6d32a8));
-            return;
-        }
-
-        EffectManager.playEffect(EffectIds.GIFTING_PARTICLES, target.getX(), target.getY() + target.getBbHeight() / 2, target.getZ(), player, entity);
-
-        MundaneConceptualTheft.stolenDistanceMap.put(entity.getUUID(), storedDistance - distance);
-
-        Vec3 eyePos = entity.getEyePosition();
-        Vec3 lookVec = entity.getLookAngle();
-        Vec3 reach = eyePos.add(lookVec.scale(distance));
-
-        ClipContext context = new ClipContext(
-                eyePos,
-                reach,
-                ClipContext.Block.COLLIDER,
-                ClipContext.Fluid.NONE,
-                entity
-        );
-
-        BlockHitResult hitResult = level.clip(context);
-
-        Vec3 finalPos;
-
-        if (hitResult.getType() != HitResult.Type.MISS) {
-            finalPos = hitResult.getLocation().subtract(lookVec.scale(0.5));
-        } else {
-            finalPos = reach;
-        }
-
-        target.teleportTo(finalPos.x, finalPos.y, finalPos.z);
-    }
-
     private void giftItem(Level level, LivingEntity entity){
         if(!(entity instanceof ServerPlayer player)) {
             if(entity instanceof Player player && entity.level().isClientSide) {
@@ -326,7 +427,6 @@ public class GiftAbility extends SelectableAbility {
             if(capability != null && hasInventory(target)) {
                 ItemStack toInsert = offHandItem.copy();
 
-                // Try to insert into all slots
                 for(int i = 0; i < capability.getSlots(); i++) {
                     toInsert = capability.insertItem(i, toInsert, false);
                     if(toInsert.isEmpty()) {
@@ -334,12 +434,10 @@ public class GiftAbility extends SelectableAbility {
                     }
                 }
 
-                // Drop any remainder
                 if(!toInsert.isEmpty()) {
                     target.spawnAtLocation(toInsert);
                 }
             } else {
-                // No inventory or capability, drop at target's location
                 target.spawnAtLocation(offHandItem.copy());
             }
         }

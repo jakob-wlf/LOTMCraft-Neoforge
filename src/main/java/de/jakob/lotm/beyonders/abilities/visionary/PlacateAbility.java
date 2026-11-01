@@ -42,7 +42,7 @@ public class PlacateAbility extends SelectableAbility {
     }
 
     @Override
-    public String[] getAbilityNames() {
+    public String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.placate.self",
                 "ability.lotmcraft.placate.others",

@@ -65,7 +65,7 @@ public class BloodSovereignAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.blood_sovereign.surge",
                 "ability.lotmcraft.blood_sovereign.corrosion"

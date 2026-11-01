@@ -36,7 +36,7 @@ public class BlessingsOfWIndAbility extends SelectableAbility {
     }
 
     @Override
-    public String[] getAbilityNames() {
+    public String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.blessings_of_wind.speed_of_wind",
                 "ability.lotmcraft.blessings_of_wind.penetrative_wind",

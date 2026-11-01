@@ -30,6 +30,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         basicItem(ModItems.EXCAVATED_AREA_ITEM.get());
         basicItem(ModItems.SUN_ITEM.get());
         basicItem(ModItems.MOON_ITEM.get());
+        basicItem(ModItems.GUIDING_BOOK.get());
         basicItem(ModItems.INGREDIENT_ENCYCLOPEDIA.get());
         basicItem(ModItems.CRYSTAL_BALL.get());
         basicItem(ModItems.MYSTERIOUS_SILVER_PLATE.get());
@@ -38,6 +39,11 @@ public class ModItemModelProvider extends ItemModelProvider {
         basicItem(ModItems.UNIQUENESS_MAP.get());
         basicItem(ModItems.CITY_MAP.get());
         basicItem(ModItems.CANE.get());
+        basicItem(ModItems.NOTARY_SEAL.get());
+        basicItem(ModItems.HOLY_BOOTS.get());
+        basicItem(ModItems.HOLY_CHESTPLATE.get());
+        basicItem(ModItems.HOLY_LEGGINGS.get());
+        basicItem(ModItems.HOLY_HELMET.get());
 
         handheldItem(ModItems.PAPER_SWORD.get());
         handheldItem(ModItems.PAPER_PICKAXE.get());

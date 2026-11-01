@@ -50,7 +50,7 @@ public class TravelersDoorAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[] {
                 "ability.lotmcraft.travelers_door.spirit_world",
                 "ability.lotmcraft.travelers_door.coordinates"

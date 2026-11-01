@@ -1,7 +1,4 @@
-package de.jakob.lotm.entity.client.ability_entities.volcano;// Made with Blockbench 5.0.3
-// Exported for Minecraft version 1.17 or later with Mojang mappings
-// Paste this class into your mod and generate all required imports
-
+package de.jakob.lotm.entity.client.ability_entities.volcano;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -10,105 +7,356 @@ import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
-import net.minecraft.client.model.geom.builders.*;
+import net.minecraft.client.model.geom.builders.CubeListBuilder;
+import net.minecraft.client.model.geom.builders.LayerDefinition;
+import net.minecraft.client.model.geom.builders.MeshDefinition;
+import net.minecraft.client.model.geom.builders.PartDefinition;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 
 public class VolcanoModel<T extends Entity> extends EntityModel<T> {
-	// This layer location should be baked with EntityRendererProvider.Context in the entity renderer and passed into this model's constructor
 	public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(LOTMCraft.MOD_ID, "volcano"), "main");
-	private final ModelPart bone;
-	private final ModelPart bone9;
-	private final ModelPart bone10;
-	private final ModelPart bone2;
-	private final ModelPart bone3;
-	private final ModelPart bone4;
-	private final ModelPart bone5;
-	private final ModelPart bone6;
-	private final ModelPart bone7;
+	public static final int TEXTURE_SIZE = 512;
+
+	private final ModelPart root;
 
 	public VolcanoModel(ModelPart root) {
-		this.bone = root.getChild("bone");
-		this.bone9 = root.getChild("bone9");
-		this.bone10 = root.getChild("bone10");
-		this.bone2 = root.getChild("bone2");
-		this.bone3 = root.getChild("bone3");
-		this.bone4 = root.getChild("bone4");
-		this.bone5 = root.getChild("bone5");
-		this.bone6 = root.getChild("bone6");
-		this.bone7 = root.getChild("bone7");
+		this.root = root;
+	}
+
+	private static void cube(PartDefinition root, String name, int u, int v, int w, int h, int d,
+							 float x, float y, float z, float rx, float ry, float rz) {
+		root.addOrReplaceChild(name,
+				CubeListBuilder.create().texOffs(u, v).addBox(-w / 2f, -h / 2f, -d / 2f, w, h, d),
+				PartPose.offsetAndRotation(x, y, z, rx, ry, rz));
 	}
 
 	public static LayerDefinition createBodyLayer() {
-		MeshDefinition meshdefinition = new MeshDefinition();
-		PartDefinition partdefinition = meshdefinition.getRoot();
+		MeshDefinition mesh = new MeshDefinition();
+		PartDefinition root = mesh.getRoot();
 
-		PartDefinition bone = partdefinition.addOrReplaceChild("bone", CubeListBuilder.create().texOffs(80, 157).addBox(-10.0F, -3.0F, -10.0F, 20.0F, 5.0F, 20.0F, new CubeDeformation(0.0F))
-		.texOffs(120, 130).addBox(-9.0F, -3.0F, -11.0F, 18.0F, 5.0F, 22.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 12.0F, 0.0F));
+		cube(root, "c0", 212, 323, 22, 9, 4, 0.86F, 3.66F, 74.06F, 0.92F, 0.01F, 0F);
+		cube(root, "c1", 230, 262, 21, 10, 4, 18.95F, 3.66F, 72.29F, 0.95F, 0.26F, 0F);
+		cube(root, "c2", 281, 262, 20, 10, 4, 35.65F, 3.66F, 65.66F, 0.91F, 0.5F, 0F);
+		cube(root, "c3", 265, 323, 21, 9, 4, 48.13F, 3.66F, 56.59F, 0.96F, 0.7F, 0F);
+		cube(root, "c4", 330, 262, 23, 10, 4, 57.58F, 3.66F, 46.82F, 1.04F, 0.89F, 0F);
+		cube(root, "c5", 385, 262, 21, 10, 4, 67.4F, 3.66F, 31.69F, 0.95F, 1.13F, 0F);
+		cube(root, "c6", 316, 323, 23, 9, 4, 71.87F, 3.66F, 14.99F, 0.93F, 1.37F, 0F);
+		cube(root, "c7", 371, 323, 22, 9, 4, 73.98F, 3.66F, 3.16F, 0.9F, 1.53F, 0F);
+		cube(root, "c8", 424, 323, 22, 9, 4, 72.53F, 3.66F, -15.86F, 1.01F, 1.79F, 0F);
+		cube(root, "c9", 0, 338, 21, 9, 4, 68.26F, 3.66F, -30.39F, 1.03F, 1.99F, 0F);
+		cube(root, "c10", 51, 338, 23, 9, 4, 58.5F, 3.66F, -44.92F, 1.03F, 2.23F, 0F);
+		cube(root, "c11", 106, 338, 23, 9, 4, 45.97F, 3.66F, -58.22F, 1.04F, 2.47F, 0F);
+		cube(root, "c12", 161, 338, 24, 9, 4, 33.96F, 3.66F, -65.69F, 1.03F, 2.66F, 0F);
+		cube(root, "c13", 436, 262, 22, 10, 4, 19.6F, 3.66F, -71.15F, 1.05F, 2.87F, 0F);
+		cube(root, "c14", 0, 278, 22, 10, 4, -2.24F, 3.66F, -74.31F, 0.96F, 3.17F, 0F);
+		cube(root, "c15", 218, 338, 22, 9, 4, -16.66F, 3.66F, -71.1F, 0.92F, 3.37F, 0F);
+		cube(root, "c16", 53, 278, 20, 10, 4, -28.89F, 3.66F, -67.34F, 1.06F, 3.55F, 0F);
+		cube(root, "c17", 271, 338, 23, 9, 4, -47.85F, 3.66F, -56.11F, 1F, 3.85F, 0F);
+		cube(root, "c18", 326, 338, 23, 9, 4, -59.85F, 3.66F, -44.15F, 0.92F, 4.08F, 0F);
+		cube(root, "c19", 381, 338, 21, 9, 4, -66.72F, 3.66F, -31.05F, 1.01F, 4.28F, 0F);
+		cube(root, "c20", 432, 338, 23, 9, 4, -72.17F, 3.66F, -15.72F, 1F, 4.5F, 0F);
+		cube(root, "c21", 102, 278, 20, 10, 4, -74.57F, 3.66F, 0.39F, 0.96F, 4.72F, 0F);
+		cube(root, "c22", 0, 352, 23, 9, 4, -72.34F, 3.66F, 14.23F, 0.92F, 4.91F, 0F);
+		cube(root, "c23", 55, 352, 22, 9, 4, -65.82F, 3.66F, 31.45F, 1F, 5.16F, 0F);
+		cube(root, "c24", 151, 278, 21, 10, 4, -57.19F, 3.66F, 46.93F, 1.03F, 5.4F, 0F);
+		cube(root, "c25", 108, 352, 20, 9, 4, -43.83F, 3.66F, 59.34F, 0.96F, 5.65F, 0F);
+		cube(root, "c26", 202, 278, 20, 10, 4, -31.38F, 3.66F, 67.48F, 0.94F, 5.85F, 0F);
+		cube(root, "c27", 251, 278, 20, 10, 4, -14.15F, 3.66F, 72.2F, 1.04F, 6.09F, 0F);
+		cube(root, "c28", 300, 278, 22, 10, 4, 6.79F, 0.14F, 67.09F, 1.06F, 0.1F, 0F);
+		cube(root, "c29", 353, 278, 22, 10, 4, 27.5F, 0.14F, 62.12F, 1.06F, 0.42F, 0F);
+		cube(root, "c30", 406, 278, 20, 10, 4, 37.87F, 0.14F, 55.37F, 1.13F, 0.6F, 0F);
+		cube(root, "c31", 157, 352, 23, 9, 4, 54.69F, 0.14F, 41.03F, 1.2F, 0.93F, 0F);
+		cube(root, "c32", 455, 278, 23, 10, 4, 61.49F, 0.14F, 28.89F, 1.12F, 1.13F, 0F);
+		cube(root, "c33", 268, 229, 21, 11, 4, 66.49F, 0.14F, 16.42F, 1.15F, 1.33F, 0F);
+		cube(root, "c34", 0, 293, 24, 10, 4, 66.51F, 0.14F, -5.04F, 1.18F, 1.65F, 0F);
+		cube(root, "c35", 57, 293, 23, 10, 4, 65.49F, 0.14F, -18.61F, 1.18F, 1.85F, 0F);
+		cube(root, "c36", 112, 293, 24, 10, 4, 57.71F, 0.14F, -36.27F, 1.04F, 2.13F, 0F);
+		cube(root, "c37", 212, 352, 23, 9, 4, 46.26F, 0.14F, -48.46F, 1.16F, 2.38F, 0F);
+		cube(root, "c38", 169, 293, 23, 10, 4, 29.59F, 0.14F, -60.08F, 1.07F, 2.68F, 0F);
+		cube(root, "c39", 319, 229, 22, 11, 4, 19.91F, 0.14F, -64.82F, 1.08F, 2.84F, 0F);
+		cube(root, "c40", 267, 352, 20, 9, 4, -3.13F, 0.14F, -68.16F, 1.1F, 3.19F, 0F);
+		cube(root, "c41", 316, 352, 22, 9, 4, -16.98F, 0.14F, -64.61F, 1.19F, 3.4F, 0F);
+		cube(root, "c42", 224, 293, 22, 10, 4, -33.18F, 0.14F, -57.88F, 1.2F, 3.66F, 0F);
+		cube(root, "c43", 369, 352, 24, 9, 4, -47.35F, 0.14F, -48.47F, 1.06F, 3.92F, 0F);
+		cube(root, "c44", 277, 293, 22, 10, 4, -57.83F, 0.14F, -35.35F, 1.09F, 4.16F, 0F);
+		cube(root, "c45", 330, 293, 20, 10, 4, -64.39F, 0.14F, -19.44F, 1.1F, 4.42F, 0F);
+		cube(root, "c46", 379, 293, 21, 10, 4, -66.73F, 0.14F, -2.22F, 1.17F, 4.68F, 0F);
+		cube(root, "c47", 430, 293, 23, 10, 4, -67.25F, 0.14F, 9.42F, 1.11F, 4.85F, 0F);
+		cube(root, "c48", 0, 308, 22, 10, 4, -61.64F, 0.14F, 26.33F, 1.05F, 5.12F, 0F);
+		cube(root, "c49", 53, 308, 24, 10, 4, -54.03F, 0.14F, 41.66F, 1.07F, 5.37F, 0F);
+		cube(root, "c50", 426, 352, 23, 9, 4, -41.09F, 0.14F, 53.05F, 1.07F, 5.62F, 0F);
+		cube(root, "c51", 110, 308, 24, 10, 4, -28.42F, 0.14F, 61.96F, 1.06F, 5.85F, 0F);
+		cube(root, "c52", 0, 366, 21, 9, 4, -5.35F, 0.14F, 67.87F, 1.12F, 6.2F, 0F);
+		cube(root, "c53", 408, 160, 21, 12, 4, 2.38F, -4.86F, 60.37F, 0.82F, 0.04F, 0F);
+		cube(root, "c54", 459, 160, 20, 12, 4, 17.75F, -4.86F, 57.98F, 0.78F, 0.3F, 0F);
+		cube(root, "c55", 372, 229, 21, 11, 4, 32.36F, -4.86F, 50.58F, 0.94F, 0.57F, 0F);
+		cube(root, "c56", 0, 178, 22, 12, 4, 41.63F, -4.86F, 43.42F, 0.94F, 0.76F, 0F);
+		cube(root, "c57", 53, 178, 22, 12, 4, 54.63F, -4.86F, 27.5F, 0.78F, 1.1F, 0F);
+		cube(root, "c58", 106, 178, 22, 12, 4, 60.08F, -4.86F, 8.89F, 0.77F, 1.42F, 0F);
+		cube(root, "c59", 159, 178, 21, 12, 4, 59.55F, -4.86F, -1.53F, 0.8F, 1.6F, 0F);
+		cube(root, "c60", 423, 229, 21, 11, 4, 55.71F, -4.86F, -22.27F, 0.8F, 1.95F, 0F);
+		cube(root, "c61", 0, 246, 23, 11, 4, 47.89F, -4.86F, -36.68F, 0.78F, 2.22F, 0F);
+		cube(root, "c62", 55, 246, 22, 11, 4, 35.1F, -4.86F, -48F, 0.8F, 2.51F, 0F);
+		cube(root, "c63", 108, 246, 23, 11, 4, 21F, -4.86F, -55.49F, 0.77F, 2.78F, 0F);
+		cube(root, "c64", 163, 246, 21, 11, 4, 10.14F, -4.86F, -59.7F, 0.89F, 2.97F, 0F);
+		cube(root, "c65", 210, 178, 22, 12, 4, -7.7F, -4.86F, -60.21F, 0.84F, 3.27F, 0F);
+		cube(root, "c66", 263, 178, 20, 12, 4, -22.15F, -4.86F, -56.48F, 0.93F, 3.52F, 0F);
+		cube(root, "c67", 214, 246, 22, 11, 4, -38.72F, -4.86F, -47.24F, 0.78F, 3.83F, 0F);
+		cube(root, "c68", 312, 178, 21, 12, 4, -50.13F, -4.86F, -34.88F, 0.81F, 4.1F, 0F);
+		cube(root, "c69", 363, 178, 23, 12, 4, -56.39F, -4.86F, -21.42F, 0.87F, 4.35F, 0F);
+		cube(root, "c70", 267, 246, 20, 11, 4, -60.79F, -4.86F, -3.89F, 0.93F, 4.65F, 0F);
+		cube(root, "c71", 418, 178, 23, 12, 4, -59.22F, -4.86F, 11.77F, 0.8F, 4.91F, 0F);
+		cube(root, "c72", 316, 246, 22, 11, 4, -53.14F, -4.86F, 26.53F, 0.8F, 5.18F, 0F);
+		cube(root, "c73", 369, 246, 21, 11, 4, -43.47F, -4.86F, 42.55F, 0.85F, 5.49F, 0F);
+		cube(root, "c74", 0, 195, 21, 12, 4, -30.82F, -4.86F, 52.27F, 0.79F, 5.75F, 0F);
+		cube(root, "c75", 420, 246, 21, 11, 4, -17F, -4.86F, 57.44F, 0.81F, 6F, 0F);
+		cube(root, "c76", 51, 195, 23, 13, 3, 8.73F, -12.35F, 51.95F, 0.67F, 0.17F, 0F);
+		cube(root, "c77", 104, 195, 22, 13, 3, 23.41F, -12.35F, 48.43F, 0.72F, 0.45F, 0F);
+		cube(root, "c78", 155, 195, 24, 13, 3, 38.91F, -12.35F, 36.83F, 0.77F, 0.81F, 0F);
+		cube(root, "c79", 210, 195, 22, 13, 3, 46.99F, -12.35F, 25.58F, 0.77F, 1.07F, 0F);
+		cube(root, "c80", 261, 195, 24, 13, 3, 51.6F, -12.35F, 11.11F, 0.76F, 1.36F, 0F);
+		cube(root, "c81", 135, 105, 23, 14, 3, 51.68F, -12.35F, -9.72F, 0.75F, 1.76F, 0F);
+		cube(root, "c82", 316, 195, 24, 13, 3, 49.21F, -12.35F, -21.3F, 0.79F, 1.98F, 0F);
+		cube(root, "c83", 371, 195, 23, 13, 3, 36.07F, -12.35F, -38.93F, 0.76F, 2.39F, 0F);
+		cube(root, "c84", 188, 105, 24, 14, 3, 21.27F, -12.35F, -48.84F, 0.77F, 2.73F, 0F);
+		cube(root, "c85", 424, 195, 20, 13, 3, 6.89F, -12.35F, -53.77F, 0.8F, 3.01F, 0F);
+		cube(root, "c86", 0, 212, 22, 13, 3, -7.95F, -12.35F, -53.15F, 0.68F, 3.29F, 0F);
+		cube(root, "c87", 51, 212, 22, 13, 3, -25.87F, -12.35F, -47.38F, 0.74F, 3.64F, 0F);
+		cube(root, "c88", 0, 262, 21, 12, 3, -36.7F, -12.35F, -39.27F, 0.69F, 3.89F, 0F);
+		cube(root, "c89", 102, 212, 21, 13, 3, -45.92F, -12.35F, -27.31F, 0.66F, 4.18F, 0F);
+		cube(root, "c90", 151, 212, 20, 13, 3, -52.43F, -12.35F, -11.69F, 0.74F, 4.49F, 0F);
+		cube(root, "c91", 198, 212, 22, 13, 3, -52.11F, -12.35F, 6.65F, 0.75F, 4.84F, 0F);
+		cube(root, "c92", 249, 212, 22, 13, 3, -48.4F, -12.35F, 23.12F, 0.78F, 5.16F, 0F);
+		cube(root, "c93", 243, 105, 24, 14, 3, -37.34F, -12.35F, 38.67F, 0.73F, 5.52F, 0F);
+		cube(root, "c94", 300, 212, 23, 13, 3, -24.48F, -12.35F, 47.71F, 0.79F, 5.81F, 0F);
+		cube(root, "c95", 353, 212, 21, 13, 3, -8.11F, -12.35F, 52.79F, 0.81F, 6.13F, 0F);
+		cube(root, "c96", 298, 105, 21, 14, 3, 0.2F, -21.04F, 46.8F, 0.73F, 0F, 0F);
+		cube(root, "c97", 125, 47, 21, 15, 3, 16.86F, -21.04F, 43.86F, 0.72F, 0.37F, 0F);
+		cube(root, "c98", 174, 47, 21, 15, 3, 28.84F, -21.04F, 37.44F, 0.7F, 0.66F, 0F);
+		cube(root, "c99", 223, 47, 21, 15, 3, 38.84F, -21.04F, 25.67F, 0.57F, 0.99F, 0F);
+		cube(root, "c100", 347, 105, 23, 14, 3, 46.52F, -21.04F, 6.81F, 0.66F, 1.43F, 0F);
+		cube(root, "c101", 272, 47, 24, 15, 3, 46.57F, -21.04F, -7.56F, 0.72F, 1.73F, 0F);
+		cube(root, "c102", 327, 47, 20, 15, 3, 41.89F, -21.04F, -20.35F, 0.56F, 2.02F, 0F);
+		cube(root, "c103", 400, 105, 23, 14, 3, 28.94F, -21.04F, -35.16F, 0.57F, 2.45F, 0F);
+		cube(root, "c104", 453, 105, 23, 14, 3, 16.11F, -21.04F, -44.61F, 0.65F, 2.8F, 0F);
+		cube(root, "c105", 0, 124, 21, 14, 3, -3.47F, -21.04F, -47.27F, 0.6F, 3.21F, 0F);
+		cube(root, "c106", 374, 47, 21, 15, 3, -12.94F, -21.04F, -43.62F, 0.59F, 3.43F, 0F);
+		cube(root, "c107", 49, 124, 21, 14, 3, -31.74F, -21.04F, -34.93F, 0.58F, 3.88F, 0F);
+		cube(root, "c108", 402, 212, 23, 13, 3, -38.31F, -21.04F, -24.96F, 0.68F, 4.13F, 0F);
+		cube(root, "c109", 423, 47, 20, 15, 3, -46.32F, -21.04F, -9.88F, 0.63F, 4.5F, 0F);
+		cube(root, "c110", 0, 67, 21, 15, 3, -46.55F, -21.04F, 7.69F, 0.6F, 4.88F, 0F);
+		cube(root, "c111", 98, 124, 23, 14, 3, -41.61F, -21.04F, 22.41F, 0.62F, 5.21F, 0F);
+		cube(root, "c112", 151, 124, 23, 14, 3, -29.64F, -21.04F, 36.68F, 0.59F, 5.6F, 0F);
+		cube(root, "c113", 293, 0, 21, 16, 3, -16.08F, -21.04F, 44.31F, 0.73F, 5.94F, 0F);
+		cube(root, "c114", 204, 124, 22, 14, 3, 8.02F, -30.6F, 39.26F, 0.66F, 0.2F, 0F);
+		cube(root, "c115", 49, 67, 21, 15, 3, 21.26F, -30.6F, 33.88F, 0.6F, 0.56F, 0F);
+		cube(root, "c116", 255, 124, 21, 14, 3, 33.72F, -30.6F, 19.59F, 0.55F, 1.04F, 0F);
+		cube(root, "c117", 304, 124, 24, 14, 3, 39.91F, -30.6F, 5.71F, 0.56F, 1.43F, 0F);
+		cube(root, "c118", 98, 67, 21, 15, 3, 37.15F, -30.6F, -12.52F, 0.65F, 1.9F, 0F);
+		cube(root, "c119", 359, 124, 20, 14, 3, 29.89F, -30.6F, -27.27F, 0.65F, 2.31F, 0F);
+		cube(root, "c120", 147, 67, 22, 15, 3, 15.28F, -30.6F, -36.85F, 0.54F, 2.75F, 0F);
+		cube(root, "c121", 406, 124, 24, 14, 3, -1.75F, -30.6F, -39.09F, 0.62F, 3.19F, 0F);
+		cube(root, "c122", 198, 67, 24, 15, 3, -17.48F, -30.6F, -36.02F, 0.51F, 3.59F, 0F);
+		cube(root, "c123", 455, 212, 23, 13, 3, -30.18F, -30.6F, -25.87F, 0.63F, 4F, 0F);
+		cube(root, "c124", 253, 67, 23, 15, 3, -37.76F, -30.6F, -9.35F, 0.66F, 4.47F, 0F);
+		cube(root, "c125", 0, 142, 24, 14, 3, -39.92F, -30.6F, 4.26F, 0.66F, 4.82F, 0F);
+		cube(root, "c126", 55, 142, 22, 14, 3, -33.75F, -30.6F, 19.96F, 0.66F, 5.25F, 0F);
+		cube(root, "c127", 106, 142, 25, 14, 3, -23.13F, -30.6F, 32.26F, 0.65F, 5.66F, 0F);
+		cube(root, "c128", 0, 229, 23, 13, 3, -5.68F, -30.6F, 39.46F, 0.57F, 6.14F, 0F);
+		cube(root, "c129", 306, 67, 21, 15, 3, -3.34F, -40.78F, 33.74F, 0.57F, -0.1F, 0F);
+		cube(root, "c130", 342, 0, 22, 16, 3, 17F, -40.78F, 28.68F, 0.53F, 0.54F, 0F);
+		cube(root, "c131", 393, 0, 22, 16, 3, 26.56F, -40.78F, 19.71F, 0.54F, 0.93F, 0F);
+		cube(root, "c132", 355, 67, 24, 15, 3, 32.51F, -40.78F, 7.01F, 0.54F, 1.36F, 0F);
+		cube(root, "c133", 444, 0, 22, 16, 3, 31.38F, -40.78F, -8.56F, 0.55F, 1.84F, 0F);
+		cube(root, "c134", 0, 27, 24, 16, 3, 24.11F, -40.78F, -22.9F, 0.59F, 2.33F, 0F);
+		cube(root, "c135", 55, 27, 24, 16, 3, 4.73F, -40.78F, -32.87F, 0.51F, 3F, 0F);
+		cube(root, "c136", 410, 67, 21, 15, 3, -6.68F, -40.78F, -32.26F, 0.49F, 3.35F, 0F);
+		cube(root, "c137", 163, 142, 20, 14, 3, -23.39F, -40.78F, -23.29F, 0.56F, 3.93F, 0F);
+		cube(root, "c138", 459, 67, 21, 15, 3, -31.25F, -40.78F, -13.63F, 0.6F, 4.3F, 0F);
+		cube(root, "c139", 0, 86, 21, 15, 3, -32.74F, -40.78F, 1.47F, 0.53F, 4.76F, 0F);
+		cube(root, "c140", 110, 27, 20, 16, 3, -25.98F, -40.78F, 22.16F, 0.53F, 5.42F, 0F);
+		cube(root, "c141", 49, 86, 23, 15, 3, -16.24F, -40.78F, 28.7F, 0.55F, 5.77F, 0F);
+		cube(root, "c142", 210, 142, 23, 14, 3, 5.58F, -51.32F, 26.25F, 0.44F, 0.21F, 0F);
+		cube(root, "c143", 102, 86, 21, 15, 3, 18.08F, -51.32F, 19.19F, 0.59F, 0.76F, 0F);
+		cube(root, "c144", 263, 142, 20, 14, 3, 27.18F, -51.32F, 5.18F, 0.46F, 1.38F, 0F);
+		cube(root, "c145", 310, 142, 22, 14, 3, 22.97F, -51.32F, -13.56F, 0.46F, 2.1F, 0F);
+		cube(root, "c146", 151, 86, 22, 15, 3, 12.02F, -51.32F, -23.95F, 0.56F, 2.68F, 0F);
+		cube(root, "c147", 361, 142, 21, 14, 3, -2.15F, -51.32F, -26.18F, 0.43F, 3.22F, 0F);
+		cube(root, "c148", 202, 86, 21, 15, 3, -14.33F, -51.32F, -23.43F, 0.51F, 3.69F, 0F);
+		cube(root, "c149", 157, 27, 22, 16, 3, -23.28F, -51.32F, -13.51F, 0.45F, 4.19F, 0F);
+		cube(root, "c150", 251, 86, 21, 15, 3, -25.99F, -51.32F, 3.4F, 0.42F, 4.84F, 0F);
+		cube(root, "c151", 300, 86, 20, 15, 3, -19.17F, -51.32F, 19.59F, 0.57F, 5.51F, 0F);
+		cube(root, "c152", 347, 86, 20, 15, 3, -10.35F, -51.32F, 24.24F, 0.45F, 5.88F, 0F);
+		cube(root, "c153", 394, 86, 26, 15, 3, 2.56F, -62.08F, 21.03F, 0.46F, 0.12F, 0F);
+		cube(root, "c154", 208, 27, 22, 16, 3, 17.64F, -62.08F, 13.41F, 0.42F, 0.92F, 0F);
+		cube(root, "c155", 410, 142, 23, 14, 3, 21.66F, -62.08F, 2.09F, 0.52F, 1.47F, 0F);
+		cube(root, "c156", 259, 27, 26, 16, 3, 13.05F, -62.08F, -16.28F, 0.54F, 2.47F, 0F);
+		cube(root, "c157", 318, 27, 22, 16, 3, 2.09F, -62.08F, -20.89F, 0.52F, 3.04F, 0F);
+		cube(root, "c158", 369, 27, 26, 16, 3, -16.46F, -62.08F, -12.11F, 0.5F, 4.08F, 0F);
+		cube(root, "c159", 0, 160, 23, 14, 3, -21.97F, -62.08F, -0.47F, 0.45F, 4.69F, 0F);
+		cube(root, "c160", 428, 27, 23, 16, 3, -16.79F, -62.08F, 12.47F, 0.51F, 5.35F, 0F);
+		cube(root, "c161", 207, 0, 17, 17, 3, 5.04F, -73.49F, 15.48F, 0.55F, 0.32F, 0F);
+		cube(root, "c162", 248, 0, 19, 17, 3, 13.01F, -73.49F, 7.03F, 0.48F, 1.08F, 0F);
+		cube(root, "c163", 453, 86, 17, 15, 3, 12.83F, -73.49F, -7.61F, 0.49F, 2.11F, 0F);
+		cube(root, "c164", 0, 105, 19, 15, 3, 4.91F, -73.49F, -14.88F, 0.46F, 2.82F, 0F);
+		cube(root, "c165", 45, 105, 17, 15, 3, -7.69F, -73.49F, -13.37F, 0.38F, 3.66F, 0F);
+		cube(root, "c166", 0, 47, 17, 16, 3, -13.52F, -73.49F, -5.42F, 0.53F, 4.33F, 0F);
+		cube(root, "c167", 41, 47, 18, 16, 3, -14.58F, -73.49F, 3.57F, 0.45F, 4.95F, 0F);
+		cube(root, "c168", 84, 47, 17, 16, 3, -5.08F, -73.49F, 14.32F, 0.45F, 5.94F, 0F);
+		cube(root, "c169", 86, 105, 5, 15, 3, 15.6F, -73.89F, 4.93F, 0.46F, 1.26F, 0F);
+		cube(root, "c170", 53, 160, 6, 14, 3, 20.97F, -62.5F, 7.2F, 0.48F, 1.24F, 0F);
+		cube(root, "c171", 72, 160, 5, 14, 3, 26.5F, -51.76F, 8.98F, 0.51F, 1.24F, 0F);
+		cube(root, "c172", 89, 160, 7, 14, 3, 31.78F, -41.24F, 12.28F, 0.54F, 1.2F, 0F);
+		cube(root, "c173", 53, 229, 7, 13, 3, 37.25F, -31.1F, 15.81F, 0.58F, 1.17F, 0F);
+		cube(root, "c174", 110, 160, 7, 14, 3, 43.89F, -21.58F, 17.24F, 0.64F, 1.2F, 0F);
+		cube(root, "c175", 49, 262, 7, 12, 3, 50.42F, -12.95F, 19.76F, 0.72F, 1.2F, 0F);
+		cube(root, "c176", 167, 308, 8, 11, 3, 56.39F, -5.91F, 23.7F, 0.85F, 1.17F, 0F);
+		cube(root, "c177", 333, 366, 10, 9, 3, 63.51F, -1.12F, 25.03F, 1.13F, 1.2F, 0F);
+		cube(root, "c178", 51, 366, 13, 2, 11, 68.85F, -0.6F, 27.13F, 0F, 1.14F, 0F);
+		cube(root, "c179", 103, 105, 5, 15, 3, 13.31F, -73.89F, -9.52F, 0.46F, 2.19F, 0F);
+		cube(root, "c180", 131, 160, 5, 14, 3, 17.44F, -62.5F, -13.68F, 0.48F, 2.24F, 0F);
+		cube(root, "c181", 148, 160, 5, 14, 3, 21.23F, -51.76F, -18.22F, 0.51F, 2.28F, 0F);
+		cube(root, "c182", 165, 160, 6, 14, 3, 26.17F, -41.24F, -21.82F, 0.54F, 2.27F, 0F);
+		cube(root, "c183", 74, 229, 7, 13, 3, 31.51F, -31.1F, -25.4F, 0.58F, 2.25F, 0F);
+		cube(root, "c184", 184, 160, 8, 14, 3, 36.82F, -21.58F, -29.46F, 0.64F, 2.25F, 0F);
+		cube(root, "c185", 70, 262, 8, 12, 3, 42.27F, -12.95F, -33.85F, 0.72F, 2.25F, 0F);
+		cube(root, "c186", 190, 308, 8, 11, 3, 46.82F, -5.91F, -39.35F, 0.85F, 2.27F, 0F);
+		cube(root, "c187", 360, 366, 9, 9, 3, 52.04F, -1.12F, -44.18F, 1.13F, 2.27F, 0F);
+		cube(root, "c188", 385, 366, 11, 2, 10, 56.41F, -0.6F, -47.89F, 0F, 2.35F, 0F);
+		cube(root, "c189", 207, 160, 4, 14, 3, -12.25F, -51.76F, -25.15F, 0.51F, 3.59F, 0F);
+		cube(root, "c190", 222, 160, 5, 14, 3, -15.66F, -41.24F, -30.26F, 0.54F, 3.62F, 0F);
+		cube(root, "c191", 95, 229, 6, 13, 3, -17.65F, -31.1F, -36.42F, 0.58F, 3.59F, 0F);
+		cube(root, "c192", 239, 160, 6, 14, 3, -21.08F, -21.58F, -42.19F, 0.64F, 3.6F, 0F);
+		cube(root, "c193", 93, 262, 6, 12, 3, -25.74F, -12.95F, -47.64F, 0.72F, 3.64F, 0F);
+		cube(root, "c194", 213, 308, 8, 11, 3, -29.57F, -5.91F, -53.54F, 0.85F, 3.65F, 0F);
+		cube(root, "c195", 428, 366, 8, 9, 3, -31.77F, -1.12F, -60.42F, 1.13F, 3.63F, 0F);
+		cube(root, "c196", 100, 366, 10, 2, 11, -34.44F, -0.6F, -65.5F, 0F, 0.71F, 0F);
+		cube(root, "c197", 258, 160, 5, 14, 3, -21.24F, -62.5F, 6.36F, 0.48F, 5F, 0F);
+		cube(root, "c198", 275, 160, 5, 14, 3, -26.54F, -51.76F, 8.86F, 0.51F, 5.03F, 0F);
+		cube(root, "c199", 292, 160, 6, 14, 3, -32.08F, -41.24F, 11.48F, 0.54F, 5.06F, 0F);
+		cube(root, "c200", 114, 229, 6, 13, 3, -37.82F, -31.1F, 14.4F, 0.58F, 5.08F, 0F);
+		cube(root, "c201", 311, 160, 7, 14, 3, -43.6F, -21.58F, 17.97F, 0.64F, 5.1F, 0F);
+		cube(root, "c202", 112, 262, 7, 12, 3, -50.33F, -12.95F, 19.97F, 0.72F, 5.09F, 0F);
+		cube(root, "c203", 236, 308, 8, 11, 3, -56.66F, -5.91F, 23.04F, 0.85F, 5.1F, 0F);
+		cube(root, "c204", 451, 366, 9, 9, 3, -62.82F, -1.12F, 26.71F, 1.13F, 5.11F, 0F);
+		cube(root, "c205", 143, 366, 13, 2, 11, -68.1F, -0.6F, 28.96F, 0F, 2.5F, 0F);
+		cube(root, "c206", 120, 105, 4, 15, 3, -1.98F, -73.89F, 16.24F, 0.46F, 6.16F, 0F);
+		cube(root, "c207", 332, 160, 5, 14, 3, -3.38F, -62.5F, 21.91F, 0.48F, 6.13F, 0F);
+		cube(root, "c208", 349, 160, 5, 14, 3, -3.26F, -51.76F, 27.79F, 0.51F, 6.17F, 0F);
+		cube(root, "c209", 366, 160, 6, 14, 3, -2.89F, -41.24F, 33.95F, 0.54F, 6.2F, 0F);
+		cube(root, "c210", 133, 229, 7, 13, 3, -1.97F, -31.1F, 40.42F, 0.58F, 6.23F, 0F);
+		cube(root, "c211", 385, 160, 8, 14, 3, -1.98F, -21.58F, 47.12F, 0.64F, 6.24F, 0F);
+		cube(root, "c212", 133, 262, 8, 12, 3, -0.03F, -12.95F, 54.15F, 0.72F, 6.28F, 0F);
+		cube(root, "c213", 259, 308, 9, 11, 3, 2.17F, -5.91F, 61.13F, 0.85F, 6.32F, 0F);
+		cube(root, "c214", 476, 366, 9, 9, 3, -0.56F, -1.12F, 68.26F, 1.13F, 6.28F, 0F);
+		cube(root, "c215", 284, 308, 11, 2, 12, -0.6F, -0.6F, 74F, 0F, 0.11F, 0F);
+		cube(root, "c216", 0, 0, 8, 23, 3, 0.97F, -70.96F, 10.61F, 0.37F, 3.23F, 0F);
+		cube(root, "c217", 23, 0, 8, 23, 3, 6.11F, -70.96F, 8.72F, 0.37F, 3.75F, 0F);
+		cube(root, "c218", 46, 0, 8, 23, 3, 10.56F, -70.96F, 1.35F, 0.37F, 4.59F, 0F);
+		cube(root, "c219", 69, 0, 8, 23, 3, 8.89F, -70.96F, -5.87F, 0.37F, 5.3F, 0F);
+		cube(root, "c220", 92, 0, 8, 23, 3, 4.07F, -70.96F, -9.84F, 0.37F, 5.89F, 0F);
+		cube(root, "c221", 115, 0, 8, 23, 3, -3.12F, -70.96F, -10.18F, 0.37F, 6.58F, 0F);
+		cube(root, "c222", 138, 0, 8, 23, 3, -8.96F, -70.96F, -5.77F, 0.37F, 7.28F, 0F);
+		cube(root, "c223", 161, 0, 8, 23, 3, -10.58F, -70.96F, 1.25F, 0.37F, 7.97F, 0F);
+		cube(root, "c224", 184, 0, 8, 23, 3, -6.55F, -70.96F, 8.4F, 0.37F, 8.76F, 0F);
+		cube(root, "c225", 154, 229, 14, 2, 14, 0F, -62.5F, 0F, 0F, 0.35F, 0F);
+		cube(root, "c226", 211, 229, 14, 2, 14, 0F, -62.7F, 0F, 0F, 1.14F, 0F);
+		cube(root, "c227", 331, 308, 8, 6, 8, 0F, -66F, 0F, 0F, 1.78F, 0F);
+		cube(root, "c228", 0, 380, 6, 6, 6, 0F, -71.5F, 0F, 0F, 1.6F, 0F);
+		cube(root, "c229", 89, 393, 4, 6, 4, 0F, -77F, 0F, 0F, 0.92F, 0F);
+		cube(root, "c230", 399, 405, 2, 2, 2, -1.85F, -93.43F, 7.96F, 1.85F, 0.13F, 2.03F);
+		cube(root, "c231", 408, 405, 2, 2, 2, -4.11F, -95.37F, 2.46F, 2.25F, 2.04F, 0.13F);
+		cube(root, "c232", 460, 393, 4, 4, 4, 4.25F, -95.29F, -3.16F, 0.87F, 1.64F, 1.58F);
+		cube(root, "c233", 477, 393, 4, 4, 4, -1.48F, -88.76F, -9.62F, 1.67F, 2.99F, 3F);
+		cube(root, "c234", 298, 405, 3, 3, 3, -6.8F, -90.06F, 0.88F, 2.57F, 2.1F, 1.98F);
+		cube(root, "c235", 417, 405, 2, 2, 2, -2.94F, -86.85F, -5.15F, 2.88F, 2.37F, 0.91F);
+		cube(root, "c236", 25, 380, 4, 6, 6, -1.24F, -78.82F, 15.03F, 0.18F, 0.21F, 0.29F);
+		cube(root, "c237", 106, 393, 5, 6, 4, 6.07F, -78.26F, 12.45F, -0.1F, 0.13F, -0.28F);
+		cube(root, "c238", 0, 405, 7, 3, 5, 9.33F, -76.67F, 8.59F, -0.37F, 0.52F, -0.46F);
+		cube(root, "c239", 292, 393, 6, 4, 5, 13.42F, -77.24F, 4.07F, -0.48F, 1.6F, -0.34F);
+		cube(root, "c240", 315, 393, 4, 4, 5, 15F, -77.14F, -0.02F, -0.44F, 1.73F, -0.12F);
+		cube(root, "c241", 301, 380, 6, 3, 8, 13.82F, -79.57F, -4.77F, 0.26F, 1.59F, -0.14F);
+		cube(root, "c242", 46, 380, 7, 4, 8, 9.92F, -78.17F, -8.78F, -0.08F, 2.2F, -0.47F);
+		cube(root, "c243", 330, 380, 4, 4, 7, 5.93F, -79.48F, -12.67F, -0.08F, 2.51F, 0.35F);
+		cube(root, "c244", 25, 405, 7, 4, 4, -0.83F, -79.63F, -12.55F, 0.48F, 2.77F, -0.21F);
+		cube(root, "c245", 179, 405, 5, 3, 4, -5.14F, -77.48F, -12.22F, -0.13F, 3.13F, -0.48F);
+		cube(root, "c246", 353, 380, 4, 5, 6, -10.8F, -79.1F, -9.56F, 0.28F, 4.15F, -0.17F);
+		cube(root, "c247", 334, 393, 6, 4, 5, -14.19F, -78.76F, -5.21F, -0.46F, 4.3F, -0.25F);
+		cube(root, "c248", 357, 393, 5, 3, 6, -12.91F, -78.51F, -0.51F, -0.2F, 4.43F, 0.04F);
+		cube(root, "c249", 192, 366, 8, 6, 7, -12.45F, -79.94F, 5.25F, -0.49F, 4.85F, 0.08F);
+		cube(root, "c250", 374, 380, 4, 5, 6, -9.65F, -79.58F, 11.35F, 0.38F, 5.64F, -0.46F);
+		cube(root, "c251", 223, 366, 6, 6, 7, -4.42F, -78.87F, 12.71F, 0.31F, 6.16F, 0.03F);
+		cube(root, "c252", 125, 393, 6, 5, 5, -32.83F, -43.97F, -5.94F, 0.13F, 5.85F, -0.38F);
+		cube(root, "c253", 48, 405, 3, 3, 5, 10.86F, -61.71F, 20.85F, 0.61F, 3.48F, -0.25F);
+		cube(root, "c254", 395, 380, 7, 5, 6, -36.39F, -17.92F, -35.52F, 0.6F, 1.71F, -0.36F);
+		cube(root, "c255", 364, 308, 7, 6, 8, -43.9F, -25.08F, -11.93F, 0.18F, 0.31F, -0.55F);
+		cube(root, "c256", 380, 393, 6, 4, 5, -20.77F, -28.94F, 37.45F, 0.06F, 3.17F, -0.64F);
+		cube(root, "c257", 148, 393, 6, 4, 6, -53.79F, -10.76F, 18.83F, 0.43F, 3.3F, 0.24F);
+		cube(root, "c258", 422, 380, 5, 5, 6, -19.59F, -53.49F, 19.92F, -0.6F, 2.39F, -0.64F);
+		cube(root, "c259", 395, 308, 6, 6, 8, 39.62F, -31.27F, 11.53F, -0.28F, 3.52F, -0.66F);
+		cube(root, "c260", 77, 380, 5, 5, 7, 12.53F, -73.8F, -11.98F, -0.37F, 4F, -0.4F);
+		cube(root, "c261", 311, 405, 5, 3, 3, 22.43F, -54.5F, -15.7F, 0.62F, 2.9F, -0.09F);
+		cube(root, "c262", 198, 405, 4, 3, 4, 21.12F, -47.7F, 22.96F, 0.26F, 2.43F, -0.03F);
+		cube(root, "c263", 445, 380, 6, 5, 6, -27.36F, -47.28F, -15.49F, 0.45F, 1.04F, 0.62F);
+		cube(root, "c264", 470, 380, 7, 5, 6, -35.42F, -30.59F, 22.03F, 0.18F, 1.6F, -0.2F);
+		cube(root, "c265", 215, 405, 4, 3, 4, 50.28F, -17.63F, -9.04F, -0.68F, 4.79F, 0.64F);
+		cube(root, "c266", 65, 405, 5, 3, 5, -37.66F, -28.88F, 20.46F, -0.55F, 2.74F, 0.61F);
+		cube(root, "c267", 86, 405, 6, 4, 4, -16.81F, -67.52F, -11.73F, 0.4F, 3.48F, 0.06F);
+		cube(root, "c268", 424, 308, 6, 6, 8, -25.8F, -6.15F, 56.03F, 0.3F, 2.73F, 0.2F);
+		cube(root, "c269", 173, 393, 6, 4, 6, 29.16F, -11.49F, 48.17F, -0.01F, 2.04F, 0.34F);
+		cube(root, "c270", 403, 393, 4, 4, 5, -35.91F, -39.64F, 1.75F, -0.16F, 3.43F, -0.6F);
+		cube(root, "c271", 453, 308, 8, 6, 8, 18.66F, -53.49F, 20.8F, 0.31F, 0.45F, 0.3F);
+		cube(root, "c272", 102, 380, 7, 5, 7, -10.06F, -33.71F, 38.38F, 0.28F, 0.97F, -0.56F);
+		cube(root, "c273", 131, 380, 7, 6, 6, 31.47F, -36.71F, 20.88F, -0.04F, 4.41F, 0.12F);
+		cube(root, "c274", 232, 405, 3, 3, 4, 28.42F, -20.8F, -39.45F, 0.09F, 4.94F, -0.5F);
+		cube(root, "c275", 328, 405, 3, 3, 3, 20.5F, -51.07F, -20.91F, -0.57F, 1.21F, 0.22F);
+		cube(root, "c276", 158, 380, 7, 6, 6, 41.11F, -31.47F, -1.38F, -0.63F, 0.93F, -0.27F);
+		cube(root, "c277", 198, 393, 5, 4, 6, -10.32F, -54.81F, 25.18F, 0.43F, 0.62F, -0F);
+		cube(root, "c278", 0, 323, 8, 6, 8, -30.9F, -32.1F, 26.51F, -0.67F, 2.91F, 0.26F);
+		cube(root, "c279", 107, 405, 5, 3, 5, 40.7F, -20.37F, -27.18F, -0.19F, 4.24F, -0.59F);
+		cube(root, "c280", 185, 380, 7, 5, 7, 15.33F, -70.07F, -11.57F, 0.42F, 3.35F, -0.33F);
+		cube(root, "c281", 341, 405, 4, 3, 3, 10.04F, -58.28F, 23.26F, -0.02F, 2.82F, -0.53F);
+		cube(root, "c282", 128, 405, 4, 3, 5, -59.86F, -7.53F, -6.32F, 0.52F, 0.35F, -0.52F);
+		cube(root, "c283", 214, 380, 5, 5, 7, 8.03F, -53.99F, 26.47F, -0.53F, 6.17F, -0.51F);
+		cube(root, "c284", 147, 405, 4, 4, 4, -9.14F, -14.88F, 52.55F, -0.67F, 3.22F, -0.01F);
+		cube(root, "c285", 356, 405, 4, 3, 3, -32.22F, -32.59F, -24.36F, 0.59F, 2.16F, -0.62F);
+		cube(root, "c286", 221, 393, 5, 5, 5, -22.91F, -40.34F, 27.16F, -0.26F, 1.05F, 0.01F);
+		cube(root, "c287", 0, 393, 7, 5, 6, -39.47F, -22.95F, 25.56F, -0.26F, 2.63F, 0.11F);
+		cube(root, "c288", 247, 405, 4, 3, 4, -22.45F, -25.11F, 39.54F, -0.5F, 4.64F, 0.18F);
+		cube(root, "c289", 33, 323, 8, 6, 8, -38.29F, -5.03F, -50.01F, 0.1F, 5.93F, -0.18F);
+		cube(root, "c290", 371, 405, 3, 3, 3, 12.82F, -13.03F, 53.41F, 0.17F, 1.57F, 0.46F);
+		cube(root, "c291", 422, 393, 6, 4, 5, 13.36F, -72.38F, 12.13F, 0.45F, 3.68F, 0.45F);
+		cube(root, "c292", 264, 405, 3, 3, 4, 16.34F, -57.94F, 19.59F, -0.33F, 4.29F, 0.33F);
+		cube(root, "c293", 66, 323, 7, 6, 8, -35.82F, -26.28F, -26.66F, 0.02F, 3.06F, -0.08F);
+		cube(root, "c294", 445, 393, 4, 6, 3, 70.37F, -0.88F, -0.27F, -0.36F, 0.47F, -0.03F);
+		cube(root, "c295", 239, 380, 7, 3, 9, 40.61F, -0.5F, -64.22F, 0.33F, 0.74F, -0.06F);
+		cube(root, "c296", 250, 366, 6, 7, 6, -77.41F, -0.5F, -8.9F, -0.22F, 5.96F, 0.38F);
+		cube(root, "c297", 384, 405, 4, 3, 3, 59.63F, -0.58F, 39.28F, -0.06F, 2.43F, -0.01F);
+		cube(root, "c298", 97, 323, 9, 5, 9, -32.81F, -0.5F, -64.11F, 0.35F, 2.42F, -0.13F);
+		cube(root, "c299", 242, 393, 5, 6, 4, -44.51F, -0.5F, 64.77F, 0.34F, 0.66F, 0.16F);
+		cube(root, "c300", 134, 323, 9, 3, 11, 60.89F, -0.67F, 36.62F, 0.1F, 0.52F, 0.01F);
+		cube(root, "c301", 156, 262, 7, 6, 9, 47F, -0.5F, 55.24F, -0.26F, 1.2F, -0.35F);
+		cube(root, "c302", 275, 366, 8, 6, 7, -26.01F, -2.81F, 61.24F, -0.21F, 4.81F, -0F);
+		cube(root, "c303", 164, 405, 4, 5, 3, -25.27F, -1.1F, 65.05F, -0.34F, 1.93F, 0.23F);
+		cube(root, "c304", 279, 405, 5, 3, 4, -16.23F, -0.5F, 72.82F, -0.07F, 5.58F, 0.15F);
+		cube(root, "c305", 27, 393, 7, 3, 8, 4.71F, -0.5F, 75.5F, 0.01F, 3.83F, -0.25F);
+		cube(root, "c306", 58, 393, 7, 3, 8, -12.49F, -2.37F, -66.09F, -0.26F, 1.37F, -0.14F);
+		cube(root, "c307", 175, 323, 8, 4, 10, 67.69F, -1.41F, -13.78F, 0.12F, 2.69F, -0.38F);
+		cube(root, "c308", 306, 366, 7, 7, 6, -6.99F, -0.5F, 75.87F, -0.26F, 5.83F, 0.07F);
+		cube(root, "c309", 261, 393, 8, 3, 7, -64.7F, -1.17F, -25.64F, -0.37F, 6.03F, 0.12F);
+		cube(root, "c310", 189, 262, 9, 4, 11, -18.31F, -0.5F, -71.69F, 0.28F, 3.74F, 0.37F);
+		cube(root, "c311", 272, 380, 7, 5, 7, 20.17F, -2.12F, -64.62F, 0.02F, 0.83F, 0.24F);
 
-		PartDefinition cube_r1 = bone.addOrReplaceChild("cube_r1", CubeListBuilder.create().texOffs(0, 156).addBox(-9.0F, -3.0F, -11.0F, 18.0F, 5.0F, 22.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, 0.0F, -1.5708F, 0.0F));
-
-		PartDefinition bone9 = partdefinition.addOrReplaceChild("bone9", CubeListBuilder.create().texOffs(120, 101).addBox(-12.0F, -3.0F, -12.0F, 24.0F, 5.0F, 24.0F, new CubeDeformation(0.0F))
-		.texOffs(120, 68).addBox(-11.0F, -3.0F, -14.0F, 22.0F, 5.0F, 28.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 17.0F, 0.0F));
-
-		PartDefinition cube_r2 = bone9.addOrReplaceChild("cube_r2", CubeListBuilder.create().texOffs(120, 35).addBox(-11.0F, -3.0F, -14.0F, 22.0F, 5.0F, 28.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, 0.0F, -1.5708F, 0.0F));
-
-		PartDefinition bone10 = partdefinition.addOrReplaceChild("bone10", CubeListBuilder.create().texOffs(120, 0).addBox(-15.0F, -3.0F, -15.0F, 30.0F, 5.0F, 30.0F, new CubeDeformation(0.0F))
-		.texOffs(0, 119).addBox(-14.0F, -3.0F, -16.0F, 28.0F, 5.0F, 32.0F, new CubeDeformation(0.0F))
-		.texOffs(0, 0).addBox(-12.0F, -3.0F, -18.0F, 24.0F, 5.0F, 36.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 22.0F, 0.0F));
-
-		PartDefinition cube_r3 = bone10.addOrReplaceChild("cube_r3", CubeListBuilder.create().texOffs(0, 41).addBox(-12.0F, -3.0F, -18.0F, 24.0F, 5.0F, 36.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, 0.0F, 1.5708F, 0.0F));
-
-		PartDefinition cube_r4 = bone10.addOrReplaceChild("cube_r4", CubeListBuilder.create().texOffs(0, 82).addBox(-14.0F, -3.0F, -16.0F, 28.0F, 5.0F, 32.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, 0.0F, -1.5708F, 0.0F));
-
-		PartDefinition bone2 = partdefinition.addOrReplaceChild("bone2", CubeListBuilder.create().texOffs(80, 182).addBox(-8.0F, -3.0F, -8.0F, 16.0F, 3.0F, 16.0F, new CubeDeformation(0.0F))
-		.texOffs(160, 178).addBox(-7.0F, -3.0F, -9.0F, 14.0F, 3.0F, 18.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 9.0F, 0.0F));
-
-		PartDefinition cube_r5 = bone2.addOrReplaceChild("cube_r5", CubeListBuilder.create().texOffs(160, 157).addBox(-7.0F, -3.0F, -9.0F, 14.0F, 3.0F, 18.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, 0.0F, -1.5708F, 0.0F));
-
-		PartDefinition bone3 = partdefinition.addOrReplaceChild("bone3", CubeListBuilder.create().texOffs(200, 130).addBox(-7.0F, -4.0F, -7.0F, 14.0F, 4.0F, 14.0F, new CubeDeformation(0.0F))
-		.texOffs(144, 199).addBox(-6.0F, -4.0F, -8.0F, 12.0F, 4.0F, 16.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 6.0F, 0.0F));
-
-		PartDefinition cube_r6 = bone3.addOrReplaceChild("cube_r6", CubeListBuilder.create().texOffs(0, 183).addBox(-6.0F, -4.0F, -8.0F, 12.0F, 4.0F, 16.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, 0.0F, -1.5708F, 0.0F));
-
-		PartDefinition bone4 = partdefinition.addOrReplaceChild("bone4", CubeListBuilder.create().texOffs(0, 203).addBox(-6.0F, -4.0F, -6.0F, 12.0F, 4.0F, 12.0F, new CubeDeformation(0.0F))
-		.texOffs(56, 201).addBox(-5.0F, -4.0F, -7.0F, 10.0F, 4.0F, 14.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 2.0F, 0.0F));
-
-		PartDefinition cube_r7 = bone4.addOrReplaceChild("cube_r7", CubeListBuilder.create().texOffs(200, 199).addBox(-5.0F, -4.0F, -7.0F, 10.0F, 4.0F, 14.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, 0.0F, -1.5708F, 0.0F));
-
-		PartDefinition bone5 = partdefinition.addOrReplaceChild("bone5", CubeListBuilder.create().texOffs(104, 217).addBox(-5.0F, -4.0F, -5.0F, 10.0F, 4.0F, 10.0F, new CubeDeformation(0.0F))
-		.texOffs(216, 101).addBox(-4.0F, -4.0F, -6.0F, 8.0F, 4.0F, 12.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, -2.0F, 0.0F));
-
-		PartDefinition cube_r8 = bone5.addOrReplaceChild("cube_r8", CubeListBuilder.create().texOffs(104, 201).addBox(-4.0F, -4.0F, -6.0F, 8.0F, 4.0F, 12.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, 0.0F, -1.5708F, 0.0F));
-
-		PartDefinition bone6 = partdefinition.addOrReplaceChild("bone6", CubeListBuilder.create().texOffs(216, 117).addBox(-4.0F, -4.0F, -4.0F, 8.0F, 4.0F, 8.0F, new CubeDeformation(0.0F))
-		.texOffs(0, 219).addBox(-3.0F, -4.0F, -5.0F, 6.0F, 4.0F, 10.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, -6.0F, 0.0F));
-
-		PartDefinition cube_r9 = bone6.addOrReplaceChild("cube_r9", CubeListBuilder.create().texOffs(200, 217).addBox(-3.0F, -4.0F, -5.0F, 6.0F, 4.0F, 10.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, 0.0F, -1.5708F, 0.0F));
-
-		PartDefinition bone7 = partdefinition.addOrReplaceChild("bone7", CubeListBuilder.create().texOffs(56, 219).addBox(-3.0F, -4.0F, -3.0F, 6.0F, 4.0F, 6.0F, new CubeDeformation(0.0F))
-		.texOffs(32, 219).addBox(-2.0F, -4.0F, -4.0F, 4.0F, 4.0F, 8.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, -10.0F, 0.0F));
-
-		PartDefinition cube_r10 = bone7.addOrReplaceChild("cube_r10", CubeListBuilder.create().texOffs(56, 183).addBox(-2.0F, -4.0F, -4.0F, 4.0F, 4.0F, 8.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, 0.0F, -1.5708F, 0.0F));
-
-		return LayerDefinition.create(meshdefinition, 256, 256);
+		return LayerDefinition.create(mesh, TEXTURE_SIZE, TEXTURE_SIZE);
 	}
 
 	@Override
-	public void setupAnim(Entity entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
-
+	public void setupAnim(T entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
 	}
 
 	@Override
 	public void renderToBuffer(PoseStack poseStack, VertexConsumer vertexConsumer, int packedLight, int packedOverlay, int color) {
-		bone.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
-		bone9.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
-		bone10.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
-		bone2.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
-		bone3.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
-		bone4.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
-		bone5.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
-		bone6.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
-		bone7.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
+		root.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
 	}
 }

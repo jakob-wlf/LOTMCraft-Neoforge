@@ -50,6 +50,8 @@ public class AbilityHandler {
         abilities.add(new SunHaloAbility("sun_halo_ability"));
         abilities.add(new HolyOathAbility("holy_oath_ability"));
         abilities.add(new HolyLightSummoningAbility("holy_light_summoning_ability"));
+        abilities.add(new HolyWaterAbility("holy_water_ability"));
+        abilities.add(new NotarizationAbility("notarization_ability"));
         abilities.add(new GodSaysItsEffectiveAbility("notary_buff_ability"));
         abilities.add(new GodSaysItsNotEffectiveAbility("notary_debuff_ability"));
         abilities.add(new LightOfHolinessAbility("light_of_holiness_ability"));
@@ -58,13 +60,19 @@ public class AbilityHandler {
         abilities.add(new HolyEyeAbility("holy_eye_ability"));
         abilities.add(new UnshadowedSpearAbility("unshadowed_spear_ability"));
         abilities.add(new UnshadowedDomainAbility("unshadowed_domain_ability"));
+        abilities.add(new HolyEquipmentAbility("holy_equipment_ability"));
         abilities.add(new WallOfLightAbility("wall_of_light_ability"));
         abilities.add(new SwordOfJusticeAbility("sword_of_justice_ability"));
+        abilities.add(new SetOfPrinciplesAbility("set_of_principles_ability"));
+        abilities.add(new JudgementOfJusticeAbility("judgement_of_justice_ability"));
+        abilities.add(new JusticeHaloAbility("justice_halo_ability"));
         abilities.add(new SpearOfLightAbility("spear_of_light_ability"));
         abilities.add(new SolarEnvoyAbility("solar_envoy_ability"));
         abilities.add(new WingsOfLightAbility("wings_of_light_ability"));
         abilities.add(new PureWhiteLightAbility("pure_white_light_ability"));
         abilities.add(new DivineKingdomManifestationAbility("divine_kingdom_manifestation_ability"));
+        abilities.add(new LightAuthorityAbility("light_authority_ability"));
+        abilities.add(new EternalDaytimeAbility("eternal_daytime_ability"));
 
         // RED-PRIEST PATHWAY
         abilities.add(new TrapAbility("trap_ability"));
@@ -325,6 +333,20 @@ public class AbilityHandler {
         abilities.add(new FateSiphoningAbility("fate_siphoning_ability"));
         abilities.add(new ConceptualTheftAbility("conceptual_theft_ability"));
         abilities.add(new TimeManipulationAbility("time_manipulation_ability"));
+        abilities.add(new PickpocketAbility("pickpocket_ability"));
+        abilities.add(new EloquenceAbility("eloquence_ability"));
+        abilities.add(new SuperiorObservationFocusAbility("superior_observation_focus_ability"));
+        abilities.add(new StealYourselfAbility("steal_yourself_ability"));
+        abilities.add(new TreasureHunterAbility("treasure_hunter_ability"));
+        abilities.add(new DeceiveMindsAbility("deceive_minds_ability"));
+        abilities.add(new DeceiveWorldAbility("deceive_world_ability"));
+        abilities.add(new DeceiveConnectionAbility("deceive_connection_ability"));
+        abilities.add(new TamperFateAbility("tamper_fate_ability"));
+        abilities.add(new StealFateAbility("steal_fate_ability"));
+        abilities.add(new StealCharacteristicAbility("steal_characteristic_ability"));
+        abilities.add(new StealConnectionAbility("steal_connection_ability"));
+        abilities.add(new StealAuthorityAbility("steal_authority_ability"));
+        abilities.add(new StealUniquenessAbility("steal_uniqueness_ability"));
 
         // DEATH PATHWAY
         abilities.add(new EyeOfDeathAbility("eye_of_death_ability"));

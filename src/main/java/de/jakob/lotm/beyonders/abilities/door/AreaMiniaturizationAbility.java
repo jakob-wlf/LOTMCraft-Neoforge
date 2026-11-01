@@ -67,7 +67,7 @@ public class AreaMiniaturizationAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.area_miniaturization.area",
                 "ability.lotmcraft.area_miniaturization.creature",
@@ -276,6 +276,6 @@ public class AreaMiniaturizationAbility extends SelectableAbility {
     }
 
     private void refund(LivingEntity entity) {
-        BeyonderData.incrementSpirituality(entity, spiritualityCost(BeyonderData.getSequence(entity)));
+        BeyonderData.incrementSpirituality(entity, spiritualityCost(BeyonderData.getSequence(entity)) * BeyonderData.getSpiritualityCostMultiplier());
     }
 }

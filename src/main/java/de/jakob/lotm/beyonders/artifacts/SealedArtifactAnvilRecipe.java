@@ -68,6 +68,15 @@ public class SealedArtifactAnvilRecipe {
             result.set(ModDataComponents.SEALED_ARTIFACT_GENERATED_FAILED,
                 isFailed((ServerLevel) level, characteristic.getSequence()));
 
+        // A Cryptologist with active Decryption already sees what the artifact will become before forging it
+        if(!level.isClientSide
+                && !result.getOrDefault(ModDataComponents.SEALED_ARTIFACT_GENERATED_FAILED, false)
+                && de.jakob.lotm.beyonders.abilities.error.DecryptionAbility.isDecrypting(event.getPlayer())) {
+            result.set(ModDataComponents.SEALED_ARTIFACT_DATA,
+                    SealedArtifactHandler.createSealedArtifactData(characteristic.getPathway(), characteristic.getSequence(), baseType));
+            result.set(ModDataComponents.SEALED_ARTIFACT_GENERATED, true);
+        }
+
         event.setOutput(result);
 
         int sequence = characteristic.getSequence();

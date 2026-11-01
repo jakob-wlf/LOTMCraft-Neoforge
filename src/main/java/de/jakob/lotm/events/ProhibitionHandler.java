@@ -40,9 +40,9 @@ public class ProhibitionHandler {
             return;
         }
 
-        // Outside World — cancel ability use by players who are near-but-outside the zone
         long now = serverLevel.getGameTime();
         for (ProhibitionAbility.ProhibitionZone zone : ProhibitionAbility.ACTIVE_ZONES) {
+            if (de.jakob.lotm.beyonders.abilities.error.DeceitAbility.isReversed(zone)) continue;
             if (zone.type != ProhibitionAbility.ProhibitionType.OUTSIDE_WORLD) continue;
             if (!zone.level.equals(serverLevel)) continue;
             if (zone.expiryTick < now) continue;
@@ -79,13 +79,11 @@ public class ProhibitionHandler {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         if (!(player.level() instanceof ServerLevel serverLevel)) return;
 
-        // Clean expired zones
         long now = serverLevel.getGameTime();
         ProhibitionAbility.ACTIVE_ZONES.removeIf(z -> z.expiryTick < now);
 
         Vec3 pos = player.position();
 
-        // Flying prohibition
         if (isInZone(pos, serverLevel, ProhibitionAbility.ProhibitionType.FLYING, BeyonderData.getSequence(player))) {
             if (player.getAbilities().flying) {
                 player.getAbilities().flying = false;
@@ -96,8 +94,8 @@ public class ProhibitionHandler {
             }
         }
 
-        // Players prohibition — push non-owner players out
         for (ProhibitionAbility.ProhibitionZone zone : ProhibitionAbility.ACTIVE_ZONES) {
+            if (de.jakob.lotm.beyonders.abilities.error.DeceitAbility.isReversed(zone)) continue;
             if (!zone.type.equals(ProhibitionAbility.ProhibitionType.PLAYERS)) continue;
             if (!zone.level.equals(serverLevel)) continue;
             if (!zone.isActive()) continue;
@@ -115,8 +113,8 @@ public class ProhibitionHandler {
                         .withStyle(ChatFormatting.RED));
             }
         }
-        // Outside World — push players away from outside the zone who approach too close
         for (ProhibitionAbility.ProhibitionZone zone : ProhibitionAbility.ACTIVE_ZONES) {
+            if (de.jakob.lotm.beyonders.abilities.error.DeceitAbility.isReversed(zone)) continue;
             if (!zone.type.equals(ProhibitionAbility.ProhibitionType.OUTSIDE_WORLD)) continue;
             if (!zone.level.equals(serverLevel)) continue;
             if (!zone.isActive()) continue;
@@ -200,7 +198,6 @@ public class ProhibitionHandler {
         Long expiry = IndividualBalanceAbility.INDIVIDUALLY_BALANCED.get(entity.getUUID());
         if (expiry == null || sl.getGameTime() >= expiry) return;
 
-        // Block abilities whose pathway requirement is sequence 1 or lower (i.e., Seq 1 abilities)
         String pathway = BeyonderData.getPathway(entity);
         Map<String, Integer> reqs = event.getAbility().getRequirements();
         Integer reqSeq = reqs.get(pathway);
@@ -216,6 +213,7 @@ public class ProhibitionHandler {
     private static boolean isInZone(Vec3 pos, ServerLevel level, ProhibitionAbility.ProhibitionType type, int targetSequence) {
         long now = level.getGameTime();
         for (ProhibitionAbility.ProhibitionZone zone : ProhibitionAbility.ACTIVE_ZONES) {
+            if (de.jakob.lotm.beyonders.abilities.error.DeceitAbility.isReversed(zone)) continue;
             if (zone.type != type) continue;
             if (!zone.level.equals(level)) continue;
             if (zone.expiryTick < now) continue;

@@ -61,7 +61,7 @@ public class LawAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.law.weaken_mysticism",
                 "ability.lotmcraft.law.enhance_mysticism",

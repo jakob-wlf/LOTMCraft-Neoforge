@@ -1,0 +1,40 @@
+{
+  "order": 50,
+  "title": "guide.lotmcraft.abilities.title",
+  "icon": "lotmcraft:crystal_ball",
+  "color": "#B5841A",
+  "quote": "guide.lotmcraft.abilities.quote",
+  "elements": [
+    "guide.lotmcraft.abilities.intro",
+    { "type": "heading", "text": "guide.lotmcraft.abilities.wheel_heading" },
+    {
+      "type": "steps",
+      "steps": [
+        "guide.lotmcraft.abilities.wheel_1",
+        "guide.lotmcraft.abilities.wheel_2",
+        "guide.lotmcraft.abilities.wheel_3",
+        "guide.lotmcraft.abilities.wheel_4"
+      ]
+    },
+    { "type": "heading", "text": "guide.lotmcraft.abilities.bar_heading" },
+    "guide.lotmcraft.abilities.bar",
+    { "type": "heading", "text": "guide.lotmcraft.abilities.cost_heading" },
+    "guide.lotmcraft.abilities.cost",
+    { "type": "note", "style": "tip", "text": "guide.lotmcraft.abilities.cogitation" },
+    { "type": "heading", "text": "guide.lotmcraft.abilities.keys_heading" },
+    {
+      "type": "keybinds",
+      "binds": [
+        { "key": "key.beyonders.pathway_infos", "text": "guide.lotmcraft.abilities.key.introspect" },
+        { "key": "key.beyonders.open_wheel_toggle", "text": "guide.lotmcraft.abilities.key.wheel_toggle" },
+        { "key": "key.beyonders.open_wheel_hold", "text": "guide.lotmcraft.abilities.key.wheel_hold" },
+        { "key": "key.beyonders.use_ability", "text": "guide.lotmcraft.abilities.key.use" },
+        { "key": "key.beyonders.next_ability", "text": "guide.lotmcraft.abilities.key.next" },
+        { "key": "key.beyonders.previous_ability", "text": "guide.lotmcraft.abilities.key.previous" },
+        { "key": "key.beyonders.use_ability_bar_ability_1", "text": "guide.lotmcraft.abilities.key.bar" },
+        { "key": "key.beyonders.toggle_griefing", "text": "guide.lotmcraft.abilities.key.griefing" }
+      ]
+    },
+    { "type": "text", "text": "guide.lotmcraft.abilities.rebind", "scale": 0.65 }
+  ]
+}

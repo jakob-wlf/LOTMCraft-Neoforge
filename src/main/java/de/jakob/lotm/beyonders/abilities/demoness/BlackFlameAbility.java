@@ -61,7 +61,7 @@ public class BlackFlameAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.black_flame.burn",
                 "ability.lotmcraft.black_flame.shoot",

@@ -57,10 +57,21 @@ public class BattleHypnosisAbility extends SelectableAbility {
     );
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.battle_hypnosis.single",
                 "ability.lotmcraft.battle_hypnosis.aoe"
+        };
+    }
+
+    @Override
+    public String[] getSequenceDependantAbilityNames(int sequence) {
+        return switch (sequence) {
+            case 10,9,8,7,6,5 -> new String[]{
+                    "ability.lotmcraft.battle_hypnosis.single",
+                    "ability.lotmcraft.battle_hypnosis.aoe"
+            };
+            default -> getAllAbilityNames();
         };
     }
 
@@ -234,54 +245,5 @@ public class BattleHypnosisAbility extends SelectableAbility {
         //AbilityUtil.sendActionBar(entity, Component.translatable("ability.lotmcraft.battle_hypnosis.confuse").withColor(0xf5c56c));
 
         AbilityUtil.ignoreAllies.put(target.getUUID(), false);
-    }
-
-    @Override
-    public void nextAbility(LivingEntity entity) {
-        if (getAbilityNames().length == 0)
-            return;
-
-        if (!selectedAbilities.containsKey(entity.getUUID())) {
-            selectedAbilities.put(entity.getUUID(), 0);
-        }
-
-        int selectedAbility = selectedAbilities.get(entity.getUUID());
-        int entitySeq = AbilityUtil.getSeqWithArt(entity, this);
-
-        selectedAbility++;
-        if (selectedAbility >= getAbilityNames().length) {
-            selectedAbility = 0;
-        }
-
-        if ((entitySeq > 4 && selectedAbility >= 0)) {
-            selectedAbility = 0;
-        }
-
-        selectedAbilities.put(entity.getUUID(), selectedAbility);
-        PacketHandler.sendToServer(new AbilitySelectionPacket(getId(), selectedAbility));
-    }
-
-    @Override
-    public void previousAbility(LivingEntity entity) {
-        if (getAbilityNames().length == 0)
-            return;
-
-        if (!selectedAbilities.containsKey(entity.getUUID())) {
-            selectedAbilities.put(entity.getUUID(), 0);
-        }
-
-        int selectedAbility = selectedAbilities.get(entity.getUUID());
-        selectedAbility--;
-        if (selectedAbility <= -1) {
-            selectedAbility = getAbilityNames().length - 1;
-        }
-
-        int entitySeq = AbilityUtil.getSeqWithArt(entity, this);
-        if ((entitySeq > 4 && selectedAbility >= 0)) {
-            selectedAbility = 0;
-        }
-
-        selectedAbilities.put(entity.getUUID(), selectedAbility);
-        PacketHandler.sendToServer(new AbilitySelectionPacket(getId(), selectedAbility));
     }
 }

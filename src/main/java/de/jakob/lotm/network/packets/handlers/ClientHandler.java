@@ -25,6 +25,7 @@ import de.jakob.lotm.beyonders.quest.QuestRegistry;
 import de.jakob.lotm.rendering.*;
 import de.jakob.lotm.rendering.effectRendering.EffectParams;
 import de.jakob.lotm.rendering.effectRendering.VFXRenderer;
+import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.ClientBeyonderCache;
 import de.jakob.lotm.util.data.ClientSacrificeCache;
 import de.jakob.lotm.util.data.ClientSpiritCache;
@@ -373,6 +374,7 @@ public class ClientHandler {
     public static void handleAllyPacket(SyncAllyDataPacket packet) {
         if (Minecraft.getInstance().player != null) {
             AllyComponent newComponent = new AllyComponent(packet.allies(), packet.requests());
+            newComponent = de.jakob.lotm.rendering.error.ErrorClientHandler.withFakeAllies(newComponent);
             Minecraft.getInstance().player.setData(ModAttachments.ALLY_COMPONENT.get(), newComponent);
         }
     }
@@ -426,6 +428,8 @@ public class ClientHandler {
     public static void useAbility(UseAbilityPacket packet) {
         ClientLevel level = Minecraft.getInstance().level;
         if (level == null) return;
+
+        de.jakob.lotm.beyonders.abilities.error.handler.ErrorClientFlags.lastOwnAbilityUse = level.getGameTime();
 
         Entity entity = level.getEntity(packet.entityId());
         if(!(entity instanceof LivingEntity living)) {
@@ -693,13 +697,6 @@ public class ClientHandler {
         }
 
         AnimationUtil.playAnimation(player, AnimationUtil.getResourceLocationById(packet.animId()));
-    }
-
-    public static void handleAbilitySelectionPacket(SyncAbilitySelectionPacket packet) {
-        if (!(LOTMCraft.abilityHandler.getById(packet.abilityId()) instanceof SelectableAbility selectable)) return;
-        var player = Minecraft.getInstance().player;
-        if (player == null) return;
-        selectable.setSelectedAbilityClient(player.getUUID(), packet.selectedIndex());
     }
 
     public static void handleSyncHistoricalVoidSummoningCountPacket(SyncHistoricalVoidSummoningCountPacket packet) {

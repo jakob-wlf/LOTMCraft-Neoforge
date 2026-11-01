@@ -50,7 +50,7 @@ public class SteelMasteryAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{"ability.lotmcraft.steel_mastery.steel_skin", "ability.lotmcraft.steel_mastery.steel_chains"};
     }
 

@@ -47,7 +47,7 @@ public class DoorToTheUnderworldAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return MODES;
     }
 

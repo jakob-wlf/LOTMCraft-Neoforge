@@ -61,7 +61,7 @@ public class AngelAuthorityAbility extends SelectableAbility {
         return reqs;
     }
 
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{"ability.lotmcraft.angel_authority.spirit_world_passage",
                 "ability.lotmcraft.angel_authority.artifact_shattering",
                 "ability.lotmcraft.angel_authority.flight"

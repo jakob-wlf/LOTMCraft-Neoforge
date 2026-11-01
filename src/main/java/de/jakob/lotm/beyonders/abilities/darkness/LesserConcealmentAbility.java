@@ -41,7 +41,7 @@ public class LesserConcealmentAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[] {
                 "ability.lotmcraft.minor_concealment.conceal_self",
                 "ability.lotmcraft.minor_concealment.conceal_target"

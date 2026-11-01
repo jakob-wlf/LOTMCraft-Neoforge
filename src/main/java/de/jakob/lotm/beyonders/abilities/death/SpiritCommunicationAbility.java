@@ -59,7 +59,7 @@ public class SpiritCommunicationAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.divination.danger_premonition",
                 "ability.lotmcraft.divination.structure_divination",

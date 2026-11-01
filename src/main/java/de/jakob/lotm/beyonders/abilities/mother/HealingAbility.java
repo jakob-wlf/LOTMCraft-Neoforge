@@ -43,7 +43,7 @@ public class HealingAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{"ability.lotmcraft.healing.self", "ability.lotmcraft.healing.others"};
     }
 

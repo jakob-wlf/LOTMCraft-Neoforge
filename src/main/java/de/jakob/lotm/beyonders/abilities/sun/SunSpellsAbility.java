@@ -70,7 +70,7 @@ public class SunSpellsAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{"ability.lotmcraft.sun_spells.sunshine", "ability.lotmcraft.sun_spells.blessing", "ability.lotmcraft.sun_spells.night_vision", "ability.lotmcraft.sun_spells.illuminate"};
     }
 

@@ -56,7 +56,7 @@ public class MidnightPoemAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[] {
                 "ability.lotmcraft.midnight_poem.lullaby",
                 "ability.lotmcraft.midnight_poem.wilt",
@@ -68,67 +68,25 @@ public class MidnightPoemAbility extends SelectableAbility {
     }
 
     @Override
-    public void nextAbility(LivingEntity entity){
-        if(getAbilityNames().length == 0)
-            return;
-
-        if(!selectedAbilities.containsKey(entity.getUUID())) {
-            selectedAbilities.put(entity.getUUID(), 0);
-        }
-
-        int selectedAbility = selectedAbilities.get(entity.getUUID());
-        int entitySeq = AbilityUtil.getSeqWithArt(entity, this);
-
-        selectedAbility++;
-        if(selectedAbility >= getAbilityNames().length) {
-            selectedAbility = 0;
-        }
-
-        if((entitySeq > 6 && selectedAbility >= 2)){
-            selectedAbility = 0;
-        }
-
-        if((entitySeq > 4 && selectedAbility >= 3)){
-            selectedAbility = 0;
-        }
-        if((entitySeq > 3 && selectedAbility >= 4)){
-            selectedAbility = 0;
-        }
-
-        selectedAbilities.put(entity.getUUID(), selectedAbility);
-        PacketHandler.sendToServer(new AbilitySelectionPacket(getId(), selectedAbility));
-    }
-
-    @Override
-    public void previousAbility(LivingEntity entity){
-        if(getAbilityNames().length == 0)
-            return;
-
-        if(!selectedAbilities.containsKey(entity.getUUID())) {
-            selectedAbilities.put(entity.getUUID(), 0);
-        }
-
-        int selectedAbility = selectedAbilities.get(entity.getUUID());
-        selectedAbility--;
-        if(selectedAbility <= -1) {
-            selectedAbility = getAbilityNames().length - 1;
-        }
-
-        int entitySeq = AbilityUtil.getSeqWithArt(entity, this);
-
-        if((entitySeq > 6 && selectedAbility >= 2)){
-            selectedAbility = 0;
-        }
-
-        if((entitySeq > 4 && selectedAbility >= 3)){
-            selectedAbility = 0;
-        }
-        if((entitySeq > 3 && selectedAbility >= 4)){
-            selectedAbility = 0;
-        }
-
-        selectedAbilities.put(entity.getUUID(), selectedAbility);
-        PacketHandler.sendToServer(new AbilitySelectionPacket(getId(), selectedAbility));
+    public String[] getSequenceDependantAbilityNames(int sequence) {
+        return switch (sequence) {
+            case 4 -> new String[] {
+                    "ability.lotmcraft.midnight_poem.lullaby",
+                    "ability.lotmcraft.midnight_poem.wilt",
+                    "ability.lotmcraft.midnight_poem.agitate",
+                    "ability.lotmcraft.midnight_poem.console",
+            };
+            case 6,5 -> new String[] {
+                    "ability.lotmcraft.midnight_poem.lullaby",
+                    "ability.lotmcraft.midnight_poem.wilt",
+                    "ability.lotmcraft.midnight_poem.agitate",
+            };
+            case 7,8,9,10 -> new String[] {
+                    "ability.lotmcraft.midnight_poem.lullaby",
+                    "ability.lotmcraft.midnight_poem.wilt",
+            };
+            default -> getAllAbilityNames();
+        };
     }
 
     @Override

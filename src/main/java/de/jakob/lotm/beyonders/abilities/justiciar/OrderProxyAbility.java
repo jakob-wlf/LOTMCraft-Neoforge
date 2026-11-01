@@ -67,7 +67,7 @@ public class OrderProxyAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.order_proxy.prohibition_resurrecting",
                 "ability.lotmcraft.order_proxy.prohibition_dying",

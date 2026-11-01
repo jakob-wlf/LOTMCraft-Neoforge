@@ -29,38 +29,33 @@ public class PhysicalEnhancementsErrorAbility extends PhysicalEnhancementsAbilit
     protected List<PhysicalEnhancement> getEnhancementsForSequence(int sequenceLevel) {
         return switch (sequenceLevel) {
             case 9 -> List.of(
-                    new PhysicalEnhancement(EnhancementType.SPEED, 1),
-                    new PhysicalEnhancement(EnhancementType.MINING_EFFICIENCY, 1)
+                    new PhysicalEnhancement(EnhancementType.SPEED, 1)
             );
 
             case 8 -> List.of(
 //                    new PhysicalEnhancement(EnhancementType.STRENGTH, 1),
                     new PhysicalEnhancement(EnhancementType.SPEED, 2),
-                    new PhysicalEnhancement(EnhancementType.HEALTH, 3),
-                    new PhysicalEnhancement(EnhancementType.MINING_EFFICIENCY, 1)
+                    new PhysicalEnhancement(EnhancementType.HEALTH, 3)
             );
 
             case 7 -> List.of(
 //                    new PhysicalEnhancement(EnhancementType.STRENGTH, 1),
                     new PhysicalEnhancement(EnhancementType.SPEED, 3),
-                    new PhysicalEnhancement(EnhancementType.HEALTH, 3),
-                    new PhysicalEnhancement(EnhancementType.MINING_EFFICIENCY, 2)
+                    new PhysicalEnhancement(EnhancementType.HEALTH, 3)
             );
 
             case 6 -> List.of(
 //                    new PhysicalEnhancement(EnhancementType.STRENGTH, 1),
                    // new PhysicalEnhancement(EnhancementType.RESISTANCE, 1),
                     new PhysicalEnhancement(EnhancementType.SPEED, 3),
-                    new PhysicalEnhancement(EnhancementType.HEALTH, 4),
-                    new PhysicalEnhancement(EnhancementType.MINING_EFFICIENCY, 2)
+                    new PhysicalEnhancement(EnhancementType.HEALTH, 4)
             );
 
             case 5 -> List.of(
 //                    new PhysicalEnhancement(EnhancementType.STRENGTH, 2),
                    // new PhysicalEnhancement(EnhancementType.RESISTANCE, 2),
                     new PhysicalEnhancement(EnhancementType.SPEED, 3),
-                    new PhysicalEnhancement(EnhancementType.HEALTH, 5),
-                    new PhysicalEnhancement(EnhancementType.MINING_EFFICIENCY, 2)
+                    new PhysicalEnhancement(EnhancementType.HEALTH, 5)
             );
 
             case 4 -> List.of(
@@ -68,8 +63,7 @@ public class PhysicalEnhancementsErrorAbility extends PhysicalEnhancementsAbilit
                    // new PhysicalEnhancement(EnhancementType.RESISTANCE, 4),
                     new PhysicalEnhancement(EnhancementType.SPEED, 5),
                     new PhysicalEnhancement(EnhancementType.HEALTH, 12),
-                    new PhysicalEnhancement(EnhancementType.REGENERATION, 1),
-                    new PhysicalEnhancement(EnhancementType.MINING_EFFICIENCY, 4)
+                    new PhysicalEnhancement(EnhancementType.REGENERATION, 1)
             );
 
             case 3 -> List.of(
@@ -77,8 +71,7 @@ public class PhysicalEnhancementsErrorAbility extends PhysicalEnhancementsAbilit
                    // new PhysicalEnhancement(EnhancementType.RESISTANCE, 5),
                     new PhysicalEnhancement(EnhancementType.SPEED, 5),
                     new PhysicalEnhancement(EnhancementType.HEALTH, 13),
-                    new PhysicalEnhancement(EnhancementType.REGENERATION, 1),
-                    new PhysicalEnhancement(EnhancementType.MINING_EFFICIENCY, 4)
+                    new PhysicalEnhancement(EnhancementType.REGENERATION, 1)
             );
 
             case 2 -> List.of(
@@ -86,8 +79,7 @@ public class PhysicalEnhancementsErrorAbility extends PhysicalEnhancementsAbilit
                    // new PhysicalEnhancement(EnhancementType.RESISTANCE, 8),
                     new PhysicalEnhancement(EnhancementType.SPEED, 6),
                     new PhysicalEnhancement(EnhancementType.HEALTH, 21),
-                    new PhysicalEnhancement(EnhancementType.REGENERATION, 2),
-                    new PhysicalEnhancement(EnhancementType.MINING_EFFICIENCY, 5)
+                    new PhysicalEnhancement(EnhancementType.REGENERATION, 2)
             );
 
             case 1 -> List.of(
@@ -95,8 +87,7 @@ public class PhysicalEnhancementsErrorAbility extends PhysicalEnhancementsAbilit
                    // new PhysicalEnhancement(EnhancementType.RESISTANCE, 8),
                     new PhysicalEnhancement(EnhancementType.SPEED, 6),
                     new PhysicalEnhancement(EnhancementType.HEALTH, 26),
-                    new PhysicalEnhancement(EnhancementType.REGENERATION, 2),
-                    new PhysicalEnhancement(EnhancementType.MINING_EFFICIENCY, 5)
+                    new PhysicalEnhancement(EnhancementType.REGENERATION, 2)
             );
 
             case 0 -> List.of(
@@ -104,8 +95,7 @@ public class PhysicalEnhancementsErrorAbility extends PhysicalEnhancementsAbilit
                    // new PhysicalEnhancement(EnhancementType.RESISTANCE, 10),
                     new PhysicalEnhancement(EnhancementType.SPEED, 7),
                     new PhysicalEnhancement(EnhancementType.HEALTH, 36),
-                    new PhysicalEnhancement(EnhancementType.REGENERATION, 3),
-                    new PhysicalEnhancement(EnhancementType.MINING_EFFICIENCY, 6)
+                    new PhysicalEnhancement(EnhancementType.REGENERATION, 3)
             );
 
             default -> List.of();

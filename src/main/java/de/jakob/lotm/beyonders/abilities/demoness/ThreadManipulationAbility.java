@@ -3,21 +3,21 @@ package de.jakob.lotm.beyonders.abilities.demoness;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.beyonders.abilities.core.interaction.InteractionHandler;
 import de.jakob.lotm.damage.ModDamageTypes;
+import de.jakob.lotm.entity.custom.ability_entities.TendrilEntity;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.helper.AbilityUtil;
-import de.jakob.lotm.util.helper.ParticleUtil;
+import de.jakob.lotm.util.helper.FxHandler;
 import de.jakob.lotm.util.helper.VectorUtil;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.DustParticleOptions;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
@@ -25,19 +25,17 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Vector3f;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class ThreadManipulationAbility extends SelectableAbility {
 
-    private final DustParticleOptions dust = new DustParticleOptions(new Vector3f(.6f, .75f, .75f), .5f);
-    private final DustParticleOptions dustBig = new DustParticleOptions(new Vector3f(.6f, .75f, .75f), 1.75f);
-    private final DustParticleOptions dustVeryBig = new DustParticleOptions(new Vector3f(.6f, .75f, .75f), 2.5f);
     private static final HashSet<UUID> boundEntities = new HashSet<>();
+    private static final int THREAD_FADE = 8;
+    private static final float THREAD_WIDTH = .018f;
+    private static final int COCOON_FADE = 10;
     private static final HashSet<UUID> inCocoon = new HashSet<>();
 
     public ThreadManipulationAbility(String id) {
@@ -64,7 +62,7 @@ public class ThreadManipulationAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.threads.binding",
                 "ability.lotmcraft.threads.cocoon",
@@ -92,11 +90,40 @@ public class ThreadManipulationAbility extends SelectableAbility {
 
         inCocoon.add(entity.getUUID());
 
+        int duration = 20 * 5;
         Location loc = new Location(entity.position(), level);
-        List<AtomicBoolean> stopConditions = ParticleUtil.createParticleCocoons(dustVeryBig, loc, .25, 1.45, entity.getEyeHeight() + 1.4, .4, 5, 20 * 20, 22, 5);
+
+        // strands are spun from all around and woven into a shell, half of them winding up and half down
+        List<TendrilEntity> strands = new ArrayList<>();
+        float shellRadius = Math.max(.7f, entity.getBbWidth() * .5f + .45f);
+        Vec3 center = entity.position().add(0, entity.getBbHeight() * .5, 0);
+        int strandCount = 12;
+        for(int i = 0; i < strandCount; i++) {
+            double yaw = i * Math.PI * 2 / strandCount + random.nextDouble(-.25, .25);
+            double pitch = random.nextDouble(-.5, .9);
+            double distance = random.nextDouble(2.2, 3.4);
+            Vec3 anchor = center.add(Math.cos(yaw) * Math.cos(pitch) * distance, Math.sin(pitch) * distance, Math.sin(yaw) * Math.cos(pitch) * distance);
+            boolean upwards = i % 2 == 0;
+            strands.add(TendrilEntity.spawn(level, TendrilEntity.Kind.THREAD, anchor, entity, anchor, random.nextInt(8, 18),
+                            duration + COCOON_FADE, COCOON_FADE, (float) random.nextDouble(2.5, 3.5), .02f)
+                    .shell(shellRadius, upwards ? .06f : .94f, upwards ? .94f : .06f));
+        }
+        FxHandler.playOnBody(level, "thread_cocoon_weave", entity);
+        UUID cocoonFx = FxHandler.playOnBody(level, "thread_cocoon", entity);
+        level.playSound(null, BlockPos.containing(center), SoundEvents.WOOL_PLACE, SoundSource.PLAYERS, 1.2f, .7f);
+
+        AtomicBoolean opened = new AtomicBoolean(false);
+        Runnable open = () -> {
+            if(opened.getAndSet(true))
+                return;
+            strands.forEach(TendrilEntity::release);
+            FxHandler.cancelOnEntity(level, cocoonFx);
+            FxHandler.playOnBody(level, "thread_cocoon_burst", entity);
+            level.playSound(null, entity.blockPosition(), SoundEvents.WOOL_BREAK, SoundSource.PLAYERS, 1.2f, .8f);
+        };
 
         AtomicReference<UUID> taskIdRef = new AtomicReference<>();
-        UUID taskId = ServerScheduler.scheduleForDuration(0, 5, (20 * 5), () -> {
+        UUID taskId = ServerScheduler.scheduleForDuration(0, 5, duration, () -> {
             if(InteractionHandler.isInteractionPossible(loc, "burning")) {
                 inCocoon.remove(entity.getUUID());
                 ServerScheduler.cancel(taskIdRef.get());
@@ -105,15 +132,14 @@ public class ThreadManipulationAbility extends SelectableAbility {
                 entity.removeEffect(MobEffects.DAMAGE_RESISTANCE);
                 entity.removeEffect(MobEffects.REGENERATION);
 
-                Vec3 pos = entity.getPosition(0.5f);
-                ParticleUtil.spawnParticles(level, ParticleTypes.FLAME,       pos, 180, 1.0, 0);
-                ParticleUtil.spawnParticles(level, ParticleTypes.LARGE_SMOKE, pos, 95, 1.0, 0.15);
+                Vec3 pos = entity.position().add(0, entity.getBbHeight() * .5, 0);
+                FxHandler.play(level, "bindings_burn", pos, Math.max(1, entity.getBbHeight() / 1.8));
                 level.playSound(null, BlockPos.containing(pos),
                         SoundEvents.FIRE_AMBIENT, SoundSource.PLAYERS, 1.5f, 1.2f);
             }
 
             if(!inCocoon.contains(entity.getUUID())) {
-                stopConditions.forEach(b -> b.set(true));
+                open.run();
                 return;
             }
 
@@ -125,7 +151,10 @@ public class ThreadManipulationAbility extends SelectableAbility {
 
             loc.setPosition(entity.position());
             loc.setLevel(entity.level());
-        }, () -> inCocoon.remove(entity.getUUID()), level);
+        }, () -> {
+            inCocoon.remove(entity.getUUID());
+            open.run();
+        }, level);
         taskIdRef.set(taskId);
         clearArtifactScaling(entity);
     }
@@ -138,6 +167,9 @@ public class ThreadManipulationAbility extends SelectableAbility {
 
         AtomicBoolean hasHit = new AtomicBoolean(false);
 
+        // the thread stays tied to where it was spun while its tip flies on
+        TendrilEntity thread = TendrilEntity.spawn(level, TendrilEntity.Kind.THREAD, startPos, null, startPos, 1, 20 * 20 + THREAD_FADE, THREAD_FADE, 0, .026f);
+
         level.playSound(null, startPos.x, startPos.y, startPos.z, SoundEvents.SNOWBALL_THROW, entity.getSoundSource(), 1.0f, 1.0f);
 
         ServerScheduler.scheduleForDuration(0, 1, 20 * 20, () -> {
@@ -149,45 +181,52 @@ public class ThreadManipulationAbility extends SelectableAbility {
             if(AbilityUtil.damageNearbyEntities(level, entity, 2.5f, ModDamageTypes.THREAD, baseDamage, pos, true, false, true,0)) {
                 hasHit.set(true);
                 AbilityUtil.addPotionEffectToNearbyEntities(level, entity, 2.5, pos, new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20 * 8, 4, false, false, false));
+                thread.moveEnd(pos);
+                thread.release();
+                FxHandler.play(level, "thread_shot_hit", pos, 1);
                 return;
             }
 
             if(!level.getBlockState(BlockPos.containing(pos.x, pos.y, pos.z)).isAir()) {
+                Vec3 surface = pos.subtract(direction.scale(.5));
                 if(BeyonderData.isGriefingEnabled(entity)) {
                     pos = pos.subtract(direction);
                     level.setBlockAndUpdate(BlockPos.containing(pos.x, pos.y, pos.z), Blocks.FIRE.defaultBlockState());
                 }
                 hasHit.set(true);
+                thread.moveEnd(surface);
+                thread.release();
+                FxHandler.play(level, "thread_shot_hit", surface, 1);
                 return;
             }
 
-            ParticleUtil.spawnParticles(level, dust, pos, 60, 0.1, 0.02);
-
+            thread.moveEnd(pos);
             currentPos.set(pos.add(direction));
-        }, () -> clearArtifactScaling(entity), level);
+        }, () -> {
+            thread.release();
+            clearArtifactScaling(entity);
+        }, level);
     }
 
     private void binding(ServerLevel level, LivingEntity entity) {
+        // the threads are spun from points in the air around the caster
+        Vec3 targetLoc = AbilityUtil.getTargetLocation(entity, 16, 1.4f);
+        List<Vec3> anchors = new ArrayList<>();
         for(int i = 0; i < 11; i++) {
-            Vec3 startPos = VectorUtil.getRelativePosition(entity.getEyePosition().add(entity.getLookAngle().normalize()), entity.getLookAngle().normalize(),  random.nextDouble(-4.5, 3f), random.nextDouble(-7, 7), random.nextDouble(-2, 5));
-            Vec3 targetLoc = AbilityUtil.getTargetLocation(entity, 16, 1.4f);
-
-            final float step = .15f;
-            final float length = (float) startPos.distanceTo(targetLoc);
-            final int duration = (int) Math.ceil(length / step) + 20 * 3;
-
-            animateParticleLine(new Location(startPos, level), targetLoc, 3, 0, duration);
+            anchors.add(VectorUtil.getRelativePosition(entity.getEyePosition().add(entity.getLookAngle().normalize()), entity.getLookAngle().normalize(),  random.nextDouble(-4.5, 3f), random.nextDouble(-7, 7), random.nextDouble(-2, 5)));
         }
 
         level.playSound(null, BlockPos.containing(entity.position()), SoundEvents.SNOWBALL_THROW, SoundSource.BLOCKS, 1, 1);
         LivingEntity targetEntity = AbilityUtil.getTargetEntity(entity, 20, 2);
-        if(targetEntity == null)
-            return;
-
-        if(boundEntities.contains(targetEntity.getUUID())) {
-            if(entity instanceof ServerPlayer player) {
+        boolean alreadyBound = targetEntity != null && boundEntities.contains(targetEntity.getUUID());
+        if(targetEntity == null || alreadyBound) {
+            if(alreadyBound && entity instanceof ServerPlayer player) {
                 ClientboundSetActionBarTextPacket packet = new ClientboundSetActionBarTextPacket(Component.literal("Entity is already bound by your threads.").withColor(0xFFaa42f5));
                 player.connection.send(packet);
+            }
+            for(Vec3 anchor : anchors) {
+                int reach = threadReach(anchor, targetLoc);
+                TendrilEntity.spawn(level, TendrilEntity.Kind.THREAD, anchor, null, targetLoc, reach, reach + 25, THREAD_FADE, 0, THREAD_WIDTH);
             }
             return;
         }
@@ -215,10 +254,23 @@ public class ThreadManipulationAbility extends SelectableAbility {
 
         Location loc = new Location(targetEntity.position(), targetEntity.level());
 
-        List<AtomicBoolean> particleConditions = new ArrayList<>();
         int finalDuration = duration;
+        List<TendrilEntity> threads = new ArrayList<>();
+        for(Vec3 anchor : anchors) {
+            threads.add(TendrilEntity.spawn(level, TendrilEntity.Kind.THREAD, anchor, targetEntity, targetLoc, threadReach(anchor, targetEntity.position()),
+                    finalDuration + THREAD_FADE, THREAD_FADE, (float) random.nextDouble(1.5, 3), THREAD_WIDTH));
+        }
+        AtomicReference<UUID> bindingFx = new AtomicReference<>();
+        AtomicBoolean released = new AtomicBoolean(false);
+        Runnable release = () -> {
+            released.set(true);
+            FxHandler.cancelOnEntity(level, bindingFx.get());
+            threads.forEach(TendrilEntity::release);
+        };
+        FxHandler.playOnBody(level, "thread_binding_snap", targetEntity);
         ServerScheduler.scheduleDelayed(20, () -> {
-            particleConditions.addAll(ParticleUtil.createParticleSpirals(dustBig, loc, .8, .8, targetEntity.getEyeHeight(), .35, 5, finalDuration, 20, 10));
+            if(!released.get())
+                bindingFx.set(FxHandler.playOnBody(level, "thread_binding", targetEntity));
         });
 
         AtomicReference<UUID> taskIdRef = new AtomicReference<>();
@@ -232,13 +284,12 @@ public class ThreadManipulationAbility extends SelectableAbility {
                 targetEntity.removeEffect(MobEffects.DIG_SLOWDOWN);
                 if (targetEntity instanceof Mob mob) mob.setNoAi(false);
 
-                Vec3 pos = targetEntity.getPosition(0.5f);
-                ParticleUtil.spawnParticles(level, ParticleTypes.FLAME,       pos, 180, 1.0, 0);
-                ParticleUtil.spawnParticles(level, ParticleTypes.LARGE_SMOKE, pos, 90, 1.0, 0.15);
+                Vec3 pos = targetEntity.position().add(0, targetEntity.getBbHeight() * .5, 0);
+                FxHandler.play(level, "bindings_burn", pos, Math.max(1, targetEntity.getBbHeight() / 1.8));
                 level.playSound(null, BlockPos.containing(pos),
                         SoundEvents.FIRE_AMBIENT, SoundSource.PLAYERS, 1.5f, 1.2f);
 
-                particleConditions.forEach(b -> b.set(true));
+                release.run();
                 boundEntities.remove(targetEntity.getUUID());
                 return;
             }
@@ -251,7 +302,7 @@ public class ThreadManipulationAbility extends SelectableAbility {
                 targetEntity.removeEffect(MobEffects.DIG_SLOWDOWN);
                 if (targetEntity instanceof Mob mob) mob.setNoAi(false);
 
-                particleConditions.forEach(b -> b.set(true));
+                release.run();
                 boundEntities.remove(targetEntity.getUUID());
                 return;
             }
@@ -264,33 +315,17 @@ public class ThreadManipulationAbility extends SelectableAbility {
 
             loc.setLevel(targetEntity.level());
             loc.setPosition(targetEntity.position());
-        }, () -> clearArtifactScaling(entity), level, () -> AbilityUtil.getTimeInArea(entity, new Location(entity.position(), level)));
+        }, () -> {
+            release.run();
+            clearArtifactScaling(entity);
+        }, level, () -> AbilityUtil.getTimeInArea(entity, new Location(entity.position(), level)));
         taskIdRef.set(taskId);
 
         ServerScheduler.scheduleDelayed(duration, () -> boundEntities.remove(targetEntity.getUUID()));
     }
 
-    private void animateParticleLine(Location startLoc, Vec3 end, int step, int interval, int duration) {
-        if(!(startLoc.getLevel() instanceof ServerLevel level))
-            return;
-        AtomicInteger tick = new AtomicInteger(0);
-
-        float distance = (float) end.distanceTo(startLoc.getPosition());
-        float bezierSteps = .15f / distance;
-
-        int maxPoints = Math.max(2, Math.min(10, (int) Math.ceil(distance * 1.5)));
-
-        List<Vec3> points = VectorUtil.createBezierCurve(startLoc.getPosition(), end, bezierSteps, random.nextInt(1, maxPoints + 1));
-
-        ServerScheduler.scheduleForDuration(0, interval, duration, () -> {
-            for(int i = 0; i < Math.min(tick.get(), points.size() - step); i+=step) {
-                for(int j = 0; j < step; j++) {
-                    ParticleUtil.spawnParticles(level, dust, points.get(i + j), 1, 0, 0);
-                }
-            }
-
-            tick.addAndGet(1);
-        }, null, level, () -> AbilityUtil.getTimeInArea(null, new Location(startLoc.getPosition(), level)));
+    /** Ticks a thread takes to shoot from its anchor to the target. */
+    private static int threadReach(Vec3 from, Vec3 to) {
+        return Mth.clamp((int) (from.distanceTo(to) / 1.6), 4, 14);
     }
-
 }

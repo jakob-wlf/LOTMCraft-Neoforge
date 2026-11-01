@@ -2,6 +2,7 @@ package de.jakob.lotm.beyonders.abilities.error;
 
 import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
+import de.jakob.lotm.beyonders.abilities.error.handler.ConceptStorage;
 import de.jakob.lotm.beyonders.abilities.error.handler.TheftHandler;
 import de.jakob.lotm.damage.ModDamageTypes;
 import de.jakob.lotm.events.ProhibitionHandler;
@@ -56,13 +57,13 @@ public class MundaneConceptualTheft extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.mundane_conceptual_theft.steal_walk",
                 "ability.lotmcraft.mundane_conceptual_theft.steal_sight",
                 "ability.lotmcraft.mundane_conceptual_theft.steal_health",
-                "ability.lotmcraft.mundane_conceptual_theft.steal_distance"
-                //"ability.lotmcraft.mundane_conceptual_theft.steal_thoughts"
+                "ability.lotmcraft.mundane_conceptual_theft.steal_distance",
+                "ability.lotmcraft.mundane_conceptual_theft.steal_thoughts"
         };
     }
 
@@ -105,11 +106,21 @@ public class MundaneConceptualTheft extends SelectableAbility {
         int entitySeq = AbilityUtil.getSeqWithArt(entity, this);
         int targetSeq = BeyonderData.getSequence(target);
 
+        int duration = getTheftDuration(entitySeq, targetSeq);
         switch (abilityIndex) {
-            case 0 -> stealWalk(target, getTheftDuration(entitySeq, targetSeq));
-            case 1 -> stealSight(target, getTheftDuration(entitySeq, targetSeq));
+            case 0 -> {
+                stealWalk(target, duration);
+                ConceptStorage.add(entity, ConceptStorage.Concept.MOVEMENT, duration / 20);
+            }
+            case 1 -> {
+                stealSight(target, duration);
+                ConceptStorage.add(entity, ConceptStorage.Concept.SIGHT, duration / 20);
+            }
             case 2 -> stealHealth(entity, target);
-
+            case 4 -> {
+                stealThoughts(entity, target, duration);
+                ConceptStorage.add(entity, ConceptStorage.Concept.THOUGHTS, duration / 20);
+            }
         }
     }
 
@@ -130,6 +141,7 @@ public class MundaneConceptualTheft extends SelectableAbility {
                 storedDistance = stolenDistanceMap.get(player.getUUID());
 
             stolenDistanceMap.put(player.getUUID(), storedDistance + distance);
+            ConceptStorage.add(player, ConceptStorage.Concept.DISTANCE, distance);
         }
 
         entity.teleportTo(validatedPos.x, validatedPos.y, validatedPos.z);
@@ -138,7 +150,20 @@ public class MundaneConceptualTheft extends SelectableAbility {
     private void stealHealth(LivingEntity entity, LivingEntity target) {
         float healthToSteal = baseDamage;
         target.hurt(ModDamageTypes.source(target.level(), ModDamageTypes.IMPACT, entity), healthToSteal);
+        float missing = entity.getMaxHealth() - entity.getHealth();
         entity.setHealth(Math.min(entity.getMaxHealth(), entity.getHealth() + healthToSteal));
+        if (healthToSteal > missing) {
+            ConceptStorage.add(entity, ConceptStorage.Concept.VITALITY, (int) (healthToSteal - missing));
+        }
+    }
+
+    private void stealThoughts(LivingEntity entity, LivingEntity target, int theftDuration) {
+        AbilityUtil.sealAllTargetAbilities(entity, target, "stolen_thoughts", theftDuration / 2);
+        target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, theftDuration, 0, false, false, false));
+        if (target instanceof Mob mob) {
+            mob.setTarget(null);
+            mob.getNavigation().stop();
+        }
     }
 
     private void stealSight(LivingEntity target, int theftDuration) {

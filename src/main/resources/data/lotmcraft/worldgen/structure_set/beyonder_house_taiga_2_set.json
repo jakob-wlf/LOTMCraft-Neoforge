@@ -9,8 +9,8 @@
     "type": "minecraft:random_spread",
 
     "salt": 53237576,
-    "spacing": 40,
-    "separation": 12,
+    "spacing": 48,
+    "separation": 14,
     "heightmap": "MOTION_BLOCKING_NO_LEAVES",
     "max_tries": 10
   }

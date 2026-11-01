@@ -8,6 +8,7 @@ import de.jakob.lotm.particle.ModParticles;
 import de.jakob.lotm.rendering.effectRendering.EffectIds;
 import de.jakob.lotm.rendering.effectRendering.EffectManager;
 import de.jakob.lotm.util.helper.ParticleUtil;
+import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -28,6 +29,8 @@ public class SpearOfDestructionProjectileEntity extends AbstractArrow {
     private final LivingEntity owner;
     private final double damage;
     private final boolean griefing;
+    private boolean isDiscarded = false;
+
 
     private int ticks = 0;
     private int petrifiedTicks = 0;
@@ -56,11 +59,12 @@ public class SpearOfDestructionProjectileEntity extends AbstractArrow {
 
     @Override
     public void tick() {
+        if(isDiscarded) return;
         // Petrification Logic -- run before super.tick() to stop movement completely
         if(getTags().contains("petrified")) {
             petrifiedTicks++;
             if(petrifiedTicks >= 20 * 5) {
-                this.discard();
+                this.remove();
             }
             return;
         }
@@ -78,14 +82,17 @@ public class SpearOfDestructionProjectileEntity extends AbstractArrow {
         if(level.getBlockState(BlockPos.containing(position())).is(Blocks.WATER) || level.getBlockState(BlockPos.containing(position())).is(Blocks.LAVA)) {
             onHitBlock(new BlockHitResult(this.position(), this.getDirection(), BlockPos.containing(this.position()), false));
         }
+    }
 
-        ParticleUtil.spawnParticles((ServerLevel) level, ModParticles.PURPLE_FLAME.get(), position(), 8, .3, .3, .3, 0);
-        ParticleUtil.spawnParticles((ServerLevel) level, ParticleTypes.FLAME, position(), 8, .3, .3, .3, 0);
+    private void remove() {
+        this.isDiscarded = true;
+        ServerScheduler.scheduleDelayed(6, this::discard);
     }
 
     @Override
     protected void onHitEntity(EntityHitResult result) {
-        this.discard();
+        if(isDiscarded) return;
+        this.remove();
         if(!(result.getEntity() instanceof LivingEntity target)) {
             return;
         }
@@ -103,7 +110,8 @@ public class SpearOfDestructionProjectileEntity extends AbstractArrow {
 
     @Override
     protected void onHitBlock(BlockHitResult result) {
-        this.discard();
+        if(isDiscarded) return;
+        this.remove();
 
         if(!(level() instanceof ServerLevel serverLevel)) {
             return;

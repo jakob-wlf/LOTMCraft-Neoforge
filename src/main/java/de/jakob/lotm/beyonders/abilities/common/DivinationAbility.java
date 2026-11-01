@@ -69,7 +69,7 @@ public class DivinationAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[] {
                 "ability.lotmcraft.divination.danger_premonition",
                 "ability.lotmcraft.divination.dream_divination",

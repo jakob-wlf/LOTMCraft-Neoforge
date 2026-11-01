@@ -57,6 +57,7 @@ public final class HudTheme {
     public static final ResourceLocation COUNTER_PLATE = tex("counter_plate");
     public static final ResourceLocation KEYCAP = tex("keycap");
     public static final ResourceLocation LUCK_CLOVER = tex("luck_clover");
+    public static final ResourceLocation LUCK_CHIP = tex("luck_chip");
 
 
     public static final int TUBE_INSET_X = 3;

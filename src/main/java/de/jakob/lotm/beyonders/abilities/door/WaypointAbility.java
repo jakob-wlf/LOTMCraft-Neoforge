@@ -44,7 +44,7 @@ public class WaypointAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.waypoint.set",
                 "ability.lotmcraft.waypoint.delete",

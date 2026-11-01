@@ -36,10 +36,8 @@ import java.util.stream.Collectors;
 @EventBusSubscriber(modid = LOTMCraft.MOD_ID)
 public class TimeChangeEntity extends Entity {
 
-    /** How long (ticks) a peer-strength entity stays under the effect before being released. */
     private static final int PARTIAL_DURATION = 100; // 5 seconds
 
-    /** How long (ticks) resistance lasts after a peer-strength entity is released. */
     private static final int RESISTANCE_DURATION = 600; // 30 seconds
 
     private static final EntityDataAccessor<Integer> DURATION =
@@ -54,20 +52,11 @@ public class TimeChangeEntity extends Entity {
     private static final EntityDataAccessor<Optional<UUID>> OWNER =
             SynchedEntityData.defineId(TimeChangeEntity.class, EntityDataSerializers.OPTIONAL_UUID);
 
-    // UUID -> time multiplier for all entities currently being slowed/sped up
     private static final Map<UUID, Float> controlledEntities = new ConcurrentHashMap<>();
     private static final Map<UUID, Float> tickAccumulators   = new ConcurrentHashMap<>();
 
-    /**
-     * Tracks peer-strength entities: UUID -> server tick at which they entered the effect.
-     * Once (currentTick - entryTick) >= PARTIAL_DURATION they are ejected and given resistance.
-     */
     private static final Map<UUID, Long> partialEntryTick = new ConcurrentHashMap<>();
 
-    /**
-     * Resistance tracking: UUID -> server tick at which resistance expires.
-     * While the world tick is below this value the entity cannot be re-added.
-     */
     private static final Map<UUID, Long> resistanceExpiry = new ConcurrentHashMap<>();
 
     public TimeChangeEntity(EntityType<?> entityType, Level level) {
@@ -133,7 +122,6 @@ public class TimeChangeEntity extends Entity {
                 .map(Entity::getUUID)
                 .collect(Collectors.toSet());
 
-        // --- Release entities that left the radius entirely ---
         controlledEntities.keySet().stream()
                 .filter(uuid -> !currentInZone.contains(uuid))
                 .toList()
@@ -143,32 +131,25 @@ public class TimeChangeEntity extends Entity {
                     partialEntryTick.remove(uuid);
                 });
 
-        // --- Expire stale resistance entries to keep the map lean ---
         resistanceExpiry.entrySet().removeIf(e -> worldTick >= e.getValue());
 
-        // --- Process entities currently in radius ---
         for (UUID uuid : currentInZone) {
-            // Resolve the actual entity so we can compare sequences
             Entity raw = ((ServerLevel) level()).getEntity(uuid);
             LivingEntity target = (raw instanceof LivingEntity le) ? le : null;
 
-            // ── Significantly stronger → immune, skip entirely ──────────────────
             if (target != null && caster != null
                     && AbilityUtil.isTargetSignificantlyStronger(caster, target)) {
-                // Make sure we're not accidentally controlling them
                 controlledEntities.remove(uuid);
                 tickAccumulators.remove(uuid);
                 partialEntryTick.remove(uuid);
                 continue;
             }
 
-            // ── Under resistance cooldown → skip ────────────────────────────────
             Long expiry = resistanceExpiry.get(uuid);
             if (expiry != null && worldTick < expiry) {
                 continue;
             }
 
-            // ── Significantly weaker (or not a beyonder) → full, permanent effect ─
             boolean fullEffect = target == null
                     || caster == null
                     || AbilityUtil.isTargetSignificantlyWeaker(caster, target);
@@ -176,26 +157,20 @@ public class TimeChangeEntity extends Entity {
             if (fullEffect) {
                 controlledEntities.put(uuid, multiplier);
                 tickAccumulators.putIfAbsent(uuid, 0f);
-                // Remove any leftover partial tracking in case they weakened mid-combat
                 partialEntryTick.remove(uuid);
             } else {
-                // ── Peer strength → partial, time-limited effect ─────────────────
                 if (!controlledEntities.containsKey(uuid)) {
-                    // First time entering: start the partial clock
                     controlledEntities.put(uuid, multiplier);
                     tickAccumulators.putIfAbsent(uuid, 0f);
                     partialEntryTick.put(uuid, worldTick);
                 } else {
-                    // Already controlled — check if partial duration has elapsed
                     long entryTick = partialEntryTick.getOrDefault(uuid, worldTick);
                     if (worldTick - entryTick >= PARTIAL_DURATION) {
-                        // Eject and grant resistance
                         controlledEntities.remove(uuid);
                         tickAccumulators.remove(uuid);
                         partialEntryTick.remove(uuid);
                         resistanceExpiry.put(uuid, worldTick + RESISTANCE_DURATION);
                     }
-                    // else: keep controlling, nothing to do
                 }
             }
         }
@@ -211,12 +186,7 @@ public class TimeChangeEntity extends Entity {
         controlledEntities.clear();
         tickAccumulators.clear();
         partialEntryTick.clear();
-        // Intentionally keep resistanceExpiry: resistance should persist even after
-        // the TimeChangeEntity expires so peers can't be immediately re-affected
-        // by a new cast. Clear it here if you prefer not to carry resistance over.
     }
-
-    // ─── Tick event hooks ────────────────────────────────────────────────────────
 
     @SubscribeEvent
     public static void onEntityTickPre(EntityTickEvent.Pre event) {
@@ -280,7 +250,9 @@ public class TimeChangeEntity extends Entity {
         tickAccumulators.put(uuid, acc);
     }
 
-    // ─── Synched data getters/setters ────────────────────────────────────────────
+    public static float getTimeMultiplier(UUID uuid) {
+        return controlledEntities.getOrDefault(uuid, 1f);
+    }
 
     public void setDuration(int duration) { this.entityData.set(DURATION, duration); }
     public int  getDuration()             { return this.entityData.get(DURATION); }
@@ -302,7 +274,6 @@ public class TimeChangeEntity extends Entity {
         return entity instanceof LivingEntity le ? le : null;
     }
 
-    // ─── Entity data boilerplate ─────────────────────────────────────────────────
 
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {

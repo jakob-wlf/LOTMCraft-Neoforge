@@ -50,7 +50,7 @@ public class DreamWeaveAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.dream_weave.strong",
                 "ability.lotmcraft.dream_weave.weak",

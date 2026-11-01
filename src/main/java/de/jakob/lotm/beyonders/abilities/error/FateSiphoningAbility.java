@@ -35,8 +35,6 @@ public class FateSiphoningAbility extends Ability {
 
     public FateSiphoningAbility(String id) {
         super(id, 20);
-        canBeShared = false;
-
         hasDynamicCooldown = true;
         dynamicCooldown = new LinkedList<>(List.of(10, 15, 20));
 

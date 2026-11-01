@@ -11,7 +11,9 @@ import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.attachments.MultiplierModifierComponent;
 import de.jakob.lotm.attachments.SanityComponent;
 import de.jakob.lotm.attachments.*;
+import de.jakob.lotm.entity.ModEntities;
 import de.jakob.lotm.events.BeyonderDataTickHandler;
+import de.jakob.lotm.events.custom.ChangeBeyonderDataEvent;
 import de.jakob.lotm.gamerule.ModGameRules;
 import de.jakob.lotm.network.PacketHandler;
 import de.jakob.lotm.network.packets.toClient.SyncBeyonderDataPacket;
@@ -29,6 +31,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.neoforged.neoforge.common.NeoForge;
 
 import java.util.*;
 
@@ -209,6 +212,10 @@ public class BeyonderData {
             if(clearCharStack) playerMap.clearStack(player);
         }
 
+        BeyonderComponent component = entity.getData(ModAttachments.BEYONDER_COMPONENT);
+
+        NeoForge.EVENT_BUS.post(new ChangeBeyonderDataEvent(entity, component.getPathway(), pathway, component.getSequence(), sequence));
+
         if(Objects.equals(sequence, LOTMCraft.NON_BEYONDER_SEQ)
                 || pathway.equals("none")) {
             clearBeyonderData(entity);
@@ -222,8 +229,6 @@ public class BeyonderData {
         }
 
         boolean griefing = !BeyonderData.isBeyonder(entity) || BeyonderData.isGriefingEnabled(entity);
-
-        BeyonderComponent component = entity.getData(ModAttachments.BEYONDER_COMPONENT);
 
         // Detect sequence-up before data changes so we can record missed acting and update cap
         String oldPathway = getPathway(entity);
@@ -392,11 +397,6 @@ public class BeyonderData {
         if(entity instanceof Player player && ControllingUtils.isControlling(player) && !ignoreControlling) {
             return ControllingUtils.getControlledSequence(player);
         }
-
-        if(SpiritHandler.isCapturableSpirit(entity) && !BeyonderData.isBeyonder(entity)) {
-            return SpiritHandler.getSequenceOfSpirit(entity);
-        }
-
         if(entity.level().isClientSide) {
             PacketHandler.requestBeyonderSync();
             return ClientBeyonderCache.getSequence(entity.getUUID());
@@ -422,7 +422,12 @@ public class BeyonderData {
 //        }
 
         BeyonderComponent component = entity.getData(ModAttachments.BEYONDER_COMPONENT);
-        return component.getSequence();
+        if(component.getSequence() != LOTMCraft.NON_BEYONDER_SEQ)
+            return component.getSequence();
+
+        if(ModEntities.isBeyonderMob(entity)) return ModEntities.getSequenceForBeyonderEntity(entity);
+
+        return LOTMCraft.NON_BEYONDER_SEQ;
     }
 
     public static float getSpirituality(LivingEntity entity) {
@@ -441,9 +446,14 @@ public class BeyonderData {
         return Math.max(0, spirituality);
     }
 
+    public static float getSpiritualityCostMultiplier() {
+        return Config.SPIRITUALITY_COST_MULTIPLIER.get().floatValue();
+    }
+
     public static void reduceSpirituality(LivingEntity entity, float amount) {
         if(!(entity instanceof Player))
             return;
+        amount *= getSpiritualityCostMultiplier();
         float current = getSpirituality(entity);
         entity.getData(ModAttachments.BEYONDER_COMPONENT).setSpirituality(Math.max(0, current - amount));
 
@@ -601,10 +611,13 @@ public class BeyonderData {
         String pathway = component.getPathway();
         int sequence = component.getSequence();
 
-        return pathway != null                                 &&
+        if (pathway != null                                 &&
                 !pathway.equalsIgnoreCase("none") &&
                 !pathway.isBlank()                             &&
-                sequence != LOTMCraft.NON_BEYONDER_SEQ;
+                sequence != LOTMCraft.NON_BEYONDER_SEQ)
+            return true;
+
+        return ModEntities.isBeyonderMob(entity);
     }
 
     public static void addModifier(LivingEntity entity, String id, double modifier) {
@@ -753,6 +766,8 @@ public class BeyonderData {
         float current = getDigestionProgress(player);
         if(accountForDigestionRate) {
             amount *= (player.level().getGameRules().getInt(ModGameRules.DIGESTION_RATE) / 10f);
+            // Worm of Time: a player whose time was stolen digests slower
+            if(amount > 0) amount *= de.jakob.lotm.beyonders.abilities.error.handler.TimeHandler.getProcessMultiplier(player);
         }
         float newAmount = Math.min(1.0f, current + amount);
 

@@ -11,6 +11,7 @@ import de.jakob.lotm.util.helper.ParticleUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -34,7 +35,7 @@ public class SolarEnvoyAbility extends ToggleAbility {
         canBeShared = false;
 
         hasDynamicSpirituality = true;
-        dynamicSpirituality = new LinkedList<>(List.of(400f, 300f, 200f));
+        dynamicSpirituality = new LinkedList<>(List.of(20f, 150f, 100f));
 
         baseDamage = 8f;
     }
@@ -68,8 +69,61 @@ public class SolarEnvoyAbility extends ToggleAbility {
                 serverLevel.setDayTime(6000);
         }
 
-        Random random = new Random();
+        if(entity instanceof ServerPlayer player) {
+            player.getAbilities().mayfly = true;
+            player.getAbilities().flying = true;
+            player.getAbilities().setFlyingSpeed(0.005f);
+            player.onUpdateAbilities();
+        }
+        // Destroy blocks
+        destroyBlocksAroundEntity(serverLevel, entity);
 
+    }
+
+    @Override
+    public void tick(Level level, LivingEntity entity) {
+        if(level.isClientSide) {
+            ClientHandler.changeToThirdPerson(entity);
+            return;
+        }
+
+
+        // Stop movement and keep position
+        if(!(entity instanceof ServerPlayer player)) {
+            entity.setDeltaMovement(0, 0, 0);
+            entity.setNoGravity(true);
+            if(locations.containsKey(entity.getUUID())) {
+                entity.teleportTo(locations.get(entity.getUUID()).x, locations.get(entity.getUUID()).y, locations.get(entity.getUUID()).z);
+            }
+        } else {
+            player.getAbilities().mayfly = true;
+            player.getAbilities().flying = true;
+            player.getAbilities().setFlyingSpeed(0.005f);
+            player.onUpdateAbilities();
+        }
+
+        // Damage entities
+        AbilityUtil.damageNearbyEntities((ServerLevel) level, entity, 37* multiplier(entity),  baseDamage/2, entity.position(), true, true, 20 * 5, ModDamageTypes.source(level, ModDamageTypes.LIGHT, entity));
+        AbilityUtil.damageNearbyEntities((ServerLevel) level, entity, 37* multiplier(entity),  baseDamage/2, entity.position(), true, true, 20 * 5, ModDamageTypes.source(level, ModDamageTypes.FAITH, entity));
+
+        // Particles
+        ParticleUtil.spawnSphereParticles((ServerLevel) level, ParticleTypes.END_ROD, entity.position(), 2.6, 60);
+        ParticleUtil.spawnSphereParticles((ServerLevel) level, ParticleTypes.FLAME, entity.position(), 2.6, 60);
+
+        // Stop when overridden by another transformation
+        TransformationComponent transformationComponent = entity.getData(ModAttachments.TRANSFORMATION_COMPONENT);
+        if (!transformationComponent.isTransformed() || transformationComponent.getTransformationIndex() != TransformationComponent.TransformationType.SOLAR_ENVOY.getIndex()) {
+            cancel((ServerLevel) level, entity);
+            return;
+        }
+
+        if(entity.tickCount % 20 == 0) {
+            destroyBlocksAroundEntity((ServerLevel) level, entity);
+        }
+
+    }
+
+    private void destroyBlocksAroundEntity(ServerLevel serverLevel, LivingEntity entity) {
         // Destroy blocks
         if (BeyonderData.isGriefingEnabled(entity)) {
             // Get all blocks once
@@ -91,39 +145,6 @@ public class SolarEnvoyAbility extends ToggleAbility {
                 }
             }
         }
-
-    }
-
-    @Override
-    public void tick(Level level, LivingEntity entity) {
-        if(level.isClientSide) {
-            ClientHandler.changeToThirdPerson(entity);
-            return;
-        }
-
-
-        // Stop movement and keep position
-        entity.setDeltaMovement(0, 0, 0);
-        entity.setNoGravity(true);
-        if(locations.containsKey(entity.getUUID())) {
-            entity.teleportTo(locations.get(entity.getUUID()).x, locations.get(entity.getUUID()).y, locations.get(entity.getUUID()).z);
-        }
-
-        // Damage entities
-        AbilityUtil.damageNearbyEntities((ServerLevel) level, entity, 37* multiplier(entity),  baseDamage/2, entity.position(), true, true, 20 * 5, ModDamageTypes.source(level, ModDamageTypes.LIGHT, entity));
-        AbilityUtil.damageNearbyEntities((ServerLevel) level, entity, 37* multiplier(entity),  baseDamage/2, entity.position(), true, true, 20 * 5, ModDamageTypes.source(level, ModDamageTypes.FAITH, entity));
-
-        // Particles
-        ParticleUtil.spawnSphereParticles((ServerLevel) level, ParticleTypes.END_ROD, entity.position(), 2.6, 60);
-        ParticleUtil.spawnSphereParticles((ServerLevel) level, ParticleTypes.FLAME, entity.position(), 2.6, 60);
-
-        // Stop when overridden by another transformation
-        TransformationComponent transformationComponent = entity.getData(ModAttachments.TRANSFORMATION_COMPONENT);
-        if (!transformationComponent.isTransformed() || transformationComponent.getTransformationIndex() != TransformationComponent.TransformationType.SOLAR_ENVOY.getIndex()) {
-            cancel((ServerLevel) level, entity);
-            return;
-        }
-
     }
 
     @Override
@@ -138,6 +159,14 @@ public class SolarEnvoyAbility extends ToggleAbility {
         TransformationComponent transformationComponent = entity.getData(ModAttachments.TRANSFORMATION_COMPONENT);
         if(transformationComponent.isTransformed() && transformationComponent.getTransformationIndex() == TransformationComponent.TransformationType.SOLAR_ENVOY.getIndex()) {
             transformationComponent.setTransformedAndSync(false, entity);
+        }
+
+        if(entity instanceof ServerPlayer player) {
+            if(!player.isCreative() && !player.isSpectator())
+                player.getAbilities().mayfly = false;
+            player.getAbilities().flying = false;
+            player.getAbilities().setFlyingSpeed(0.05f);
+            player.onUpdateAbilities();
         }
 
         clearArtifactScaling(entity);

@@ -71,7 +71,7 @@ public class DreamMazeAbility extends SelectableAbility {
     }
 
     @Override
-    public String[] getAbilityNames() {
+    public String[] getAllAbilityNames() {
         return new String[]{"ability.lotmcraft.dream_maze.self", "ability.lotmcraft.dream_maze.others"};
     }
 

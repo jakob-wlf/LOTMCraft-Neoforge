@@ -48,9 +48,8 @@ public class ConceptualTheftAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
-                "ability.lotmcraft.conceptual_theft.day_night",
                 "ability.lotmcraft.conceptual_theft.area",
                 "ability.lotmcraft.conceptual_theft.digestion",
                 "ability.lotmcraft.conceptual_theft.spirituality",
@@ -71,17 +70,16 @@ public class ConceptualTheftAbility extends SelectableAbility {
             default -> spiritualityCost = 7500;
         }
 
-        if(abilityIndex == 0 || abilityIndex == 1 || abilityIndex == 2 || abilityIndex == 4) {
+        if(abilityIndex == 0 || abilityIndex == 1 || abilityIndex == 3) {
             if(BeyonderData.getSpirituality(entity) < spiritualityCost) return;
             BeyonderData.reduceSpirituality(entity, spiritualityCost);
         }
 
         switch (abilityIndex) {
-            case 0 -> stealDayNight(serverLevel, entity);
-            case 1 -> stealArea(serverLevel, entity);
-            case 2 -> stealDigestion(level, entity);
-            case 3 -> stealSpirituality(level, entity);
-            case 4 -> stealSanity(level, entity);
+            case 0 -> stealArea(serverLevel, entity);
+            case 1 -> stealDigestion(level, entity);
+            case 2 -> stealSpirituality(level, entity);
+            case 3 -> stealSanity(level, entity);
         }
     }
 
@@ -153,49 +151,6 @@ public class ConceptualTheftAbility extends SelectableAbility {
         TheftHandler.performSpiritualityTheft(entity, target, random, this);
     }
 
-    private void stealDayNight(ServerLevel serverLevel, LivingEntity entity) {
-        boolean isDay = serverLevel.isDay();
-
-        setDayNight(serverLevel, isDay);
-
-        if(!(entity instanceof Player player)) {
-            return;
-        }
-
-        if(isDay) {
-            player.addItem(new ItemStack(ModItems.SUN_ITEM.get()));
-        }
-        else {
-            player.addItem(new ItemStack(ModItems.MOON_ITEM.get()));
-        }
-    }
-
-    private static void setDayNight(ServerLevel serverLevel, boolean isDay) {
-        long currentTime = serverLevel.getDayTime();
-        long currentDayTime = currentTime % 24000;
-
-        long targetTime;
-        if (isDay) {
-            // Advance to midnight (18000 ticks)
-            targetTime = 18000;
-        } else {
-            // Advance to noon (6000 ticks)
-            targetTime = 6000;
-        }
-
-        // Calculate ticks to add to reach target time
-        long ticksToAdd;
-        if (currentDayTime <= targetTime) {
-            // Target time hasn't occurred yet today
-            ticksToAdd = targetTime - currentDayTime;
-        } else {
-            // Target time has already passed, advance to target time tomorrow
-            ticksToAdd = (24000 - currentDayTime) + targetTime;
-        }
-
-        serverLevel.setDayTime(currentTime + ticksToAdd);
-    }
-
     private void stealArea(ServerLevel serverLevel, LivingEntity entity) {
         if(!BeyonderData.isGriefingEnabled(entity)) {
             AbilityUtil.sendActionBar(entity, Component.translatable("ability.lotmcraft.petrification.griefing_disabled").withColor(0xa0e2fa));
@@ -214,7 +169,6 @@ public class ConceptualTheftAbility extends SelectableAbility {
                 false
         );
 
-        // Store block data
         Map<String, String> blockData = new HashMap<>();
         int blockCount = 0;
 
@@ -226,13 +180,10 @@ public class ConceptualTheftAbility extends SelectableAbility {
                 continue;
             }
 
-            // Store block state using registry name and properties
             String posKey = pos.getX() + "," + pos.getY() + "," + pos.getZ();
 
-            // Get the block's registry name
             String blockId = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
 
-            // Get properties as string
             StringBuilder stateStr = new StringBuilder(blockId);
             if (!state.getProperties().isEmpty()) {
                 stateStr.append("[");
@@ -247,21 +198,17 @@ public class ConceptualTheftAbility extends SelectableAbility {
 
             blockData.put(posKey, stateStr.toString());
 
-            // Remove the block
             serverLevel.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
             blockCount++;
 
-            // Limit to prevent performance issues
             if (blockCount >= 10000) break;
         }
 
-        // Create the excavated area item
         ItemStack excavatedArea = new ItemStack(ModItems.EXCAVATED_AREA_ITEM.get());
         excavatedArea.set(ModDataComponents.EXCAVATED_BLOCKS, blockData);
         excavatedArea.set(ModDataComponents.EXCAVATION_CENTER,
                 targetLocation.x + "," + targetLocation.y + "," + targetLocation.z);
 
-        // Give item to player
         if (entity instanceof Player player) {
             if (!player.getInventory().add(excavatedArea)) {
                 player.drop(excavatedArea, false);

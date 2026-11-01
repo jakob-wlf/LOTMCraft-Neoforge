@@ -515,7 +515,7 @@ public class IntrospectScreen extends AbstractContainerScreen<IntrospectMenu> {
                 expanded.add(ability);
                 subAbilityEntries.add(null);
                 if (ability instanceof SelectableAbility sa) {
-                    String[] names = sa.getAbilityNamesCopy();
+                    String[] names = sa.getSequenceDependantAbilityNames(menu.getSequence());
                     if (names.length > 1) {
                         for (int si = 0; si < names.length; si++) {
                             expanded.add(ability);
@@ -932,6 +932,22 @@ public class IntrospectScreen extends AbstractContainerScreen<IntrospectMenu> {
     public void updateMenuData(int sequence, String pathway, float digestionProgress, float sanity) {
         this.menu.updateData(sequence, pathway, digestionProgress, sanity);
         initializeAbilities();
+    }
+    private void refreshPassivesIfChanged() {
+        if (minecraft == null || minecraft.player == null) return;
+
+        List<PassiveAbility> fresh =
+                LOTMCraft.passiveAbilityHandler.getPassiveAbilitiesForEntity(minecraft.player);
+
+        if (!fresh.equals(passiveAbilities)) {
+            passiveAbilities.clear();
+            passiveAbilities.addAll(fresh);
+        }
+    }
+    @Override
+    protected void containerTick() {
+        super.containerTick();
+        refreshPassivesIfChanged();
     }
 
     // =====================================================================================
@@ -1714,7 +1730,7 @@ public class IntrospectScreen extends AbstractContainerScreen<IntrospectMenu> {
             List<Component> tooltipLines = new ArrayList<>();
 
             if (hoveredSubIndex >= 0 && hoveredAbility instanceof SelectableAbility sa) {
-                String[] names = sa.getAbilityNamesCopy();
+                String[] names = sa.getSequenceDependantAbilityNames(menu.getSequence());
                 if (hoveredSubIndex < names.length) {
                     int color = showAllAbilities ? 0xFFFFFF : BeyonderData.pathwayInfos.get(menu.getPathway()).color();
                     tooltipLines.add(Component.translatable(names[hoveredSubIndex]).withStyle(ChatFormatting.BOLD).withColor(color));

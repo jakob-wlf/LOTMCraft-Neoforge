@@ -22,6 +22,9 @@ public class ModEffects {
     public static final Holder<MobEffect> MENTAL_PLAGUE = MOB_EFFECTS.register("mental_plague",
             () -> new MentalPlagueEffect(MobEffectCategory.HARMFUL, 0xf0b05d));
 
+    public static final Holder<MobEffect> PURIFICATION = MOB_EFFECTS.register("purification",
+            () -> new PurificationEffect(MobEffectCategory.BENEFICIAL, 0xffd04f));
+
     public static final Holder<MobEffect> PETRIFICATION = MOB_EFFECTS.register("petrification",
             () -> new PetrificationEffect(MobEffectCategory.HARMFUL, 0x7532a8));
 

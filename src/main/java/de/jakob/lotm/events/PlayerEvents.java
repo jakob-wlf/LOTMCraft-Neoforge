@@ -75,7 +75,6 @@ public class PlayerEvents {
             ShapeShiftingUtil.resetShape(player);
             ControllingUtils.cancel(player, 0, true, false);
 
-            // Clean up concealed domain entities
             ConcealedDomainEntity concealedDomainEntity = ConcealedDomainEntity.getActiveForOwner(player.getUUID());
             if(concealedDomainEntity != null) {
                 concealedDomainEntity.discard();
@@ -88,7 +87,6 @@ public class PlayerEvents {
 
             de.jakob.lotm.beyonders.abilities.death.InternalUnderworldAbility.recallSoulsOnLogout(player);
 
-            // Revert sacrifice upgrade if active when logging out
             SacrificeRevertComponent revert = player.getData(ModAttachments.SACRIFICE_REVERT_COMPONENT);
             if (revert.isActive()) {
                 if (BeyonderData.isBeyonder(player)
@@ -122,10 +120,18 @@ public class PlayerEvents {
 
             NewPlayerComponent component = player.getData(ModAttachments.BOOK_COMPONENT);
             if(!component.isHasReceivedNewPlayerPerks() && player.serverLevel().getGameRules().getBoolean(ModGameRules.SPAWN_WITH_STARTING_CHARACTERISTIC)) {
+                if(!component.isHasReceivedGuidingBook()) {
+                    ItemStack guidingBook = new ItemStack(ModItems.GUIDING_BOOK.get());
+                    if(!player.getInventory().contains(guidingBook)) {
+                        player.drop(guidingBook, false);
+                    }
+                    component.setHasReceivedGuidingBook(true);
+                }
                 PathwaySelectionMenu.openWithAllPathways(player);
             }
             else {
                 component.setHasReceivedNewPlayerPerks(true);
+                component.setHasReceivedGuidingBook(true);
             }
         }
     }
@@ -170,7 +176,8 @@ public class PlayerEvents {
 
         if (!(damager instanceof LivingEntity source)) return;
 
-        if(((DangerPremonitionDivinationAbility) LOTMCraft.abilityHandler.getById("danger_premonition_divination_ability")).isActiveForEntity(event.getEntity()) && random.nextFloat() < .1) {
+        if(((DangerPremonitionDivinationAbility) LOTMCraft.abilityHandler.getById("danger_premonition_divination_ability")).isActiveForEntity(event.getEntity()) && random.nextFloat() < .1
+                && !de.jakob.lotm.beyonders.abilities.error.handler.DeceitHandler.isHiddenFromIntuition(event.getEntity(), source)) {
             if(BeyonderData.getSequence(source) - BeyonderData.getSequence(event.getEntity()) >= -2) {
                 if(event.getSource().is(ModDamageTypes.PHYSICAL)) {
                     boolean hasActiveGrafting = false;

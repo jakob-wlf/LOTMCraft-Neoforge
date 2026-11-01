@@ -52,7 +52,7 @@ public class PyrokinesisAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.pyrokinesis.flame_wave",
                 "ability.lotmcraft.pyrokinesis.wall_of_fire",
@@ -84,7 +84,7 @@ public class PyrokinesisAbility extends SelectableAbility {
         FlamingSpearProjectileEntity spear = new FlamingSpearProjectileEntity(level, entity, DamageLookup.lookupDamage(7, 0.9) * multiplier(entity), BeyonderData.isGriefingEnabled(entity), 2.0f, ride);
         spear.setPos(startPos.x, startPos.y, startPos.z); // Set initial position
         spear.setVariant(PriestFlameVariants.byId(BeyonderData.getSequence(entity)));
-        spear.shoot(direction.x, direction.y, direction.z, 2f*multiplier(entity), 0);
+        spear.shoot(direction.x, direction.y, direction.z, 3, 0);
         level.addFreshEntity(spear);
         if(player.isShiftKeyDown() && BeyonderData.getSequence(entity) <= 5) {
             if(player.getVehicle() instanceof FlamingSpearProjectileEntity) return;

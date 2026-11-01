@@ -1,6 +1,7 @@
 package de.jakob.lotm.network;
 
 import de.jakob.lotm.LOTMCraft;
+import de.jakob.lotm.network.packets.toServer.CreateContractPayload;
 import de.jakob.lotm.network.packets.toClient.*;
 import de.jakob.lotm.network.packets.toServer.*;
 import de.jakob.lotm.util.BeyonderData;
@@ -32,6 +33,12 @@ public class PacketHandler {
     }
 
     private static void registerClientPackets(PayloadRegistrar registrar) {
+        registrar.playToClient(
+                de.jakob.lotm.network.packets.error.ErrorSyncPacket.TYPE,
+                de.jakob.lotm.network.packets.error.ErrorSyncPacket.STREAM_CODEC,
+                de.jakob.lotm.network.packets.error.ErrorSyncPacket::handle
+        );
+
         registrar.playToClient(
                 SyncBeyonderDataPacket.TYPE,
                 SyncBeyonderDataPacket.STREAM_CODEC,
@@ -398,12 +405,6 @@ public class PacketHandler {
         );
 
         registrar.playToClient(
-                SyncAbilitySelectionPacket.TYPE,
-                SyncAbilitySelectionPacket.STREAM_CODEC,
-                SyncAbilitySelectionPacket::handle
-        );
-
-        registrar.playToClient(
                 SyncAllyDataPacket.TYPE,
                 SyncAllyDataPacket.STREAM_CODEC,
                 SyncAllyDataPacket::handle
@@ -618,9 +619,27 @@ public class PacketHandler {
     private static void registerServerPackets(PayloadRegistrar registrar) {
 
         registrar.playToServer(
+                de.jakob.lotm.network.packets.error.ErrorActionPacket.TYPE,
+                de.jakob.lotm.network.packets.error.ErrorActionPacket.STREAM_CODEC,
+                de.jakob.lotm.network.packets.error.ErrorActionPacket::handle
+        );
+
+        registrar.playToServer(
                 WhipSlashPayload.TYPE,
                 WhipSlashPayload.STREAM_CODEC,
                 WhipSlashPayload::handle
+        );
+
+        registrar.playToServer(
+                CreateContractPayload.TYPE,
+                CreateContractPayload.CODEC,
+                CreateContractPayload::handle
+        );
+
+        registrar.playToServer(
+                ConfirmDecisionPayload.TYPE,
+                ConfirmDecisionPayload.CODEC,
+                ConfirmDecisionPayload::handle
         );
 
         registrar.playToServer(

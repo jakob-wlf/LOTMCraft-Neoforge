@@ -9,6 +9,7 @@ import de.jakob.lotm.beyonders.abilities.core.AbilityUsedEvent;
 import de.jakob.lotm.entity.ModEntities;
 import de.jakob.lotm.item.ModItems;
 import de.jakob.lotm.util.helper.ParticleUtil;
+import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -35,6 +36,7 @@ public class UnshadowedSpearProjectileEntity extends AbstractArrow {
     private final boolean griefing;
     private final Ability ability;
     private final static int MAX_LIFETIME = 20 * 20;
+    private boolean isDiscarded = false;
 
     private int ticks = 0;
     private int petrifiedTicks = 0;
@@ -59,6 +61,11 @@ public class UnshadowedSpearProjectileEntity extends AbstractArrow {
         init();
     }
 
+    private void remove() {
+        this.isDiscarded = true;
+        ServerScheduler.scheduleDelayed(6, this::discard);
+    }
+
     private void init() {
         this.setNoGravity(true);
     }
@@ -77,11 +84,12 @@ public class UnshadowedSpearProjectileEntity extends AbstractArrow {
 
     @Override
     public void tick() {
+        if(isDiscarded) return;
         // Petrification Logic -- run before super.tick() to stop movement completely
         if(getTags().contains("petrified")) {
             petrifiedTicks++;
             if(petrifiedTicks >= 20 * 5) {
-                this.discard();
+                this.remove();
             }
             return;
         }
@@ -104,13 +112,14 @@ public class UnshadowedSpearProjectileEntity extends AbstractArrow {
         ParticleUtil.spawnParticles((ServerLevel) level, ParticleTypes.END_ROD, position(), 5, .3, .3, .3, 0);
 
         if(this.ticks >= MAX_LIFETIME){
-            this.discard();
+            this.remove();
         }
     }
 
     @Override
     protected void onHitEntity(EntityHitResult result) {
-        this.discard();
+        if(isDiscarded) return;
+        this.remove();
         if(!(result.getEntity() instanceof LivingEntity))
             return;
         LivingEntity target = (LivingEntity) result.getEntity();
@@ -126,8 +135,9 @@ public class UnshadowedSpearProjectileEntity extends AbstractArrow {
 
     @Override
     protected void onHitBlock(BlockHitResult result) {
+        if(isDiscarded) return;
         postAbilityUsedEvent(result.getLocation());
-        this.discard();
+        this.remove();
     }
 
 

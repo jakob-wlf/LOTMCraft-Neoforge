@@ -1,0 +1,32 @@
+{
+  "order": 60,
+  "title": "guide.lotmcraft.rituals.title",
+  "icon": "lotmcraft:ritualistic_table",
+  "color": "#5E3A86",
+  "quote": "guide.lotmcraft.rituals.quote",
+  "elements": [
+    "guide.lotmcraft.rituals.intro",
+    { "type": "crafting", "recipe": "lotmcraft:ritualistic_table", "caption": "guide.lotmcraft.rituals.craft_caption" },
+    { "type": "heading", "text": "guide.lotmcraft.rituals.perform_heading" },
+    {
+      "type": "steps",
+      "steps": [
+        "guide.lotmcraft.rituals.perform_1",
+        "guide.lotmcraft.rituals.perform_2",
+        "guide.lotmcraft.rituals.perform_3",
+        "guide.lotmcraft.rituals.perform_4",
+        "guide.lotmcraft.rituals.perform_5"
+      ]
+    },
+    {
+      "type": "items",
+      "items": ["minecraft:light_blue_candle", "minecraft:black_candle", "minecraft:red_candle", "minecraft:yellow_candle",
+                "minecraft:green_candle", "minecraft:purple_candle", "minecraft:white_candle"],
+      "caption": "guide.lotmcraft.rituals.candles_caption"
+    },
+    { "type": "heading", "text": "guide.lotmcraft.rituals.books_heading" },
+    "guide.lotmcraft.rituals.books",
+    { "type": "note", "style": "warning", "text": "guide.lotmcraft.rituals.warning" },
+    { "type": "link", "chapter": "spirit_world", "text": "guide.lotmcraft.rituals.link" }
+  ]
+}

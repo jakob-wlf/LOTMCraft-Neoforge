@@ -6,6 +6,7 @@ import de.jakob.lotm.beyonders.abilities.core.AbilityUsedEvent;
 import de.jakob.lotm.damage.ModDamageTypes;
 import de.jakob.lotm.rendering.effectRendering.EffectIds;
 import de.jakob.lotm.rendering.effectRendering.EffectManager;
+import de.jakob.lotm.rendering.effectRendering.EffectParams;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.helper.AbilityUtil;
@@ -63,12 +64,12 @@ public class PureWhiteLightAbility extends Ability {
 
         level.playSound(null, targetLoc.x, targetLoc.y, targetLoc.z, SoundEvents.BEACON_ACTIVATE, entity.getSoundSource(), 10.0f, 1.0f);
 
-        EffectManager.playEffect(EffectIds.PURE_WHITE_LIGHT, targetLoc.x, targetLoc.y, targetLoc.z, serverLevel, entity);
+        EffectManager.playEffect(EffectIds.PURE_WHITE_LIGHT, targetLoc.x, targetLoc.y, targetLoc.z, serverLevel, entity, EffectParams.ofDuration(90));
 
         AtomicDouble radius = new AtomicDouble(2);
 
         Vec3 finalTargetLoc = targetLoc;
-        ServerScheduler.scheduleForDuration(20, 2, 110, () -> {
+        ServerScheduler.scheduleForDuration(10, 1, 55, () -> {
             if(BeyonderData.isGriefingEnabled(entity)) {
                 AbilityUtil.getBlocksInSphereRadius(serverLevel, finalTargetLoc, radius.get(), true, true, false).forEach(blockPos -> {
                     if(serverLevel.getBlockState(blockPos).getDestroySpeed(serverLevel, blockPos) >= 0)
@@ -83,7 +84,7 @@ public class PureWhiteLightAbility extends Ability {
             radius.addAndGet(0.8);
         }, null, (ServerLevel) level, () -> AbilityUtil.getTimeInArea(entity, new Location(entity.position(), level)));
 
-        ServerScheduler.scheduleDelayed(100, () -> {
+        ServerScheduler.scheduleDelayed(50, () -> {
             NeoForge.EVENT_BUS.post(new AbilityUsedEvent((ServerLevel) level, finalTargetLoc, entity, this, interactionFlags, interactionRadius, interactionCacheTicks));
         }, (ServerLevel) level, () -> AbilityUtil.getTimeInArea(entity, new Location(entity.position(), level)));
 

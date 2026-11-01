@@ -45,6 +45,8 @@ public class SanityComponent {
             if (BeyonderData.isBeyonder(entity)) {
                 amount *= (float) BeyonderData.getSanityDecreaseMultiplierForSequence(BeyonderData.getSequence(entity, false, true));
             }
+
+            amount *= de.jakob.lotm.beyonders.abilities.error.handler.TimeHandler.getProcessMultiplier(entity);
         }
 
         this.sanity += amount;
@@ -88,6 +90,11 @@ public class SanityComponent {
         }
 
         amount *= getSanityDifferenceMultiplier(casterSequence, targetSequence);
+
+        if (amount < 0) {
+            amount *= de.jakob.lotm.beyonders.abilities.error.passives.MentalResistanceAbility.getSanityAttackMultiplier(entity);
+            amount *= de.jakob.lotm.beyonders.abilities.error.handler.TimeHandler.getProcessMultiplier(entity);
+        }
 
         this.sanity += amount;
 

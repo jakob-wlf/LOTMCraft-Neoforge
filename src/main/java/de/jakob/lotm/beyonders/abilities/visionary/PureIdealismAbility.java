@@ -47,7 +47,7 @@ public class PureIdealismAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.pure_idealism_ability.gather_role",
                 "ability.lotmcraft.pure_idealism_ability.immerse_into_role",

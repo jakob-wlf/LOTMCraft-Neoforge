@@ -2,14 +2,15 @@ package de.jakob.lotm.beyonders.abilities.sun;
 
 import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.damage.ModDamageTypes;
-import de.jakob.lotm.particle.ModParticles;
+import de.jakob.lotm.network.packets.handlers.ClientHandler;
 import de.jakob.lotm.util.helper.AbilityUtil;
-import de.jakob.lotm.util.helper.ParticleUtil;
+import de.jakob.lotm.util.helper.FxHandler;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -52,38 +53,19 @@ public class CleaveOfPurificationAbility extends Ability {
 
     @Override
     public void onAbilityUse(Level level, LivingEntity entity) {
-        if(level.isClientSide)
+        if(level.isClientSide) {
+            ClientHandler.applyCameraShakeToPlayersInRadius(.8f, 6, (ClientLevel) level, entity.position(), 8);
             return;
+        }
 
         Vec3 startPos = entity.getEyePosition().subtract(0, .2, 0).add(entity.getLookAngle().normalize());
         level.playSound(null, startPos.x, startPos.y, startPos.z, SoundEvents.BLAZE_SHOOT, entity.getSoundSource(), 2.0f, .5f);
+        level.playSound(null, startPos.x, startPos.y, startPos.z, SoundEvents.PLAYER_ATTACK_SWEEP, entity.getSoundSource(), 1.6f, .7f);
+        level.playSound(null, startPos.x, startPos.y, startPos.z, SoundEvents.FIRECHARGE_USE, entity.getSoundSource(), 1.0f, 1.3f);
 
-        ParticleUtil.drawParticleLine(
-                (ServerLevel) level,
-                ParticleTypes.END_ROD,
-                startPos,
-                entity.getLookAngle().normalize(),
-                2,
-                .5, 8, .4
-        );
-
-        ParticleUtil.drawParticleLine(
-                (ServerLevel) level,
-                ModParticles.HOLY_FLAME.get(),
-                startPos,
-                entity.getLookAngle().normalize(),
-                2,
-                .5, 32, .4
-        );
-
-        ParticleUtil.drawParticleLine(
-                (ServerLevel) level,
-                ParticleTypes.FIREWORK,
-                startPos,
-                entity.getLookAngle().normalize(),
-                2,
-                .5, 12, .4
-        );
+        // the crescent is authored as a 150 degree arc starting at +X, turned so its middle lies on the view
+        FxHandler.play((ServerLevel) level, "cleave_of_purification", entity.getEyePosition().subtract(0, .35, 0),
+                Mth.clamp(multiplier(entity), 1, 3), FxHandler.facing(entity, -15));
 
         int entitySeq = AbilityUtil.getSeqWithArt(entity, this);
         if(entitySeq <= 4)

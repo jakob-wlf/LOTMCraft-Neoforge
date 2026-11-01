@@ -34,7 +34,7 @@ public class HostControllingAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.host_controlling.drain_health",
                 "ability.lotmcraft.host_controlling.kill"

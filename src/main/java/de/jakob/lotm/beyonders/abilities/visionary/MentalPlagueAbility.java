@@ -57,7 +57,7 @@ public class MentalPlagueAbility extends SelectableAbility {
     );
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.mental_plague_ability.place",
                 "ability.lotmcraft.mental_plague_ability.activate_sight",

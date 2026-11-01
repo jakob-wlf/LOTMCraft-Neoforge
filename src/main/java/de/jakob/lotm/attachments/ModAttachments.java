@@ -34,6 +34,7 @@ public class ModAttachments {
                     .copyOnDeath()
                     .build());
 
+
     public static final Supplier<AttachmentType<Set<ResourceLocation>>> INSIDE_NOW = ATTACHMENT_TYPES.register("inside_now",
             () -> AttachmentType.<Set<ResourceLocation>>builder(() -> new HashSet<>()).build());
 

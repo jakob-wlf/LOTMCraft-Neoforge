@@ -6,6 +6,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.LivingEntity;
 
+import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,17 @@ public class AuthorityResistanceManager {
     private static final Map<String, Map<ResourceKey<DamageType>, List<Float>>> resistances = new HashMap(22);
 
     private static Map<UUID, Integer> sequenceBuffer = new ConcurrentHashMap<>();
+    private record ResistanceModifier(@Nullable ResourceKey<DamageType> damageType, float multiplier, long expireTick) {
+        boolean isExpired(long now) {
+            return expireTick >= 0 && now >= expireTick;
+        }
+
+        boolean appliesTo(ResourceKey<DamageType> type) {
+            return damageType == null || damageType.equals(type);
+        }
+    }
+
+    private static final Map<UUID, Map<String, ResistanceModifier>> modifiers = new ConcurrentHashMap<>();
 
     static{
         Map<ResourceKey<DamageType>, List<Float>> visionary = new HashMap<>();
@@ -179,6 +191,70 @@ public class AuthorityResistanceManager {
         }
 
         return listRes.get(seq);
+    }
+
+    /** Applies to ALL damage types. Multiplies the final damage multiplier (0.5 = take half damage). */
+    public static void addModifier(LivingEntity entity, String id, float multiplier) {
+        putModifier(entity, id, new ResistanceModifier(null, multiplier, -1));
+    }
+
+    /** Applies only to the given damage type. */
+    public static void addModifier(LivingEntity entity, String id, ResourceKey<DamageType> type, float multiplier) {
+        putModifier(entity, id, new ResistanceModifier(type, multiplier, -1));
+    }
+
+    public static void addModifierWithTimeLimit(LivingEntity entity, String id, float multiplier, long millis) {
+        putModifier(entity, id, new ResistanceModifier(null, multiplier, expiry(entity, millis)));
+    }
+
+    public static void addModifierWithTimeLimit(LivingEntity entity, String id, ResourceKey<DamageType> type, float multiplier, long millis) {
+        putModifier(entity, id, new ResistanceModifier(type, multiplier, expiry(entity, millis)));
+    }
+
+    public static void removeModifier(LivingEntity entity, String id) {
+        Map<String, ResistanceModifier> map = modifiers.get(entity.getUUID());
+        if (map == null) return;
+        map.remove(id);
+        if (map.isEmpty()) modifiers.remove(entity.getUUID());
+    }
+
+    public static void clearModifiers(LivingEntity entity) {
+        modifiers.remove(entity.getUUID());
+    }
+
+    private static long expiry(LivingEntity entity, long millis) {
+        return entity.level().getGameTime() + (millis / 50);
+    }
+
+    private static void putModifier(LivingEntity entity, String id, ResistanceModifier modifier) {
+        modifiers.computeIfAbsent(entity.getUUID(), k -> new ConcurrentHashMap<>()).put(id, modifier);
+    }
+
+    private static float getModifierMultiplier(LivingEntity entity, ResourceKey<DamageType> type) {
+        Map<String, ResistanceModifier> map = modifiers.get(entity.getUUID());
+        if (map == null) return 1f;
+
+        long now = entity.level().getGameTime();
+        float result = 1f;
+
+        for (var it = map.values().iterator(); it.hasNext(); ) {
+            ResistanceModifier m = it.next();
+            if (m.isExpired(now)) {
+                it.remove(); // lazy cleanup
+                continue;
+            }
+            if (m.appliesTo(type)) {
+                result *= m.multiplier();
+            }
+        }
+        return result;
+    }
+
+    public static float getResistance(LivingEntity entity, DamageSource source, String path, int seq) {
+        float base = getResistance(source, path, seq);
+        var key = source.typeHolder().unwrapKey().orElse(null);
+        if (key == null) return base;
+        return base * getModifierMultiplier(entity, key);
     }
 
     public static void addToBuffer(LivingEntity entity, Integer seq){

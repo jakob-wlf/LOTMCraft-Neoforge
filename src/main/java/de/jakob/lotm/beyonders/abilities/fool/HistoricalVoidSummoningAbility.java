@@ -112,7 +112,7 @@ public class HistoricalVoidSummoningAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.historical_void_summoning.summon_item",
                 "ability.lotmcraft.historical_void_summoning.summon_entity",

@@ -8,6 +8,7 @@ import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.beyonders.abilities.core.ToggleAbility;
 import de.jakob.lotm.beyonders.abilities.demoness.MirrorSubstituteAbility;
 import de.jakob.lotm.beyonders.abilities.door.DoorSubstitutionAbility;
+import de.jakob.lotm.beyonders.abilities.error.StealConnectionAbility;
 import de.jakob.lotm.beyonders.abilities.fool.marionettes.MarionetteUtils;
 import de.jakob.lotm.beyonders.abilities.visionary.handlers.VisionaryHandler;
 import de.jakob.lotm.dimension.ModDimensions;
@@ -69,7 +70,7 @@ public class PuppeteeringAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.puppeteering_ability.puppeteere",
                 "ability.lotmcraft.puppeteering_ability.mass_puppeteering",
@@ -87,55 +88,6 @@ public class PuppeteeringAbility extends SelectableAbility {
             case 1 -> massPuppeteering(level, entity);
             case 2 -> cancelMassPuppeteering(entity);
         }
-    }
-
-    @Override
-    public void nextAbility(LivingEntity entity){
-        if(getAbilityNames().length == 0)
-            return;
-
-        if(!selectedAbilities.containsKey(entity.getUUID())) {
-            selectedAbilities.put(entity.getUUID(), 0);
-        }
-
-        int selectedAbility = selectedAbilities.get(entity.getUUID());
-        int entitySeq = AbilityUtil.getSeqWithArt(entity, this);
-
-        selectedAbility++;
-        if(selectedAbility >= getAbilityNames().length) {
-            selectedAbility = 0;
-        }
-
-        if((entitySeq > 4 && selectedAbility >= 1)){
-            selectedAbility = 0;
-        }
-
-        selectedAbilities.put(entity.getUUID(), selectedAbility);
-        PacketHandler.sendToServer(new AbilitySelectionPacket(getId(), selectedAbility));
-    }
-
-    @Override
-    public void previousAbility(LivingEntity entity){
-        if(getAbilityNames().length == 0)
-            return;
-
-        if(!selectedAbilities.containsKey(entity.getUUID())) {
-            selectedAbilities.put(entity.getUUID(), 0);
-        }
-
-        int selectedAbility = selectedAbilities.get(entity.getUUID());
-        selectedAbility--;
-        if(selectedAbility <= -1) {
-            selectedAbility = getAbilityNames().length - 1;
-        }
-
-        int entitySeq = AbilityUtil.getSeqWithArt(entity, this);
-        if((entitySeq > 4 && selectedAbility >= 1)){
-            selectedAbility = 0;
-        }
-
-        selectedAbilities.put(entity.getUUID(), selectedAbility);
-        PacketHandler.sendToServer(new AbilitySelectionPacket(getId(), selectedAbility));
     }
 
     public void massPuppeteering(Level level, LivingEntity entity) {
@@ -219,6 +171,8 @@ public class PuppeteeringAbility extends SelectableAbility {
     }
 
     private int calculatePuppetTime(LivingEntity caster, LivingEntity target, int multiplier) {
+        if (StealConnectionAbility.isThreadImmune(target)) return -1;
+
         int sequence = AbilityUtil.getSeqWithArt(caster, this);
         int targetSequence = BeyonderData.getSequence(target);
         int time = getManipulationTimeBySequenceAndSequenceDifference(sequence, targetSequence) * multiplier;

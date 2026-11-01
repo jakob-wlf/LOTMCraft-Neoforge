@@ -18,8 +18,7 @@ import de.jakob.lotm.beyonders.abilities.demoness.passives.PhysicalEnhancementsD
 import de.jakob.lotm.beyonders.abilities.door.passives.PhysicalEnhancementsDoorAbility;
 import de.jakob.lotm.beyonders.abilities.door.passives.SpiritWorldAwarenessAbility;
 import de.jakob.lotm.beyonders.abilities.door.passives.VoidImmunityAbility;
-import de.jakob.lotm.beyonders.abilities.error.passives.PassiveTheftAbility;
-import de.jakob.lotm.beyonders.abilities.error.passives.PhysicalEnhancementsErrorAbility;
+import de.jakob.lotm.beyonders.abilities.error.passives.*;
 import de.jakob.lotm.beyonders.abilities.fool.passives.*;
 import de.jakob.lotm.beyonders.abilities.justiciar.passives.ChaosHuntingAbility;
 import de.jakob.lotm.beyonders.abilities.justiciar.passives.EnhancedMentalAttributesAbility;
@@ -29,6 +28,7 @@ import de.jakob.lotm.beyonders.abilities.mother.passives.PhysicalEnhancementsMot
 import de.jakob.lotm.beyonders.abilities.red_priest.passive.FireResistanceAbility;
 import de.jakob.lotm.beyonders.abilities.red_priest.passive.FlamingHitAbility;
 import de.jakob.lotm.beyonders.abilities.red_priest.passive.PhysicalEnhancementsRedPriestAbility;
+import de.jakob.lotm.beyonders.abilities.sun.passives.InextinguishableLightAbility;
 import de.jakob.lotm.beyonders.abilities.sun.passives.PhysicalEnhancementsSunAbility;
 import de.jakob.lotm.beyonders.abilities.tyrant.passives.LightningArrowAbility;
 import de.jakob.lotm.beyonders.abilities.tyrant.passives.PhysicalEnhancementsTyrantAbility;
@@ -75,6 +75,9 @@ public class PassiveAbilityHandler {
         passiveAbilities.add(new EnhancedMentalAttributesAbility("enhanced_mental_attributes_justiciar_ability"));
         passiveAbilities.add(new ChaosHuntingAbility("chaos_hunting_justiciar_ability"));
 
+        // Sun
+        passiveAbilities.add(new InextinguishableLightAbility("inextinguishable_light_ability"));
+
         // Red priest
         passiveAbilities.add(new FlamingHitAbility("flaming_hit_ability"));
         passiveAbilities.add(new FireResistanceAbility("fire_resistance_ability"));
@@ -105,7 +108,14 @@ public class PassiveAbilityHandler {
         passiveAbilities.add(new DarknessRevivalAbility("darkness_revival_ability"));
 
         // Error
-        passiveAbilities.add(new PassiveTheftAbility("passive_theft_ability"));
+        passiveAbilities.add(new AgileHandsAbility("agile_hands_ability"));
+        passiveAbilities.add(new CombatProficiencyAbility("combat_proficiency_ability"));
+        passiveAbilities.add(new SuperiorObservationAbility("superior_observation_ability"));
+        passiveAbilities.add(new SwindlerCharmAbility("swindler_charm_ability"));
+        passiveAbilities.add(new QuickReactionAbility("quick_reaction_ability"));
+        passiveAbilities.add(new MentalResistanceAbility("mental_resistance_ability"));
+        passiveAbilities.add(new FateAbility("fate_ability"));
+        passiveAbilities.add(new LuckSenseAbility("luck_sense_ability"));
 
         // Demoness
         passiveAbilities.add(new FeatherFallAbility("feather_fall_ability"));

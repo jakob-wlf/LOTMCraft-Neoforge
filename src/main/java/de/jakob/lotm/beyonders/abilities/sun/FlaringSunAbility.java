@@ -8,6 +8,9 @@ import de.jakob.lotm.entity.ModEntities;
 import de.jakob.lotm.entity.custom.ability_entities.sun_pathway.SunEntity;
 import de.jakob.lotm.network.PacketHandler;
 import de.jakob.lotm.network.packets.toClient.AddEntityTagPacket;
+import de.jakob.lotm.network.packets.toClient.CancelPhotonBlockEffectPacket;
+import de.jakob.lotm.network.packets.toClient.PlayCancellablePhotonBlockEffectPacket;
+import de.jakob.lotm.network.packets.toClient.PlayPhotonBlockEffectPacket;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.helper.AbilityUtil;
@@ -23,10 +26,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class FlaringSunAbility extends Ability {
@@ -82,22 +82,23 @@ public class FlaringSunAbility extends Ability {
             );
         }
 
-        SunEntity sun = new SunEntity(ModEntities.SUN.get(), level);
-        sun.setPos(startPos);
-        level.addFreshEntity(sun);
-
         AtomicBoolean wasDarkened = new AtomicBoolean(false);
-        double multiplier = multiplier(entity);
+        UUID effectId = UUID.randomUUID();
+
+        ServerScheduler.scheduleDelayed(2, () -> {
+            double offsetX = startPos.x - (blockPos.getX() + 0.5);
+            double offsetY = startPos.y - (blockPos.getY() + 0.5);
+            double offsetZ = startPos.z - (blockPos.getZ() + 0.5);
+
+            PacketHandler.sendToNearbyPlayers(new PlayCancellablePhotonBlockEffectPacket("flaring_sun", blockPos, offsetX, offsetY, offsetZ, 2, null, -1, false, true, null, effectId), (ServerLevel) level, startPos, 256);
+        });
 
         ServerScheduler.scheduleForDuration(0, 5, 20 * 15, () -> {
             if(!wasDarkened.get()) {
                 if(InteractionHandler.isInteractionPossible(new Location(targetPos, level), "darkness", BeyonderData.getSequence(entity))) {
                     wasDarkened.set(true);
-                    sun.addTag("darkened");
-                    PacketHandler.sendToAllPlayersInSameLevel(new AddEntityTagPacket("darkened", sun.getId()), (ServerLevel) level);
+                    PacketHandler.sendToNearbyPlayers(new CancelPhotonBlockEffectPacket(effectId), (ServerLevel) level, startPos, 256);
                 }
-                ParticleUtil.spawnSphereParticles((ServerLevel) level, ParticleTypes.FLAME, startPos, 5.65f, 200);
-                ParticleUtil.spawnSphereParticles((ServerLevel) level, ParticleTypes.END_ROD, startPos, 5.65f, 180);
 
                 AbilityUtil.damageNearbyEntities((ServerLevel) level, entity, 24* multiplier(entity), baseDamage/2, targetPos, true, false, 20 * 4, ModDamageTypes.source(level, ModDamageTypes.PURIFICATION, entity));
                 AbilityUtil.damageNearbyEntities((ServerLevel) level, entity, 24* multiplier(entity), baseDamage/2, targetPos, true, false, 20 * 4, ModDamageTypes.source(level, ModDamageTypes.FAITH, entity));
@@ -109,8 +110,6 @@ public class FlaringSunAbility extends Ability {
             if(level.getBlockState(blockPos).getBlock() == Blocks.LIGHT) {
                 level.setBlockAndUpdate(blockPos, Blocks.AIR.defaultBlockState());
             }
-
-            sun.discard();
         }, (ServerLevel) level, () -> AbilityUtil.getTimeInArea(entity, new Location(targetPos, level)));
 
         NeoForge.EVENT_BUS.post(new AbilityUsedEvent((ServerLevel) level, targetPos, entity, this, interactionFlags, interactionRadius, interactionCacheTicks));

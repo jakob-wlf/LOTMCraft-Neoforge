@@ -1,5 +1,6 @@
 package de.jakob.lotm.beyonders.abilities.door;
 
+import de.jakob.lotm.attachments.BlockExpiryData;
 import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.entity.ModEntities;
 import de.jakob.lotm.entity.custom.ability_entities.door_pathway.DistortionFieldEntity;
@@ -17,6 +18,7 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class DistortionFieldAbility extends Ability {
     public DistortionFieldAbility(String id) {
@@ -71,6 +73,7 @@ public class DistortionFieldAbility extends Ability {
         distortionFieldEntity.setPos(startPos);
         serverLevel.addFreshEntity(distortionFieldEntity);
 
+        AtomicInteger count = new AtomicInteger();
         ServerScheduler.scheduleForDuration(0, 6, duration, () -> {
             if(entity.level() != serverLevel) {
                 return;
@@ -83,11 +86,7 @@ public class DistortionFieldAbility extends Ability {
                 }
 
                 serverLevel.setBlockAndUpdate(b, Blocks.BARRIER.defaultBlockState());
-
-                // Make sure there are not too many particles at once
-                if(random.nextInt(100) != 0) {
-                    return;
-                }
+                BlockExpiryData.get(serverLevel).schedule(serverLevel, b, duration - count.get());
             });
 
             // Replace area near caster with air
@@ -107,21 +106,12 @@ public class DistortionFieldAbility extends Ability {
 
                 e.teleportTo(e.getX() + random.nextDouble(-8, 8), e.getY() + random.nextDouble(-1, 2), e.getZ() + random.nextDouble(-8, 8));
             });
-
+            count.addAndGet(6);
         }, () -> {
             // Remove Distortion Field Entity
             distortionFieldEntity.discard();
 
             clearArtifactScaling(entity);
-
-            // Remove Barriers
-            barrierBlocks.forEach(b -> {
-                if(!serverLevel.getBlockState(b).is(Blocks.BARRIER)) {
-                    return;
-                }
-
-                serverLevel.setBlockAndUpdate(b, Blocks.AIR.defaultBlockState());
-            });
         }, serverLevel, () -> AbilityUtil.getTimeInArea(entity, new Location(entity.position(), serverLevel)));
     }
 

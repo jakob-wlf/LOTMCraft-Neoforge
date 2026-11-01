@@ -49,7 +49,7 @@ public class SpaceTimeStormAbility extends SelectableAbility {
     }
 
     @Override
-    protected String[] getAbilityNames() {
+    protected String[] getAllAbilityNames() {
         return new String[]{
                 "ability.lotmcraft.space_time_storm.area",
                 "ability.lotmcraft.space_time_storm.targeted"

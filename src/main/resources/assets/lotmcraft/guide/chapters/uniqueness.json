@@ -1,0 +1,22 @@
+{
+  "order": 100,
+  "title": "guide.lotmcraft.uniqueness.title",
+  "icon": "lotmcraft:fool_uniqueness",
+  "color": "#C49A2D",
+  "quote": "guide.lotmcraft.uniqueness.quote",
+  "elements": [
+    "guide.lotmcraft.uniqueness.intro",
+    { "type": "heading", "text": "guide.lotmcraft.uniqueness.temple_heading" },
+    "guide.lotmcraft.uniqueness.temple",
+    { "type": "heading", "text": "guide.lotmcraft.uniqueness.apotheosis_heading" },
+    "guide.lotmcraft.uniqueness.apotheosis",
+    {
+      "type": "steps",
+      "steps": [
+        "guide.lotmcraft.uniqueness.step_1",
+        "guide.lotmcraft.uniqueness.step_2",
+        "guide.lotmcraft.uniqueness.step_3"
+      ]
+    }
+  ]
+}
