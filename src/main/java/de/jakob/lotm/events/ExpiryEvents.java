@@ -1,6 +1,7 @@
 package de.jakob.lotm.events;
 
 import de.jakob.lotm.LOTMCraft;
+import de.jakob.lotm.attachments.BiomeExpiryData;
 import de.jakob.lotm.attachments.BlockExpiryData;
 import net.minecraft.server.level.ServerLevel;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -14,6 +15,7 @@ public class ExpiryEvents {
     public static void onLevelTick(LevelTickEvent.Post event) {
         if (event.getLevel() instanceof ServerLevel level) {
             BlockExpiryData.get(level).tick(level);
+            BiomeExpiryData.get(level).tick(level);
         }
     }
 

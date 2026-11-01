@@ -22,8 +22,10 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.AbstractArrow;
@@ -54,6 +56,11 @@ public class FireballEntity extends AbstractArrow {
 
     private int ticks = 0;
     private int petrifiedTicks = 0;
+    private ResourceKey<DamageType> secondaryDamageType = ModDamageTypes.SOUL_FIRE;
+
+    public void setSecondaryDamageType(ResourceKey<DamageType> type) {
+        this.secondaryDamageType = type;
+    }
 
     public FireballEntity(EntityType<? extends AbstractArrow> entityType, Level level) {
         super(entityType, level);
@@ -168,26 +175,30 @@ public class FireballEntity extends AbstractArrow {
     @Override
     protected void onHitEntity(EntityHitResult result) {
         this.discard();
-        if(!(result.getEntity() instanceof LivingEntity target) || result.getEntity() == owner)
-            return;
-
-        // check if the owner exists before - to not crash
-        if(owner != null){
-            target.hurt(ModDamageTypes.source(level, ModDamageTypes.FIRE, owner), (float) damage/2);
-            target.hurt(ModDamageTypes.source(level, ModDamageTypes.SOUL_FIRE, owner), (float) damage/2);
+        if(!(result.getEntity() instanceof LivingEntity target) || result.getEntity() == owner) return;
+        level.explode(owner, target.position().x, target.position().y, target.position().z, 3.5f, griefing, Level.ExplosionInteraction.NONE);
+        // Split evenly if there is a second type, otherwise all fire
+        float primaryDamage = secondaryDamageType != null ? (float) damage / 2f : (float) damage;
+        if (this.getOwner() instanceof LivingEntity) {
+            target.hurt(ModDamageTypes.source(level, ModDamageTypes.FIRE, owner), primaryDamage);
+            if (secondaryDamageType != null) target.hurt(ModDamageTypes.source(level, secondaryDamageType, owner), (float) damage / 2f);
         } else {
-            target.hurt(ModDamageTypes.source(level, ModDamageTypes.FIRE), (float) damage/2);
-            target.hurt(ModDamageTypes.source(level, ModDamageTypes.SOUL_FIRE), (float) damage/2);
+            target.hurt(ModDamageTypes.source(level, ModDamageTypes.FIRE), primaryDamage);
+            if (secondaryDamageType != null) target.hurt(ModDamageTypes.source(level, secondaryDamageType), (float) damage / 2f);
         }
-        target.setRemainingFireTicks(target.getRemainingFireTicks() + 20 * 3);
-        if(!level.isClientSide)
-            NeoForge.EVENT_BUS.post(new AbilityUsedEvent((ServerLevel) level, position(), owner, null, new String[]{"explosion", "burning"}, 3, 10));
+        target.setRemainingFireTicks(target.getRemainingFireTicks() + 20 * 6);
+        if(!level.isClientSide) NeoForge.EVENT_BUS.post(new AbilityUsedEvent((ServerLevel) level, position(), owner, null, new String[]{"explosion", "burning"}, 3, 10));
     }
 
     @Override
     protected void onHitBlock(BlockHitResult result) {
         this.discard();
-
+        if(griefing) {
+            level.explode(owner, result.getLocation().x, result.getLocation().y, result.getLocation().z, 4f, true, Level.ExplosionInteraction.MOB);
+        }
+        else {
+            level.explode(owner, result.getLocation().x, result.getLocation().y, result.getLocation().z, 4f, false, Level.ExplosionInteraction.NONE);
+        }
         if(!level.isClientSide)
             NeoForge.EVENT_BUS.post(new AbilityUsedEvent((ServerLevel) level, position(), owner, null, new String[]{"explosion", "burning"}, 3, 10));
     }

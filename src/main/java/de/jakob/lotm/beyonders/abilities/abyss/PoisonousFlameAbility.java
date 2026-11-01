@@ -38,7 +38,7 @@ public class PoisonousFlameAbility extends Ability {
     @Override
     public Map<String, Integer> getRequirements() {
         return new HashMap<>(Map.of(
-                "abyss", 8
+                "abyss", -1
         ));
     }
 
@@ -86,7 +86,7 @@ public class PoisonousFlameAbility extends Ability {
                 true,
                 0,
                 20 * 3,
-                ModDamageTypes.source(level, ModDamageTypes.BEYONDER_GENERIC, entity)
+                ModDamageTypes.source(level, ModDamageTypes.PLAGUE, entity)
         );
 
         if(!purified) {

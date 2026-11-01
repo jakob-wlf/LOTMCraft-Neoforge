@@ -35,13 +35,6 @@ public class StealFateAbility extends SelectableAbility {
 
     public StealFateAbility(String id) {
         super(id, 30);
-        canBeUsedByNPC = false;
-        canBeCopied = false;
-        canBeReplicated = false;
-        canBeShared = false;
-        canBeUsedInArtifact = false;
-        cannotBeStolen = true;
-
         hasDynamicCooldown = true;
         dynamicCooldown = new LinkedList<>(List.of(15, 20, 30));
 

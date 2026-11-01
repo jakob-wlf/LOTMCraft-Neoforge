@@ -4,20 +4,20 @@ import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.attachments.TransformationComponent;
 import de.jakob.lotm.beyonders.abilities.core.ToggleAbility;
-import de.jakob.lotm.network.packets.handlers.ClientHandler;
-import de.jakob.lotm.particle.ModParticles;
+import de.jakob.lotm.damage.ModDamageTypes;
 import de.jakob.lotm.util.BeyonderData;
-import de.jakob.lotm.util.helper.ParticleUtil;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
+import de.jakob.lotm.util.helper.AbilityUtil;
+import de.jakob.lotm.util.helper.DamageLookup;
+import de.jakob.lotm.util.helper.FxHandler;
+import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -29,7 +29,12 @@ import java.util.UUID;
 
 @EventBusSubscriber(modid = LOTMCraft.MOD_ID)
 public class DoorTransfigurationAbility extends ToggleAbility {
-    private static final HashMap<UUID, Integer> doorSizeModifier = new HashMap<>();
+    private static final HashMap<UUID, Long> lastEscape = new HashMap<>();
+
+    private static final int ESCAPE_COOLDOWN = 10;
+    private static final int DOOR_BURST_DELAY = 35;
+    private static final double BURST_RADIUS = 4.5;
+    private static final double BURST_DAMAGE_SCALE = .8;
 
     public DoorTransfigurationAbility(String id) {
         super(id, "escape");
@@ -44,48 +49,28 @@ public class DoorTransfigurationAbility extends ToggleAbility {
     @Override
     public void tick(Level level, LivingEntity entity) {
         if(level.isClientSide) {
-            ClientHandler.changeToThirdPerson(entity);
-            return;
-        }
-        TransformationComponent transformationComponent = entity.getData(ModAttachments.TRANSFORMATION_COMPONENT);
-        if (!transformationComponent.isTransformed() ||
-                transformationComponent.getTransformationIndex() <= TransformationComponent.TransformationType.DOOR_TRANSFIGURATION.getIndex() ||
-                transformationComponent.getTransformationIndex() >= TransformationComponent.TransformationType.DOOR_TRANSFIGURATION.getIndex() + 20
-        ) {
-            cancel((ServerLevel) level, entity);
             return;
         }
 
-        float spiritualityCost = getCost(BeyonderData.getSequence(entity));
-        if(BeyonderData.getSpirituality(entity) < spiritualityCost) {
+        if(BeyonderData.getSpirituality(entity) < getCost(BeyonderData.getSequence(entity))) {
             cancel((ServerLevel) level, entity);
-            return;
         }
-
-        entity.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING, 20, 10, false, false, false));
-        entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 15, false, false, false));
     }
 
     @Override
     public void start(Level level, LivingEntity entity) {
         if(level.isClientSide) return;
-
-        doorSizeModifier.put(entity.getUUID(), 2);
-
-        TransformationComponent transformationComponent = entity.getData(ModAttachments.TRANSFORMATION_COMPONENT);
-        transformationComponent.setTransformedAndSync(true, entity);
-        transformationComponent.setTransformationIndexAndSync(TransformationComponent.TransformationType.DOOR_TRANSFIGURATION.getIndex() + 2, entity);
     }
 
     @Override
     public void stop(Level level, LivingEntity entity) {
         if(level.isClientSide) {
-            ClientHandler.changeToFirstPerson(entity);
             return;
         }
 
-        doorSizeModifier.remove(entity.getUUID());
+        lastEscape.remove(entity.getUUID());
 
+        // players who still carry the old door transformation get turned back
         TransformationComponent transformationComponent = entity.getData(ModAttachments.TRANSFORMATION_COMPONENT);
         if(transformationComponent.isTransformed() &&
                 transformationComponent.getTransformationIndex() >= TransformationComponent.TransformationType.DOOR_TRANSFIGURATION.getIndex() &&
@@ -118,7 +103,7 @@ public class DoorTransfigurationAbility extends ToggleAbility {
     @SubscribeEvent
     public static void onIncomingDamage(LivingDamageEvent.Pre event) {
         LivingEntity entity = event.getEntity();
-        if(entity.level().isClientSide) {
+        if(!(entity.level() instanceof ServerLevel level)) {
             return;
         }
 
@@ -126,16 +111,13 @@ public class DoorTransfigurationAbility extends ToggleAbility {
             return;
         }
 
-        doorSizeModifier.computeIfPresent(entity.getUUID(), (k, v) -> Math.min(15, v + 1));
-        if(!doorSizeModifier.containsKey(entity.getUUID())) return;
-        int sizeModifier = doorSizeModifier.get(entity.getUUID());
+        event.setNewDamage(0);
 
-        TransformationComponent transformationComponent = entity.getData(ModAttachments.TRANSFORMATION_COMPONENT);
-        if(transformationComponent.isTransformed() &&
-                transformationComponent.getTransformationIndex() >= TransformationComponent.TransformationType.DOOR_TRANSFIGURATION.getIndex() &&
-                transformationComponent.getTransformationIndex() <= (TransformationComponent.TransformationType.DOOR_TRANSFIGURATION.getIndex() + 20)) {
-            transformationComponent.setTransformedAndSync(true, entity);
-            transformationComponent.setTransformationIndexAndSync(TransformationComponent.TransformationType.DOOR_TRANSFIGURATION.getIndex() + sizeModifier, entity);
+        // rapid hits (fire, poison, multi-hits) are absorbed without opening a new door every tick
+        long gameTime = level.getGameTime();
+        Long last = lastEscape.get(entity.getUUID());
+        if(last != null && gameTime - last < ESCAPE_COOLDOWN) {
+            return;
         }
 
         float spiritualityCost = getCost(BeyonderData.getSequence(entity));
@@ -143,32 +125,68 @@ public class DoorTransfigurationAbility extends ToggleAbility {
             BeyonderData.reduceSpirituality(entity, spiritualityCost);
         }
 
-        event.setNewDamage(0);
-
-        entity.level().playSound(null, entity.blockPosition(), SoundEvents.ENCHANTMENT_TABLE_USE, entity.getSoundSource(), .1f, 1f);
-
-        Vec3 particleLoc = entity.getEyePosition().subtract(0, entity.getEyeHeight() / 2, 0);
-        ParticleUtil.spawnParticles((ServerLevel) entity.level(), ParticleTypes.END_ROD, particleLoc, 120, 1.2, 1.75, 1.2, .1);
-        ParticleUtil.spawnParticles((ServerLevel) entity.level(), ModParticles.STAR.get(), particleLoc, 100, 1.2, 1.75f, 1.2, .1);
-
-        Vec3 newTeleportLoc = findSafeTeleportLoc(entity);
-        if(newTeleportLoc != null) {
-            entity.teleportTo(newTeleportLoc.x, newTeleportLoc.y, newTeleportLoc.z);
+        Entity attacker = event.getSource().getEntity();
+        Vec3 newLoc = findTeleportLoc(entity, attacker);
+        if(newLoc == null) {
+            return;
         }
+        lastEscape.put(entity.getUUID(), gameTime);
+
+        Vec3 oldLoc = entity.position();
+        Vec3 doorFacing = attacker != null && attacker != entity ? attacker.position().subtract(oldLoc) : entity.getLookAngle();
+        double scale = Math.max(0.6, entity.getBbHeight() / 1.8);
+
+        entity.teleportTo(newLoc.x, newLoc.y, newLoc.z);
+        entity.resetFallDistance();
+
+        FxHandler.play(level, "door_transfiguration_door", oldLoc, scale, FxHandler.yawTowards(doorFacing));
+        FxHandler.play(level, "door_transfiguration_arrive", newLoc, scale);
+
+        level.playSound(null, oldLoc.x, oldLoc.y, oldLoc.z, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 1.5f, .8f);
+        level.playSound(null, newLoc.x, newLoc.y, newLoc.z, SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, .5f, 1.4f);
+        ServerScheduler.scheduleDelayed(20, () ->
+                level.playSound(null, oldLoc.x, oldLoc.y, oldLoc.z, SoundEvents.WOODEN_DOOR_OPEN, SoundSource.PLAYERS, .8f, .6f), level);
+        DoorTransfigurationAbility ability = (DoorTransfigurationAbility) LOTMCraft.abilityHandler.getById("door_transfiguration_ability");
+        double burstDamage = DamageLookup.lookupDamage(BeyonderData.getSequence(entity), BURST_DAMAGE_SCALE) * ability.multiplier(entity);
+        Vec3 burstCenter = oldLoc.add(0, 1.65 * scale, 0);
+        ServerScheduler.scheduleDelayed(DOOR_BURST_DELAY, () -> {
+            AbilityUtil.damageNearbyEntities(level, entity, BURST_RADIUS * scale, ModDamageTypes.SPACE_DESTRUCTION, burstDamage, burstCenter, true, true);
+            level.playSound(null, oldLoc.x, oldLoc.y, oldLoc.z, SoundEvents.FIREWORK_ROCKET_TWINKLE, SoundSource.PLAYERS, 1.5f, 1.1f);
+            level.playSound(null, oldLoc.x, oldLoc.y, oldLoc.z, SoundEvents.AMETHYST_CLUSTER_BREAK, SoundSource.PLAYERS, 1.5f, 1.3f);
+            level.playSound(null, oldLoc.x, oldLoc.y, oldLoc.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, .7f, 1.5f);
+        }, level);
     }
 
-    private static Vec3 findSafeTeleportLoc(LivingEntity entity) {
+    private static Vec3 findTeleportLoc(LivingEntity entity, Entity attacker) {
+        Level level = entity.level();
         RandomSource random = entity.getRandom();
-        Vec3 currentLoc = entity.position();
-        Vec3 teleportLoc;
-        for(int i = 0; i < 100; i++) {
-            teleportLoc = currentLoc.add((random.nextDouble() - .5) * 5, random.nextDouble(), (random.nextDouble() - .5) * 5);
-            BlockState state = entity.level().getBlockState(BlockPos.containing(teleportLoc));
-            if(state.getCollisionShape(entity.level(), BlockPos.containing(teleportLoc)).isEmpty()) {
-                return teleportLoc;
+        Vec3 origin = entity.position();
+        Vec3 away = attacker != null && attacker != entity ? origin.subtract(attacker.position()).multiply(1, 0, 1) : Vec3.ZERO;
+        Vec3 fallback = null;
+
+        for(int i = 0; i < 60; i++) {
+            double angle = random.nextDouble() * Math.PI * 2;
+            Vec3 dir = new Vec3(Math.cos(angle), 0, Math.sin(angle));
+            if(i < 30 && away.lengthSqr() > 1.0E-4 && dir.dot(away.normalize()) < 0) {
+                continue;
+            }
+
+            Vec3 candidate = origin.add(dir.scale(3 + random.nextDouble() * 3));
+            for(int dy : new int[]{0, 1, -1, 2, -2}) {
+                Vec3 pos = candidate.add(0, dy, 0);
+                AABB box = entity.getBoundingBox().move(pos.subtract(origin));
+                if(!level.noCollision(entity, box)) {
+                    continue;
+                }
+                if(!level.noCollision(entity, box.move(0, -0.6, 0))) {
+                    return pos;
+                }
+                if(fallback == null) {
+                    fallback = pos;
+                }
             }
         }
 
-        return null;
+        return fallback;
     }
 }

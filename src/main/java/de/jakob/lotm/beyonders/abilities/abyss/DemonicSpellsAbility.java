@@ -1,8 +1,10 @@
 package de.jakob.lotm.beyonders.abilities.abyss;
 
+import de.jakob.lotm.beyonders.abilities.abyss.DevilWorship.DevilWorshipAbility;
 import de.jakob.lotm.beyonders.abilities.core.AbilityUsedEvent;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.beyonders.abilities.core.interaction.InteractionHandler;
+import de.jakob.lotm.damage.ModDamageTypes;
 import de.jakob.lotm.entity.ModEntities;
 import de.jakob.lotm.entity.custom.AvatarEntity;
 import de.jakob.lotm.rendering.effectRendering.EffectIds;
@@ -18,6 +20,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -30,6 +33,8 @@ import net.neoforged.neoforge.common.NeoForge;
 import org.joml.Vector3f;
 
 import java.util.*;
+
+import static de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Corroder.BloodlineMindRotterAbility.getPoisonDamageMultiplier;
 
 public class DemonicSpellsAbility extends SelectableAbility {
     private final DustParticleOptions greenDust = new DustParticleOptions(new Vector3f(0.2f, 0.8f, 0.2f), 1.2f);
@@ -56,7 +61,8 @@ public class DemonicSpellsAbility extends SelectableAbility {
         return new String[]{
                 "ability.lotmcraft.demonic_spells.acid_swamp",
                 "ability.lotmcraft.demonic_spells.filthy_illusion",
-                "ability.lotmcraft.demonic_spells.hellfire_wall"
+                "ability.lotmcraft.demonic_spells.hellfire_wall",
+                "ability.lotmcraft.demonic_spells.projection"
         };
     }
 
@@ -70,6 +76,7 @@ public class DemonicSpellsAbility extends SelectableAbility {
             case 0 -> castAcidSwamp(serverLevel, entity);
             case 1 -> castFilthyIllusion(serverLevel, entity);
             case 2 -> castHellfireWall(serverLevel, entity);
+            case 3 -> castProjection(entity);
         }
     }
 
@@ -89,7 +96,7 @@ public class DemonicSpellsAbility extends SelectableAbility {
                 return;
             }
 
-            AbilityUtil.damageNearbyEntities(level, entity, swampRadius, damage, swampCenter, true, false);
+            AbilityUtil.damageNearbyEntities(level, entity, swampRadius, damage*getPoisonDamageMultiplier(entity), swampCenter, true, false, ModDamageTypes.source(level, ModDamageTypes.CORROSION, entity));
 
             AbilityUtil.getNearbyEntities(entity, level, swampCenter, swampRadius)
                     .stream()
@@ -200,7 +207,7 @@ public class DemonicSpellsAbility extends SelectableAbility {
                 }
             }
 
-            AbilityUtil.damageNearbyEntities(level, entity, wallRadius - 2, wallRadius + 2, damage, center, true, false, true, 0, 60);
+            AbilityUtil.damageNearbyEntities(level, entity, wallRadius - 2, wallRadius + 2, damage, center, true, false, true, 0, 60, ModDamageTypes.source(level, ModDamageTypes.FIRE, entity));
         }, level);
 
         ServerScheduler.scheduleDelayed(20 * 8 + 1, () -> {
@@ -210,5 +217,8 @@ public class DemonicSpellsAbility extends SelectableAbility {
                 }
             }
         }, level);
+    }
+    private void castProjection(LivingEntity entity) {
+        if (entity instanceof ServerPlayer player) {DevilWorshipAbility.castProjection(player);}
     }
 }

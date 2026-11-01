@@ -182,8 +182,8 @@ public class ElectricShockEntity extends Entity {
         // Handle entity hit - damage, effects, etc.
         if (!level().isClientSide) {
             DamageSource dmg = (source != null)
-                    ? ModDamageTypes.source(entity.level(), ModDamageTypes.LIGHTNING, source)
-                    : ModDamageTypes.source(entity.level(), ModDamageTypes.LIGHTNING);
+                    ? ModDamageTypes.source(entity.level(), ModDamageTypes.LIGHTNING)
+                    : level().damageSources().generic();
 
             entity.hurt(dmg, (float) damage);
 

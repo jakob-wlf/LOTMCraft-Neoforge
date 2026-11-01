@@ -14,8 +14,6 @@ public class SuperiorObservationFocusAbility extends ToggleAbility {
     public SuperiorObservationFocusAbility(String id) {
         super(id);
         canBeUsedByNPC = false;
-        canBeShared = false;
-        canBeCopied = false;
         tickRate = 20;
     }
 

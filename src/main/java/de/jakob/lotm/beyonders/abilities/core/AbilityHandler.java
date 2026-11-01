@@ -1,6 +1,18 @@
 package de.jakob.lotm.beyonders.abilities.core;
 
 import de.jakob.lotm.beyonders.abilities.abyss.*;
+import de.jakob.lotm.beyonders.abilities.abyss.DevilWorship.DevilWorshipAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.MaliceSeed.MaliceSeedAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.contract.ContractAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Corroder.BloodlineCorroderAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Curseling.BloodlineBloodDropAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Curseling.BloodlineCurselingAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Curseling.BloodlineDesireSymbiosisAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.FlameDevil.FlameCageAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.FlameDevil.FlameSpellsAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.FlameDevil.SwordOfLavaAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Phantom.BloodlinePhantomAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Shapeshifter.BloodlineSkinshifterAbility;
 import de.jakob.lotm.beyonders.abilities.common.*;
 import de.jakob.lotm.beyonders.abilities.common.LuckPerceptionAbility;
 import de.jakob.lotm.beyonders.abilities.justiciar.*;
@@ -102,14 +114,18 @@ public class AbilityHandler {
 
         // TYRANT PATHWAY
         abilities.add(new IllusoryScalesAbility("illusory_scales_ability"));
+        abilities.add(new PerfectBalanceAbility("perfect_balance_ability"));
         abilities.add(new WrathAbility("wrath_ability"));
         abilities.add(new RagingBlowsAbility("raging_blows_ability"));
         abilities.add(new WaterManipulationAbility("water_manipulation_ability"));
         abilities.add(new WindManipulationAbility("wind_manipulation_ability"));
+        abilities.add(new FloatAbility("float_ability"));
+        abilities.add(new FloatingWindAbility("floating_wind_ability"));
         abilities.add(new BlessingsOfWIndAbility("blessings_of_wind_ability"));
         abilities.add(new LightningAbility("lightning_ability"));
         abilities.add(new SirenSongAbility("siren_song_ability"));
         abilities.add(new StrongLightningAbility("strong_lightning_ability"));
+        abilities.add(new ScaleArmorAbility("scale_armor_ability"));
         abilities.add(new TsunamiAbility("tsunami_ability"));
         abilities.add(new EarthquakeAbility("earthquake_ability"));
         abilities.add(new HurricaneAbility("hurricane_ability"));
@@ -129,9 +145,18 @@ public class AbilityHandler {
         // ABYSS PATHWAY
         abilities.add(new ToxicSmokeAbility("toxic_smoke_ability"));
         abilities.add(new PoisonousFlameAbility("poisonous_flame_ability"));
+        abilities.add(new DemonicAttributeAbility("demonic_attribute_ability"));
+        abilities.add(new DevilWorshipAbility("devil_worship_ability"));
         abilities.add(new FlameSpellsAbility("flame_spells_ability"));
         abilities.add(new LanguageOfFoulnessAbility("language_of_foulness_ability"));
         abilities.add(new DevilTransformationAbility("devil_transformation_ability"));
+        abilities.add(new ContractAbility("contract_ability"));
+        abilities.add(new BloodlineSkinshifterAbility("bloodline_shapeshifter_ability"));
+        abilities.add(new BloodlineCorroderAbility("bloodline_corroder_ability"));
+        abilities.add(new BloodlineCurselingAbility("bloodline_curseling_ability"));
+        abilities.add(new BloodlineBloodDropAbility("bloodline_blood_drop_ability"));
+        abilities.add(new BloodlineDesireSymbiosisAbility("bloodline_desire_symbiosis_ability"));
+        abilities.add(new BloodlinePhantomAbility("bloodline_phantom_ability"));
         abilities.add(new DangerPremonitionAbility("danger_premonition_ability"));
         abilities.add(new FlameCageAbility("flame_cage_ability"));
         abilities.add(new ShadowShiftAbility("shadow_shift_ability"));
@@ -145,8 +170,11 @@ public class AbilityHandler {
         abilities.add(new MaliceSeedAbility("malice_seed_ability"));
         abilities.add(new BloodSovereignAbility("blood_sovereign_ability"));
         abilities.add(new FearAuraAbility("fear_aura_ability"));
+        abilities.add(new TheCorroderAbility("corroder_ability"));
         abilities.add(new FlamesOfTheAbyssAbility("flames_of_the_abyss_ability"));
-
+        abilities.add(new DegenerationAbility("degeneration_ability"));
+        abilities.add(new DivineKingdomAbyssAbility("divine_kingdom_abyss_ability"));
+        abilities.add(new AbyssalAwakeningAbility("abyssal_awakening_ability"));
 
         // FOOL PATHWAY
         abilities.add(new AirBulletAbility("air_bullet_ability"));

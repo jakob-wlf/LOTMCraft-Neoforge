@@ -120,10 +120,18 @@ public class PlayerEvents {
 
             NewPlayerComponent component = player.getData(ModAttachments.BOOK_COMPONENT);
             if(!component.isHasReceivedNewPlayerPerks() && player.serverLevel().getGameRules().getBoolean(ModGameRules.SPAWN_WITH_STARTING_CHARACTERISTIC)) {
+                if(!component.isHasReceivedGuidingBook()) {
+                    ItemStack guidingBook = new ItemStack(ModItems.GUIDING_BOOK.get());
+                    if(!player.getInventory().contains(guidingBook)) {
+                        player.drop(guidingBook, false);
+                    }
+                    component.setHasReceivedGuidingBook(true);
+                }
                 PathwaySelectionMenu.openWithAllPathways(player);
             }
             else {
                 component.setHasReceivedNewPlayerPerks(true);
+                component.setHasReceivedGuidingBook(true);
             }
         }
     }

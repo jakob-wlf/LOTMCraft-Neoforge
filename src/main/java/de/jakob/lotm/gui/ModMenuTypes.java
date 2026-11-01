@@ -23,6 +23,7 @@ import de.jakob.lotm.gui.custom.trades.BeyonderTradeMenu;
 import de.jakob.lotm.gui.custom.historical_void.HistoricalVoidMenu;
 import de.jakob.lotm.gui.custom.spirit_command.SpiritCommandMenu;
 import de.jakob.lotm.gui.custom.spirit_housing.SpiritManageMenu;
+import de.jakob.lotm.gui.custom.malice_seed.MaliceSeedMenu;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
@@ -118,7 +119,7 @@ public class ModMenuTypes {
 
     public static final DeferredHolder<MenuType<?>, MenuType<SpiritCommandMenu>> SPIRIT_COMMAND_MENU =
             MENU_TYPES.register("spirit_command_menu", () ->
-                    IMenuTypeExtension.create((windowId, inv, data) -> new SpiritCommandMenu(windowId, inv, data)));
+                    IMenuTypeExtension.create(SpiritCommandMenu::new));
 
     public static final DeferredHolder<MenuType<?>, MenuType<ArtifactWheelMenu>> ARTIFACT_WHEEL_MENU = MENU_TYPES.register(
             "artifact_wheel_menu",
@@ -126,6 +127,10 @@ public class ModMenuTypes {
                 ItemStack stack = ItemStack.OPTIONAL_STREAM_CODEC.decode(data);
                 return new ArtifactWheelMenu(windowId, inv, stack);
             })
+    );
+    public static final DeferredHolder<MenuType<?>, MenuType<MaliceSeedMenu>> MALICE_SEED_MENU = MENU_TYPES.register(
+            "malice_seed_menu",
+            () -> IMenuTypeExtension.create((windowId, inv, buf) -> new MaliceSeedMenu(windowId, inv, MaliceSeedMenu.readSeeds(buf)))
     );
 
     public static final DeferredHolder<MenuType<?>, MenuType<JusticePrincipleMenu>> JUSTICE_PRINCIPLES =

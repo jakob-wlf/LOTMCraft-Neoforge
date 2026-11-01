@@ -29,8 +29,6 @@ public class TamperFateAbility extends SelectableAbility {
 
     public TamperFateAbility(String id) {
         super(id, 6);
-        canBeShared = false;
-        canBeCopied = false;
 
         hasDynamicCooldown = true;
         dynamicCooldown = new LinkedList<>(List.of(3, 4, 6));

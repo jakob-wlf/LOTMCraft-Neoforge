@@ -18,8 +18,10 @@ import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerEntity;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -100,7 +102,7 @@ public class GiantLightningEntity extends Entity {
             entityData.set(COLOR, color);
 
             // More branches for giant lightning, spawn them at varied distances
-            for (int i = 0; i < branches; i++) {
+            for(int i = 0; i < branches; i++) {
                 distancesAtWhichToSpawnNewBranches.add((new Random()).nextFloat(10f, 50f));
             }
             // Add extra branches distributed along the entire path
@@ -143,7 +145,7 @@ public class GiantLightningEntity extends Entity {
             entityData.set(COLOR, color);
 
             // Fewer sub-branches to avoid overwhelming visuals
-            for (int i = 0; i < branches; i++) {
+            for(int i = 0; i < branches; i++) {
                 distancesAtWhichToSpawnNewBranches.add((new Random()).nextFloat(5f, 15f));
             }
         }
@@ -182,10 +184,8 @@ public class GiantLightningEntity extends Entity {
                 ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
 
         // Check for entity hits in a larger area
-        //AABB searchBox = new AABB(startPos, currentEnd).inflate(3.0); // Larger hitbox
-        //List<Entity> entities = level().getEntities(this, searchBox);
-
-        List<Entity> entities = level().getEntities(this, new AABB(startPos, currentEnd));
+        AABB searchBox = new AABB(startPos, currentEnd).inflate(3.0); // Larger hitbox
+        List<Entity> entities = level().getEntities(this, searchBox);
         for (Entity entity : entities) {
             if (!(entity instanceof GiantLightningEntity) && !entity.isSpectator()) {
                 onHitEntity(entity, currentEnd);
@@ -200,16 +200,16 @@ public class GiantLightningEntity extends Entity {
         }
 
         // Spawn branches
-        if (!level().isClientSide) {
+        if(!level().isClientSide) {
             // Create a copy to avoid concurrent modification
             List<Float> branchesToSpawn = new ArrayList<>();
-            for (float d : distancesAtWhichToSpawnNewBranches) {
-                if (Math.abs(d - currentDistance) < step * 0.5f) {
+            for(float d : distancesAtWhichToSpawnNewBranches) {
+                if(Math.abs(d - currentDistance) < step * 0.5f) {
                     branchesToSpawn.add(d);
                 }
             }
 
-            for (float d : branchesToSpawn) {
+            for(float d : branchesToSpawn) {
                 Vec3 branchStart = startPos.add(direction.scale(d));
                 // Branch directions mostly downward with controlled horizontal spread
                 Vec3 branchDir = new Vec3(
@@ -236,7 +236,7 @@ public class GiantLightningEntity extends Entity {
         }
 
         // Advance beam
-        if (currentDistance < maxDistance)
+        if(currentDistance < maxDistance)
             currentDistance += step;
 
         if (currentDistance >= maxDistance && !level().isClientSide) {
@@ -277,9 +277,9 @@ public class GiantLightningEntity extends Entity {
         Vec3 target = startPos.add(direction.scale(Math.min(currentDistance, maxDistance)));
 
         // Fewer segments for more angular, dramatic appearance
-        int segments = Math.max(1, (int) (currentDistance / 2.5f));
+        int segments = Math.max(1, (int)(currentDistance / 2.5f));
         for (int i = 0; i <= segments; i++) {
-            float progress = segments > 0 ? (float) i / segments : 0f;
+            float progress = segments > 0 ? (float)i / segments : 0f;
             Vec3 basePoint = startPos.lerp(target, progress);
 
             // Larger random offsets for more dramatic jagged appearance
@@ -295,12 +295,12 @@ public class GiantLightningEntity extends Entity {
     }
 
     private void onHitEntity(Entity entity, Vec3 pos) {
-        if (hasHit)
+        if(hasHit)
             return;
         hasHit = true;
 
         if (!level().isClientSide && source != null) {
-            //explode(pos);
+            explode(pos);
 
             NeoForge.EVENT_BUS.post(new AbilityUsedEvent((ServerLevel) level(), pos, source, null, new String[]{"lightning", "explosion"}, explosionPower * 1.5, 15));
 
@@ -308,20 +308,27 @@ public class GiantLightningEntity extends Entity {
             boolean inWater = isNearWater(pos);
             float waterMultiplier = inWater ? 2.0f : 1.0f;
 
-            entity.hurt(ModDamageTypes.source(this.level(), ModDamageTypes.LIGHTNING, source), (float) damage * waterMultiplier / 2);
-            entity.hurt(ModDamageTypes.source(this.level(), ModDamageTypes.INFORMATION_DESTRUCTION, source), (float) damage / 2);
+            hurtSplit(entity, (float) damage * waterMultiplier);
 
             // Damage nearby entities as well
             List<Entity> nearbyEntities = level().getEntities(this,
                     new AABB(pos.add(-5, -5, -5), pos.add(5, 5, 5)));
             for (Entity nearby : nearbyEntities) {
                 if (nearby != entity && !(nearby instanceof GiantLightningEntity) && !nearby.isSpectator()) {
-                    nearby.hurt(ModDamageTypes.source(this.level(), ModDamageTypes.LIGHTNING, source), (float) (damage * 0.3));
+                    hurtSplit(nearby, (float) (damage * 0.3));
                 }
             }
 
+            // If in water, deal AoE damage to entities in water
+            if(inWater) {
+                dealWaterConductionDamage(pos);
+            }
+
+            // Check for water wall interaction
+            dealWaterWallDamage(pos);
+
             ServerScheduler.scheduleDelayed(15, this::discardEntityAndBranches);
-        } else if (level().isClientSide) {
+        } else if(level().isClientSide) {
             ClientHandler.applyCameraShakeToPlayersInRadius(4f, 35, (ClientLevel) level(), pos, 60);
         }
     }
@@ -335,16 +342,24 @@ public class GiantLightningEntity extends Entity {
     }
 
     private void onHitBlock(HitResult hit) {
-        if (hasHit)
+        if(hasHit)
             return;
         hasHit = true;
 
         if (!level().isClientSide) {
             Vec3 pos = hit.getLocation();
-            if (source != null) {
-               // explode(pos);
+            if(source != null) {
+                explode(pos);
                 NeoForge.EVENT_BUS.post(new AbilityUsedEvent((ServerLevel) level(), pos, source, null, new String[]{"lightning", "explosion"}, explosionPower * 1.5, 15));
             }
+
+            // Check for water interaction
+            if(isNearWater(pos)) {
+                dealWaterConductionDamage(pos);
+            }
+
+            // Check for water wall interaction
+            dealWaterWallDamage(pos);
 
             ServerScheduler.scheduleDelayed(15, this::discardEntityAndBranches);
         } else {
@@ -353,7 +368,7 @@ public class GiantLightningEntity extends Entity {
     }
 
     public void discardEntityAndBranches() {
-        for (GiantLightningEntity e : branches) {
+        for(GiantLightningEntity e : branches) {
             e.discardEntityAndBranches();
         }
         this.discard();
@@ -361,10 +376,10 @@ public class GiantLightningEntity extends Entity {
 
     private boolean isNearWater(Vec3 pos) {
         BlockPos center = BlockPos.containing(pos);
-        for (int x = -2; x <= 2; x++) {
-            for (int y = -2; y <= 2; y++) {
-                for (int z = -2; z <= 2; z++) {
-                    if (level().getBlockState(center.offset(x, y, z)).is(Blocks.WATER)) {
+        for(int x = -2; x <= 2; x++) {
+            for(int y = -2; y <= 2; y++) {
+                for(int z = -2; z <= 2; z++) {
+                    if(level().getBlockState(center.offset(x, y, z)).is(Blocks.WATER)) {
                         return true;
                     }
                 }
@@ -374,22 +389,22 @@ public class GiantLightningEntity extends Entity {
     }
 
     private void dealWaterConductionDamage(Vec3 pos) {
-        if (source == null || level().isClientSide) return;
+        if(source == null || level().isClientSide) return;
 
         ServerLevel serverLevel = (ServerLevel) level();
         AbilityUtil.getNearbyEntities(source, serverLevel, pos, 20).forEach(e -> {
-            if (e.isInWater() || isNearWater(e.position())) {
-                e.hurt(ModDamageTypes.source(this.level(), ModDamageTypes.LIGHTNING, source), (float) (damage * 1.5));
+            if(e.isInWater() || isNearWater(e.position())) {
+                hurtSplit(e, (float) (damage * 1.5));
                 ParticleUtil.spawnParticles(serverLevel, ParticleTypes.ELECTRIC_SPARK, e.position(), 20, .5, 0);
             }
         });
     }
 
     private void dealWaterWallDamage(Vec3 pos) {
-        if (source == null || level().isClientSide) return;
+        if(source == null || level().isClientSide) return;
 
         ServerLevel serverLevel = (ServerLevel) level();
-        for (WaterMasteryAbility.ActiveWaterWall wall : WaterMasteryAbility.getActiveWaterWalls()) {
+        for(WaterMasteryAbility.ActiveWaterWall wall : WaterMasteryAbility.getActiveWaterWalls()) {
             Vec3 wallPos = wall.position();
             Vec3 perp = wall.perpendicular();
 
@@ -397,10 +412,10 @@ public class GiantLightningEntity extends Entity {
             double alongWall = toHit.dot(perp);
             double distToWallLine = toHit.subtract(perp.scale(alongWall)).length();
 
-            if (distToWallLine < 5 && Math.abs(alongWall) < wall.halfWidth()) {
-                for (int j = -wall.halfWidth(); j <= wall.halfWidth(); j += 3) {
+            if(distToWallLine < 5 && Math.abs(alongWall) < wall.halfWidth()) {
+                for(int j = -wall.halfWidth(); j <= wall.halfWidth(); j += 3) {
                     Vec3 wallPoint = wallPos.add(perp.scale(j));
-                    AbilityUtil.damageNearbyEntities(serverLevel, source, 3, ModDamageTypes.LIGHTNING, (float) (damage * 1.5), wallPoint, true, false);
+                    AbilityUtil.getNearbyEntities(source, serverLevel, wallPoint, 3).forEach(e -> hurtSplit(e, (float) (damage * 1.5)));
                     ParticleUtil.spawnParticles(serverLevel, ParticleTypes.ELECTRIC_SPARK, wallPoint, 10, 1, 0);
                 }
                 break;
@@ -473,5 +488,18 @@ public class GiantLightningEntity extends Entity {
 
     public int getColor() {
         return entityData.get(COLOR);
+    }
+
+    private void hurtSplit(Entity target, float amount) {
+        float part = amount / 3f;
+        hurtAs(target, ModDamageTypes.LIGHTNING, part);
+        hurtAs(target, ModDamageTypes.INFORMATION_DESTRUCTION, part);
+        hurtAs(target, ModDamageTypes.PURIFICATION, amount - part * 2f); // remainder, so rounding never loses damage
+    }
+
+    private void hurtAs(Entity target, ResourceKey<DamageType> type, float amount) {
+        target.hurt(ModDamageTypes.source(level(), type, source), amount);
+        // Vanilla i-frames would swallow the next hit, so clear them between the three
+        if (target instanceof LivingEntity living) living.invulnerableTime = 0;
     }
 }

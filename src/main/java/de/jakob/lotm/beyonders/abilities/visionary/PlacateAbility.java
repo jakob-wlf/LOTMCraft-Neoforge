@@ -2,6 +2,7 @@ package de.jakob.lotm.beyonders.abilities.visionary;
 
 import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.attachments.VirtualPersonaComponent;
+import de.jakob.lotm.beyonders.abilities.abyss.MaliceSeed.MaliceSeedAbility;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.beyonders.abilities.visionary.handlers.VisionaryHandler;
 import de.jakob.lotm.beyonders.abilities.visionary.prophecy.Prophecy;
@@ -245,6 +246,8 @@ public class PlacateAbility extends SelectableAbility {
             personas.damageAffectedBy(VirtualPersonaComponent.getMaxHealthPerSeq(entitySeq),
                     (ServerLevel) targetPlayer.level(), targetPlayer.getName().getString(), entitySeq);
         }
+        int casterEffSeq = AbilityUtil.getSeqWithArt(caster, this) + ("visionary".equals(BeyonderData.getPathway(caster)) ? 0 : 2);
+        MaliceSeedAbility.purify(caster, entity, casterEffSeq, 2);
 
 //        if(caster instanceof ServerPlayer player)
 //            RingEffectManager.createRingForPlayer(entity.getEyePosition().subtract(0, .4, 0), 2, 60, 255 / 255f, 211 / 255f, 92 / 255f, 1, .5f, .75f, (ServerLevel) caster.level(), player);

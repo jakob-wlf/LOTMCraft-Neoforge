@@ -663,6 +663,21 @@ public class PacketHandler {
                 PlayPhotonEntityEffectPacket.STREAM_CODEC,
                 PlayPhotonEntityEffectPacket::handle
         );
+        registrar.playToClient(
+                SyncMaliceSeedsToClient.TYPE,
+                SyncMaliceSeedsToClient.STREAM_CODEC,
+                SyncMaliceSeedsToClient::handle
+        );
+        registrar.playToClient(
+                DevilWorshipNetwork.OpenSummonScreen.TYPE,
+                DevilWorshipNetwork.OpenSummonScreen.STREAM_CODEC,
+                DevilWorshipNetwork.OpenSummonScreen::handle
+        );
+        registrar.playToClient(
+                BloodSovereignClient.SyncBlood.TYPE,
+                BloodSovereignClient.SyncBlood.STREAM_CODEC,
+                BloodSovereignClient.SyncBlood::handle
+        );
     }
 
     private static void registerServerPackets(PayloadRegistrar registrar) {
@@ -1112,6 +1127,35 @@ public class PacketHandler {
                 MassPuppeteeringSelectedEntitiesPacket.TYPE,
                 MassPuppeteeringSelectedEntitiesPacket.STREAM_CODEC,
                 MassPuppeteeringSelectedEntitiesPacket::handle
+        );
+        registrar.playToServer(
+                SetMaliceChannelPacket.TYPE,
+                SetMaliceChannelPacket.STREAM_CODEC,
+                SetMaliceChannelPacket::handle
+        );
+        registrar.playToServer(
+                RequestMaliceSeedSyncPacket.TYPE,
+                RequestMaliceSeedSyncPacket.STREAM_CODEC,
+                RequestMaliceSeedSyncPacket::handle
+        );
+        registrar.playToServer(
+                TakeOverMaliceHostPacket.TYPE,
+                TakeOverMaliceHostPacket.STREAM_CODEC,
+                TakeOverMaliceHostPacket::handle
+        );
+        registrar.playToServer(
+                SubmitContractBuilderPacket.TYPE,
+                SubmitContractBuilderPacket.STREAM_CODEC,
+                SubmitContractBuilderPacket::handle
+        );
+        registrar.playToServer(
+                DevilWorshipNetwork.ChooseMission.TYPE,
+                DevilWorshipNetwork.ChooseMission.STREAM_CODEC,
+                DevilWorshipNetwork.ChooseMission::handle);
+        registrar.playToServer(
+                StruggleInFilthPacket.TYPE,
+                StruggleInFilthPacket.STREAM_CODEC,
+                StruggleInFilthPacket::handle
         );
     }
 

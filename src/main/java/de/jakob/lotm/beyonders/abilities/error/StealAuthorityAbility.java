@@ -47,11 +47,6 @@ public class StealAuthorityAbility extends Ability {
 
     public StealAuthorityAbility(String id) {
         super(id, 60);
-        canBeUsedByNPC = false;
-        canBeCopied = false;
-        canBeReplicated = false;
-        canBeShared = false;
-        canBeUsedInArtifact = false;
         cannotBeStolen = true;
 
         hasDynamicCooldown = true;

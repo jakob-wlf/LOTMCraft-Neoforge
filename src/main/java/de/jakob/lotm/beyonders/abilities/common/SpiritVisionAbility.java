@@ -1,14 +1,13 @@
 package de.jakob.lotm.beyonders.abilities.common;
 
-import com.lowdragmc.lowdraglib2.editor.resource.IResourcePath;
-import com.lowdragmc.photon.client.postfx.PhotonPostFX;
 import de.jakob.lotm.attachments.AllyComponent;
-import de.jakob.lotm.beyonders.abilities.darkness.RequiemAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.MaliceSeed.MaliceSeedAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Phantom.PhantomDetectionUtil;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Shapeshifter.SpiritDisguiseUtil;
 import de.jakob.lotm.beyonders.abilities.core.ToggleAbility;
 import de.jakob.lotm.beyonders.abilities.visionary.handlers.VisionaryHandler;
 import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.beyonders.abilities.visionary.handlers.VisionaryLoosingControlHandler;
-import de.jakob.lotm.effect.ModEffects;
 import de.jakob.lotm.network.PacketHandler;
 import de.jakob.lotm.network.packets.toClient.PlayPhotonEntityEffectPacket;
 import de.jakob.lotm.network.packets.toClient.SyncSpiritVisionAbilityPacket;
@@ -37,7 +36,10 @@ import org.joml.Vector3f;
 import java.util.*;
 
 public class SpiritVisionAbility extends ToggleAbility {
-
+    private final Map<UUID, Set<Entity>> seedOutlined = new HashMap<>();
+    private static final String MALICE_TEAM = "lotm_malice_black";
+    private static final PlayerTeam MALICE_TEAM_OBJ = new PlayerTeam(new Scoreboard(), MALICE_TEAM);
+    static { MALICE_TEAM_OBJ.setColor(ChatFormatting.BLACK); }
     public SpiritVisionAbility(String id) {
         super(id);
 
@@ -63,8 +65,7 @@ public class SpiritVisionAbility extends ToggleAbility {
                         "wheel_of_fortune", 9,
                         "darkness", 7,
                         "abyss", 9,
-                        "red_priest", 8,
-                        "twilight_giant", 7
+                        "red_priest", 8
                 ));
 
         for (String pathway : BeyonderData.pathways) {
@@ -72,19 +73,6 @@ public class SpiritVisionAbility extends ToggleAbility {
                 reqs.put(pathway, 5);
         }
         return reqs;
-    }
-
-    public void forceStop(ServerLevel level, LivingEntity entity) {
-        if (isActiveForEntity(entity)) cancel(level, entity);
-    }
-
-    @Override
-    public void onAbilityUse(Level level, LivingEntity entity) {
-        if (!level.isClientSide && RequiemAbility.blocksSpiritVision(entity)) {
-            forceStop((ServerLevel) level, entity);
-            return;
-        }
-        super.onAbilityUse(level, entity);
     }
 
     @Override
@@ -98,7 +86,6 @@ public class SpiritVisionAbility extends ToggleAbility {
         }
 
         entity.playSound(SoundEvents.ENCHANTMENT_TABLE_USE, 1, 1);
-
     }
 
     private final DustParticleOptions dust = new DustParticleOptions(new Vector3f(255, 255, 255), 2f);
@@ -111,18 +98,13 @@ public class SpiritVisionAbility extends ToggleAbility {
             return;
         }
 
-        if (RequiemAbility.blocksSpiritVision(entity)) {
-            cancel((ServerLevel) level, entity);
-            return;
-        }
-
         if (!(entity instanceof ServerPlayer player))
             return;
 
         LivingEntity lookedAt = AbilityUtil.getTargetEntity(entity, 40, 1.2f, false, true);
 
         if (lookedAt != null) {
-            if (VisionaryHandler.shouldStayInvisible(BeyonderData.getSequence(entity), lookedAt))
+            if (VisionaryHandler.shouldStayInvisible(BeyonderData.getSequence(entity), lookedAt)|| PhantomDetectionUtil.isHiddenFromSpiritVision(entity, lookedAt))
                 return;
         }
 
@@ -146,12 +128,13 @@ public class SpiritVisionAbility extends ToggleAbility {
         List<LivingEntity> nearbyEntities = AbilityUtil.getNearbyEntities(entity, (ServerLevel) level, entity.getEyePosition(), 30, false, true)
                 .stream()
                 .filter(nearbyEntity -> {
-                    return !VisionaryHandler.shouldStayInvisible(BeyonderData.getSequence(entity), nearbyEntity);
+                    return !VisionaryHandler.shouldStayInvisible(BeyonderData.getSequence(entity), nearbyEntity) && !PhantomDetectionUtil.isHiddenFromSpiritVision(entity, nearbyEntity);
                 })
                 .toList();
 
 
         for (LivingEntity nearbyEntity : nearbyEntities) {
+            updateSeedOutlines(player, nearbyEntities);
             setGlowingForPlayer(nearbyEntity, (ServerPlayer) entity, true);
         }
 
@@ -166,6 +149,7 @@ public class SpiritVisionAbility extends ToggleAbility {
 
         if (player.getData(ModAttachments.ALLY_COMPONENT.get()).isAlly(target.getUUID()))
             return false;
+        if (SpiritDisguiseUtil.isFooledByDisguise(player, target)) return false;
 
         return AbilityUtil.isTargetSignificantlyStronger(player, target);
     }
@@ -206,6 +190,11 @@ public class SpiritVisionAbility extends ToggleAbility {
             if (glowingEntities.containsKey(entity.getUUID()))
                 glowingEntities.get(entity.getUUID()).forEach(e -> setGlowingForPlayer(e, player, false));
             glowingEntities.remove(entity.getUUID());
+            Set<Entity> outlined = seedOutlined.remove(entity.getUUID());
+            if (outlined != null && !outlined.isEmpty()) {
+                outlined.forEach(e -> setSeedOutline(player, e, false));
+                player.connection.send(ClientboundSetPlayerTeamPacket.createRemovePacket(MALICE_TEAM_OBJ));
+            }
 
             PacketHandler.sendToPlayer(player, new SyncSpiritVisionAbilityPacket(false, -1));
 
@@ -226,6 +215,19 @@ public class SpiritVisionAbility extends ToggleAbility {
     @Override
     protected float getSpiritualityCost() {
         return .5f;
+    }
+    private static void setSeedOutline(ServerPlayer viewer, Entity e, boolean on) {
+        viewer.connection.send(ClientboundSetPlayerTeamPacket.createPlayerPacket(MALICE_TEAM_OBJ, e.getScoreboardName(), on ? ClientboundSetPlayerTeamPacket.Action.ADD : ClientboundSetPlayerTeamPacket.Action.REMOVE));
+    }
+    private void updateSeedOutlines(ServerPlayer viewer, List<LivingEntity> nearby) {
+        Set<Entity> previous = seedOutlined.computeIfAbsent(viewer.getUUID(), k -> new HashSet<>());
+        Set<Entity> current = new HashSet<>();
+        for (LivingEntity e : nearby) {if (MaliceSeedAbility.canObserverSeeSeed(viewer, e)) current.add(e);}
+        if (previous.isEmpty() && !current.isEmpty()) {viewer.connection.send(ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(MALICE_TEAM_OBJ, true));}
+        for (Entity e : current) if (!previous.contains(e)) setSeedOutline(viewer, e, true);
+        for (Entity e : previous) if (!current.contains(e)) setSeedOutline(viewer, e, false);
+        previous.clear();
+        previous.addAll(current);
     }
 
 }

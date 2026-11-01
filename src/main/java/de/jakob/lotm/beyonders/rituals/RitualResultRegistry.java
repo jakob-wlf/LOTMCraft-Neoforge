@@ -1,10 +1,6 @@
 package de.jakob.lotm.beyonders.rituals;
 
-import de.jakob.lotm.beyonders.rituals.impl.RitualHigherSequenceRecipe;
-import de.jakob.lotm.beyonders.rituals.impl.RitualMagicAreaEffect;
-import de.jakob.lotm.beyonders.rituals.impl.RitualMagicOpenPortal;
-import de.jakob.lotm.beyonders.rituals.impl.RitualMagicPotionEffect;
-import de.jakob.lotm.beyonders.rituals.impl.RitualMagicSummonEntity;
+import de.jakob.lotm.beyonders.rituals.impl.*;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;

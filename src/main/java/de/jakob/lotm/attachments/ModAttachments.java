@@ -82,6 +82,13 @@ public class ModAttachments {
             ATTACHMENT_TYPES.register("ability_bar_component", () ->
                     AttachmentType.serializable(AbilityBarComponent::new).copyOnDeath().build()
             );
+    public static final Supplier<AttachmentType<BloodlineComponent>>
+            BLOODLINE_COMPONENT =
+            ATTACHMENT_TYPES.register("bloodline_component", () ->
+                    AttachmentType.serializable(BloodlineComponent::new)
+                            .sync(BloodlineComponent.STREAM_CODEC)
+                            .build()
+            );
 
     public static final Supplier<AttachmentType<LuckComponent>> LUCK_COMPONENT =
             ATTACHMENT_TYPES.register("luck_component", () ->
@@ -350,6 +357,14 @@ public class ModAttachments {
                     .copyOnDeath()
                     .build()
     );
+    public static final Supplier<AttachmentType<DemonicAttributeComponent>> DEMONIC_ATTRIBUTE_COMPONENT = ATTACHMENT_TYPES.register(
+            "demonic_attribute_component",
+            () -> AttachmentType.serializable(DemonicAttributeComponent::new)
+                            .sync(DemonicAttributeComponent.STREAM_CODEC)
+                            .build()
+    );
+
+
 
     public static final Supplier<AttachmentType<SpiritHousingComponent>> SPIRIT_HOUSING =
             ATTACHMENT_TYPES.register("spirit_housing", () ->
