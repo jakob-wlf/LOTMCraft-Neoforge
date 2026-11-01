@@ -260,7 +260,7 @@ public class DimensionSightAbility extends SelectableAbility {
         return deceit != null && deceit.hasAbility(target, true) && BeyonderData.getSequence(viewer) > BeyonderData.getSequence(target);
     }
 
-    private static boolean unwatchable(ServerPlayer viewer, LivingEntity target) {
+    public static boolean unwatchable(ServerPlayer viewer, LivingEntity target) {
         if (concealed(viewer, target)) return true;
         return "door".equals(BeyonderData.getPathway(target)) && BeyonderData.getSequence(target) < BeyonderData.getSequence(viewer);
     }
@@ -410,6 +410,7 @@ public class DimensionSightAbility extends SelectableAbility {
     private static boolean concealed(ServerPlayer viewer, LivingEntity target) {
         if (target == viewer) return false;
         int seq = BeyonderData.getSequence(viewer);
+        if (seq <= 0 && "door".equals(BeyonderData.getPathway(viewer)) && BeyonderData.getSequence(target) > 0) return false;
         UUID uuid = target.getUUID();
         return ConcealmentAbility.veiled(viewer, target)
                 || ConcealmentAuthorityAbility.undivinable(target)

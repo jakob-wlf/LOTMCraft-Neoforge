@@ -8,11 +8,11 @@ import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBlo
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Curseling.BloodlineBloodDropAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Curseling.BloodlineCurselingAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Curseling.BloodlineDesireSymbiosisAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Phantom.BloodlinePhantomAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Shapeshifter.BloodlineSkinshifterAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.FlameDevil.FlameCageAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.FlameDevil.FlameSpellsAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.FlameDevil.SwordOfLavaAbility;
-import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Phantom.BloodlinePhantomAbility;
-import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Shapeshifter.BloodlineSkinshifterAbility;
 import de.jakob.lotm.beyonders.abilities.common.*;
 import de.jakob.lotm.beyonders.abilities.common.LuckPerceptionAbility;
 import de.jakob.lotm.beyonders.abilities.justiciar.*;
@@ -20,6 +20,7 @@ import de.jakob.lotm.beyonders.abilities.darkness.*;
 import de.jakob.lotm.beyonders.abilities.death.*;
 import de.jakob.lotm.beyonders.abilities.demoness.*;
 import de.jakob.lotm.beyonders.abilities.door.*;
+import de.jakob.lotm.beyonders.abilities.door.PositionAuthority.*;
 import de.jakob.lotm.beyonders.abilities.error.*;
 import de.jakob.lotm.beyonders.abilities.fool.*;
 import de.jakob.lotm.beyonders.abilities.mother.*;
@@ -176,6 +177,7 @@ public class AbilityHandler {
         abilities.add(new DivineKingdomAbyssAbility("divine_kingdom_abyss_ability"));
         abilities.add(new AbyssalAwakeningAbility("abyssal_awakening_ability"));
 
+
         // FOOL PATHWAY
         abilities.add(new AirBulletAbility("air_bullet_ability"));
         abilities.add(new PaperEquipmentAbility("paper_equipment_ability"));
@@ -209,7 +211,7 @@ public class AbilityHandler {
         abilities.add(new ConcealmentAbility("concealment_ability"));
         abilities.add(new ConcealmentAuthorityAbility("concealment_authority_ability"));
         abilities.add(new IdentityConcealmentAbility("identity_concealment_ability"));
-        //abilities.add(new ConcealedDomainAbility("concealed_domain_ability"));
+        abilities.add(new ConcealedDomainAbility("concealed_domain_ability"));
         abilities.add(new SwordOfDarknessAbility("sword_of_darkness_ability"));
         abilities.add(new MisfortuneAuthorityAbility("misfortune_authority_ability"));
         abilities.add(new DarknessAuthorityAbility("darkness_authority_ability"));
@@ -272,6 +274,10 @@ public class AbilityHandler {
         abilities.add(new SymbolizationAbility("symbolization_ability"));
         abilities.add(new SealingAbility("sealing_ability"));
         abilities.add(new SpatialCageAbility("spatial_cage_ability"));
+        abilities.add(new PositionSummonAbility("position_summon_ability"));
+        abilities.add(new PositionTravelAbility("position_travel_ability"));
+        abilities.add(new PositionCageAbility("position_cage_ability"));
+        abilities.add(new PositionSealAbility("position_seal_ability"));
         abilities.add(new SpaceTearingAbility("space_tearing_ability"));
         abilities.add(new WaypointAbility("waypoint_ability"));
         abilities.add(new ReplicatingAbility("replicating_ability"));

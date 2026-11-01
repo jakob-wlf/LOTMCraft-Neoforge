@@ -1,8 +1,8 @@
 package de.jakob.lotm.beyonders.abilities.core;
 
 import de.jakob.lotm.LOTMCraft;
-import de.jakob.lotm.beyonders.abilities.darkness.RequiemAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Phantom.BloodlinePhantomAbility;
+import de.jakob.lotm.beyonders.abilities.darkness.RequiemAbility;
 import de.jakob.lotm.beyonders.abilities.error.ParasitationAbility;
 import de.jakob.lotm.attachments.*;
 import de.jakob.lotm.beyonders.abilities.fool.marionettes.ControllingUtils;
@@ -88,7 +88,7 @@ public abstract class Ability {
 
     protected boolean hasManualDistance = false;
     public int baseDistance = 0;
-
+    public boolean meetsBloodlineRequirement(LivingEntity entity) {return true;}
     public Ability(String id, float cooldown, String... interactionFlags) {
         this.id = id;
         this.cooldown = Math.round(cooldown * 20);
@@ -259,8 +259,6 @@ public abstract class Ability {
     public boolean shouldUseAbility(LivingEntity entity) {
         return true;
     }
-
-    public boolean meetsBloodlineRequirement(LivingEntity entity) {return true;}
 
     public boolean hasAbility(LivingEntity entity, boolean ignoreCreativeMode) {
         if(entity.getData(ModAttachments.MARIONETTE_COMPONENT).isMarionette() && entity.getData(ModAttachments.MARIONETTE_COMPONENT).hasWorm()) {
@@ -438,7 +436,6 @@ public abstract class Ability {
         }
         return description.withStyle(ChatFormatting.DARK_GRAY);
     }
-
 
     public String getId() {
         return id;

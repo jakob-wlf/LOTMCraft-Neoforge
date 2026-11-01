@@ -1,13 +1,20 @@
 package de.jakob.lotm.beyonders.abilities.core;
 
-import de.jakob.lotm.beyonders.abilities.abyss.passives.*;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.AbyssMentalResistanceAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.CriminalProficiencyAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.CurseResistanceAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DemonOfTheBodyAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Corroder.BloodlineMindRotterAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.FlameDevil.BloodlineFilthFlameSpiritAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.ShadowShifter.BloodlineShadowShiftAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbility;
-import de.jakob.lotm.beyonders.abilities.abyss.passives.CriminalProficiencyAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DomainOfBodyAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.FireResistanceAbyssAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.MaliceAuthorityAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.PhysicalEnhancementsAbyssAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.PoisonResistanceAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.SinLordAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.UndyingBloodAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.WordImmunityAbility;
 import de.jakob.lotm.beyonders.abilities.darkness.passives.ConcealmentSenseAbility;
 import de.jakob.lotm.beyonders.abilities.darkness.passives.DarknessRevivalAbility;

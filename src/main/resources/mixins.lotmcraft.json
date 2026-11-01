@@ -2,15 +2,13 @@
   "required": true,
   "package": "de.jakob.lotm.util.mixin",
   "compatibilityLevel": "JAVA_17",
-  "mixins": [
+    "mixins": [
     "EntityAccessor",
     "MixinIngredient",
     "ErrorItemNameMixin",
     "MixinIngredient",
     "MercuryPushMixin",
-    "SignConcealMixin",
-    "PlayerPhantomMixin",
-    "EntityPhantomMixin"
+    "SignConcealMixin"
   ],
   "client": [
     "EntityGlowMixin",

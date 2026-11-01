@@ -22,6 +22,7 @@ import de.jakob.lotm.gui.custom.selection_gui.*;
 import de.jakob.lotm.network.PacketHandler;
 import de.jakob.lotm.network.packets.toClient.*;
 import de.jakob.lotm.entity.custom.ability_entities.door_pathway.DimensionSightEntity;
+import de.jakob.lotm.network.packets.toServer.RemoveSpatialCagePacket;
 import de.jakob.lotm.network.packets.toServer.ShapeShiftingPlayerModelPacket;
 import de.jakob.lotm.beyonders.quest.Quest;
 import de.jakob.lotm.beyonders.quest.QuestRegistry;
@@ -37,6 +38,7 @@ import de.jakob.lotm.util.helper.ParticleUtil;
 import de.jakob.lotm.util.helper.RingExpansionRenderer;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -104,6 +106,16 @@ public class ClientHandler {
     private static final HashMap<UUID, BlockEffectExecutor> activeBlockEffects = new HashMap<>();
     public static void openCoordinateScreen(Player player, String use) {
         Minecraft.getInstance().setScreen(new CoordinateInputScreen(player, use));
+    }
+
+    public static void openSpatialCageScreen(UUID cage, int cost, int seconds) {
+        Component message = cost > 0
+                ? Component.translatable("ability.lotmcraft.spatial_cage.remove_message", seconds, cost)
+                : Component.translatable("ability.lotmcraft.spatial_cage.remove_free", seconds);
+        Minecraft.getInstance().setScreen(new ConfirmScreen(confirmed -> {
+            if (confirmed) PacketHandler.sendToServer(new RemoveSpatialCagePacket(cage));
+            Minecraft.getInstance().setScreen(null);
+        }, Component.translatable("ability.lotmcraft.spatial_cage.remove_title"), message));
     }
 
     public static void openConcealSecretScreen(List<String> words) {

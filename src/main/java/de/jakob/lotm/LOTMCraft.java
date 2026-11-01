@@ -121,7 +121,6 @@ import de.jakob.lotm.gui.custom.encyclopedia.IngredientEncyclopediaScreen;
 import de.jakob.lotm.gui.custom.flaming_jump.FlamingJumpScreen;
 import de.jakob.lotm.gui.custom.introspect.IntrospectScreen;
 import de.jakob.lotm.gui.custom.honorific_names.HonorificNamesScreen;
-import de.jakob.lotm.gui.custom.malice_seed.MaliceSeedScreen;
 import de.jakob.lotm.gui.custom.justice_selection.JusticePrincipleScreen;
 import de.jakob.lotm.gui.custom.marionettes.MarionetteControlScreen;
 import de.jakob.lotm.gui.custom.mass_puppeteering.MassPuppeteeringScreen;
@@ -244,6 +243,7 @@ public class LOTMCraft
         ModBiomeModifiers.register(modEventBus);
         ModVillagers.register(modEventBus);
         ModBlocks.register(modEventBus);
+        ModFilth.register(modEventBus);
         ModBlockEntities.register(modEventBus);
         ModStructures.register(modEventBus);
         ModDataComponents.register(modEventBus);
@@ -253,7 +253,6 @@ public class LOTMCraft
         ModAttachments.register(modEventBus);
         PhantomFormAttachment.ATTACHMENTS.register(modEventBus);
         ModDimensions.register(modEventBus);
-        ModFilth.register(modEventBus);
         ModGameRules.register();
         ModArmorMaterials.register(modEventBus);
 
@@ -455,7 +454,6 @@ public class LOTMCraft
             event.register(ModMenuTypes.SPIRIT_COMMAND_MENU.get(), SpiritCommandScreen::new);
             event.register(ModMenuTypes.FLAMING_JUMP_MENU.get(), FlamingJumpScreen::new);
             event.register(ModMenuTypes.MASS_PUPPETEERING_MENU.get(), MassPuppeteeringScreen::new);
-            event.register(ModMenuTypes.MALICE_SEED_MENU.get(), MaliceSeedScreen::new);
             event.register(ModMenuTypes.PATHWAY_SELECTION.get(), PathwaySelectionScreen::new);
             event.register(ModMenuTypes.INGREDIENT_ENCYCLOPEDIA.get(), IngredientEncyclopediaScreen::new);
             event.register(ModMenuTypes.CONTRACT.get(), ContractScreen::new);
