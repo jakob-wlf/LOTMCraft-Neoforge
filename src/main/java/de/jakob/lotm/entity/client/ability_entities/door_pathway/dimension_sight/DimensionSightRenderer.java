@@ -74,6 +74,9 @@ public class DimensionSightRenderer extends EntityRenderer<DimensionSightEntity>
         float open = Math.min(1f, age / 10f);
 
         poseStack.pushPose();
+        poseStack.translate(0, DimensionSightEntity.HALF, 0);
+
+        poseStack.pushPose();
         poseStack.mulPose(Axis.YP.rotationDegrees(-entity.getYRot()));
         poseStack.scale(open, open, open);
         renderVeil(poseStack, buffer, age);
@@ -87,6 +90,8 @@ public class DimensionSightRenderer extends EntityRenderer<DimensionSightEntity>
         poseStack.scale(SCALE * open, SCALE * open, SCALE * open);
         renderTerrain(entity, poseStack, buffer);
         renderSighted(view, partialTick, poseStack, buffer);
+        poseStack.popPose();
+
         poseStack.popPose();
     }
 

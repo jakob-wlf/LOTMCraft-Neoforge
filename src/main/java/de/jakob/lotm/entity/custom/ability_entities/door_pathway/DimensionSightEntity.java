@@ -5,6 +5,7 @@ import de.jakob.lotm.network.packets.toClient.SyncDimensionSightPacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
@@ -15,6 +16,8 @@ import net.minecraft.world.phys.Vec3;
 import java.util.List;
 
 public class DimensionSightEntity extends Entity {
+    public static final float HALF = 1.75f;
+
     private BlockPos center = BlockPos.ZERO;
     private int[] offsets = new int[0];
     private BlockState[] states = new BlockState[0];
@@ -71,6 +74,11 @@ public class DimensionSightEntity extends Entity {
 
     @Override
     public boolean isPickable() {
+        return true;
+    }
+
+    @Override
+    public boolean hurt(DamageSource source, float amount) {
         return false;
     }
 

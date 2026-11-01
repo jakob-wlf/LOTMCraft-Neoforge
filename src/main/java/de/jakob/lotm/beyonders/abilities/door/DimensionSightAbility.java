@@ -1,6 +1,7 @@
 package de.jakob.lotm.beyonders.abilities.door;
 
 import de.jakob.lotm.LOTMCraft;
+import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.beyonders.abilities.darkness.ConcealmentAbility;
 import de.jakob.lotm.beyonders.abilities.darkness.ConcealmentAuthorityAbility;
@@ -14,13 +15,18 @@ import de.jakob.lotm.beyonders.abilities.twilight_giant.MindConcealmentAbility;
 import de.jakob.lotm.beyonders.abilities.visionary.handlers.VisionaryHandler;
 import de.jakob.lotm.entity.custom.ability_entities.door_pathway.DimensionSightEntity;
 import de.jakob.lotm.network.PacketHandler;
+import de.jakob.lotm.network.packets.toClient.CancelPhotonBlockEffectPacket;
 import de.jakob.lotm.network.packets.toClient.OpenCoordinateScreenPacket;
+import de.jakob.lotm.network.packets.toClient.PlayCancellablePhotonBlockEffectPacket;
+import de.jakob.lotm.particle.ModParticles;
 import de.jakob.lotm.network.packets.toClient.OpenPlayerDivinationScreenPacket;
 import de.jakob.lotm.network.packets.toClient.SyncDimensionSightPacket;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.data.PlayerInfo;
 import de.jakob.lotm.util.data.PlayerSelectionWorkType;
 import de.jakob.lotm.util.helper.AbilityUtil;
+import de.jakob.lotm.util.helper.ParticleUtil;
+import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -35,6 +41,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
@@ -46,6 +54,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 import java.util.*;
@@ -59,6 +68,13 @@ public class DimensionSightAbility extends SelectableAbility {
     private static final int MAX_SIGHTED = 64;
     private static final int TICKET = 3;
     private static final float UPKEEP = 40f;
+    private static final float SEIZE_COST = 3000f;
+    private static final int WARN_TICKS = 100;
+    private static final String[] HIDING = {
+            "concealment_ability", "shadow_concealment_ability", "invisibility_ability", "space_concealment_ability",
+            "psychological_invisibility_ability", "parasitation_ability", "mind_concealment_ability",
+            "mercury_armory_ability", "light_concealment_ability"
+    };
     private static final int COLOR = 0xa0e2fa;
 
     private static final Map<UUID, Integer> pending = new HashMap<>();
@@ -70,6 +86,7 @@ public class DimensionSightAbility extends SelectableAbility {
         final BlockPos spot;
         final UUID target;
         final Set<Integer> known = new HashSet<>();
+        final Map<UUID, Integer> warned = new HashMap<>();
         ChunkPos ticket;
         ServerLevel level;
         BlockPos center;
@@ -128,7 +145,7 @@ public class DimensionSightAbility extends SelectableAbility {
             case 1 -> {
                 List<PlayerInfo> players = new ArrayList<>();
                 for (ServerPlayer other : player.server.getPlayerList().getPlayers()) {
-                    if (other == player || concealed(player, other)) continue;
+                    if (other == player || unwatchable(player, other)) continue;
                     players.add(new PlayerInfo(other.getUUID(), other.getGameProfile().getName()));
                 }
                 if (players.isEmpty()) {
@@ -160,7 +177,7 @@ public class DimensionSightAbility extends SelectableAbility {
         Integer mode = pending.remove(player.getUUID());
         if (mode == null || mode != 1) return;
         ServerPlayer target = player.server.getPlayerList().getPlayer(uuid);
-        if (target == null || target == player || !target.isAlive() || concealed(player, target)) {
+        if (target == null || target == player || !target.isAlive() || unwatchable(player, target)) {
             AbilityUtil.sendActionBar(player, Component.translatable("ability.lotmcraft.dimension_sight.lost").withColor(COLOR));
             return;
         }
@@ -170,7 +187,8 @@ public class DimensionSightAbility extends SelectableAbility {
     private static void start(ServerPlayer player, ServerLevel level, BlockPos spot, UUID target) {
         stop(player.getUUID());
         Vec3 ahead = Vec3.directionFromRotation(0, player.getYRot()).scale(2.5);
-        DimensionSightEntity veil = new DimensionSightEntity(player.level(), player.getEyePosition().add(ahead), player.getYRot());
+        Vec3 center = player.getEyePosition().add(ahead);
+        DimensionSightEntity veil = new DimensionSightEntity(player.level(), center.subtract(0, DimensionSightEntity.HALF, 0), player.getYRot());
         player.level().addFreshEntity(veil);
 
         Sight sight = new Sight(veil, level, spot, target);
@@ -183,6 +201,68 @@ public class DimensionSightAbility extends SelectableAbility {
         }
         sights.put(player.getUUID(), sight);
         player.level().playSound(null, veil.getX(), veil.getY(), veil.getZ(), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.PLAYERS, 1.0f, 0.6f);
+    }
+
+    @SubscribeEvent
+    public static void onAttack(AttackEntityEvent event) {
+        if (!(event.getTarget() instanceof DimensionSightEntity veil)) return;
+        event.setCanceled(true);
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        Sight sight = sights.get(player.getUUID());
+        if (sight == null || sight.veil != veil || sight.target == null) return;
+        ServerPlayer target = player.server.getPlayerList().getPlayer(sight.target);
+        if (target == null || !target.isAlive() || unwatchable(player, target)) return;
+        if (BeyonderData.getSpirituality(player) < SEIZE_COST) {
+            AbilityUtil.sendActionBar(player, Component.translatable("ability.lotmcraft.dimension_sight.exhausted").withColor(COLOR));
+            return;
+        }
+        BeyonderData.reduceSpirituality(player, SEIZE_COST);
+        stop(player.getUUID());
+        seize(player, target, veil);
+    }
+
+    private static void seize(ServerPlayer player, ServerPlayer target, DimensionSightEntity veil) {
+        int seq = BeyonderData.getSequence(player);
+        int targetSeq = BeyonderData.getSequence(target);
+        boolean resists = "door".equals(BeyonderData.getPathway(target)) && targetSeq <= seq;
+        int duration = resists || seq > targetSeq ? 20 : 20 * 10;
+        if (!resists) {
+            BeyonderData.addModifierWithTimeLimit(target, "sealed", .6, duration);
+            AbilityUtil.sealAllTargetAbilities(player, target, "sealed", duration);
+            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, 100, false, false, false));
+        }
+
+        ServerLevel level = player.serverLevel();
+        target.teleportTo(level, veil.getX(), player.getY(), veil.getZ(), player.getYRot() + 180f, 0f);
+        target.setDeltaMovement(Vec3.ZERO);
+        target.hurtMarked = true;
+
+        Vec3 at = target.position();
+        BlockPos blockPos = BlockPos.containing(at);
+        UUID effect = UUID.randomUUID();
+        PacketHandler.sendToNearbyPlayers(new PlayCancellablePhotonBlockEffectPacket("sealing_effect", blockPos,
+                at.x - (blockPos.getX() + 0.5), at.y - (blockPos.getY() + 0.5) + .1, at.z - (blockPos.getZ() + 0.5),
+                2.25, null, -1, false, true, null, effect), level, at, 128);
+        ServerScheduler.scheduleDelayed(duration, () -> PacketHandler.sendToNearbyPlayers(new CancelPhotonBlockEffectPacket(effect), level, at, 128));
+        ParticleUtil.spawnParticles(level, ModParticles.STAR.get(), target.getEyePosition().subtract(0, .5, 0), 15, .4, .9, .4, .05);
+
+        level.playSound(null, target.getX(), target.getY(), target.getZ(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 1f, 1f);
+        level.playSound(null, target.getX(), target.getY(), target.getZ(), SoundEvents.ENDER_CHEST_OPEN, SoundSource.PLAYERS, 1f, 1f);
+        level.playSound(null, target.getX(), target.getY(), target.getZ(), SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 1f, 0.8f);
+    }
+
+    private static boolean canHide(ServerPlayer viewer, ServerPlayer target) {
+        for (String id : HIDING) {
+            Ability ability = LOTMCraft.abilityHandler.getById(id);
+            if (ability != null && ability.hasAbility(target, true)) return true;
+        }
+        Ability deceit = LOTMCraft.abilityHandler.getById("deceit_ability");
+        return deceit != null && deceit.hasAbility(target, true) && BeyonderData.getSequence(viewer) > BeyonderData.getSequence(target);
+    }
+
+    private static boolean unwatchable(ServerPlayer viewer, LivingEntity target) {
+        if (concealed(viewer, target)) return true;
+        return "door".equals(BeyonderData.getPathway(target)) && BeyonderData.getSequence(target) < BeyonderData.getSequence(viewer);
     }
 
     private static boolean stop(UUID caster) {
@@ -221,7 +301,7 @@ public class DimensionSightAbility extends SelectableAbility {
         }
         if (sight.target != null) {
             ServerPlayer target = server.getPlayerList().getPlayer(sight.target);
-            if (target == null || !target.isAlive() || concealed(player, target)) return "ability.lotmcraft.dimension_sight.lost";
+            if (target == null || !target.isAlive() || unwatchable(player, target)) return "ability.lotmcraft.dimension_sight.lost";
             sight.level = target.serverLevel();
         }
         return null;
@@ -261,6 +341,13 @@ public class DimensionSightAbility extends SelectableAbility {
             present.add(entity.getId());
             boolean fresh = sight.known.add(entity.getId());
             boolean isPlayer = entity instanceof Player;
+            if (entity instanceof ServerPlayer watched && watched != player
+                    && sight.age - sight.warned.getOrDefault(watched.getUUID(), -WARN_TICKS) >= WARN_TICKS) {
+                sight.warned.put(watched.getUUID(), sight.age);
+                if (canHide(player, watched)) {
+                    AbilityUtil.sendActionBar(watched, Component.translatable("ability.lotmcraft.dimension_sight.watched").withColor(0xAAAAAA));
+                }
+            }
             CompoundTag data = !isPlayer && (terrain || fresh) ? snapshot(entity) : null;
             sighted.add(new SyncDimensionSightPacket.Sighted(
                     entity.getId(),
@@ -328,7 +415,7 @@ public class DimensionSightAbility extends SelectableAbility {
                 || ConcealmentAuthorityAbility.undivinable(target)
                 || SpaceConcealmentAbility.isInsideConcealedSpace(target.position())
                 || VisionaryHandler.shouldStayInvisible(seq, target)
-                || MindConcealmentAbility.isHiddenFrom(viewer, target)
+               // || MindConcealmentAbility.isHiddenFrom(viewer, target)
                 || LightConcealmentAbility.isHidden(target)
                 || MercuryArmoryAbility.isHidden(target)
                 || ParasitationAbility.isConcealed(uuid)

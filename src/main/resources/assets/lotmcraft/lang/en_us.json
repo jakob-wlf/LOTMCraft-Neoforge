@@ -1049,6 +1049,7 @@
   "lotmcraft.dimension_sight_ability": "Dimension Sight",
   "lotmcraft.dimension_sight_ability.description": "Project a distant scene into a circular veil where you stand.",
   "ability.lotmcraft.dimension_sight.location": "Location Sight",
+  "ability.lotmcraft.dimension_sight.watched": "You feel that someone is watching you",
   "ability.lotmcraft.dimension_sight.player": "Player Sight",
   "ability.lotmcraft.dimension_sight.closed": "The veil fades",
   "ability.lotmcraft.dimension_sight.none": "No one to watch",
