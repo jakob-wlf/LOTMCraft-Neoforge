@@ -2,6 +2,7 @@ package de.jakob.lotm.beyonders.abilities.darkness;
 
 import de.jakob.lotm.attachments.DisabledAbilitiesComponent;
 import de.jakob.lotm.attachments.ModAttachments;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.FlameDevil.BloodlineFilthFlameSpiritAbility;
 import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.beyonders.abilities.core.AbilityUsedEvent;
 import de.jakob.lotm.beyonders.abilities.core.interaction.InteractionHandler;
@@ -84,6 +85,10 @@ public class RequiemAbility extends Ability {
         LivingEntity targetEntity = AbilityUtil.getTargetEntity(entity, baseDistance, 2);
         if(targetEntity == null)
             return;
+        if (BloodlineFilthFlameSpiritAbility.shieldSpirit(AbilityUtil.getSeqWithArt(entity, this), entity, targetEntity)) {
+            AbilityUtil.sendActionBar(entity, Component.literal("Their spirit burns your requiem away!").withColor(0xB5651D));
+            return;
+        }
 
         if(pacifiedEntities.contains(targetEntity.getUUID())) {
             if(entity instanceof ServerPlayer player) {

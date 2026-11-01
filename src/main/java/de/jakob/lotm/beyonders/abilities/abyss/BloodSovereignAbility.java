@@ -147,7 +147,7 @@ public class BloodSovereignAbility extends SelectableAbility {
                         if (AbilityUtil.isTargetSignificantlyStronger(seq, BeyonderData.getSequence(t)))
                             return;
 
-                        t.hurt(ModDamageTypes.source(level, ModDamageTypes.BEYONDER_GENERIC, entity),
+                        t.hurt(ModDamageTypes.source(level, ModDamageTypes.CORROSION, entity),
                                 (float) damage);
 
                         Vec3 tp = t.position().add(0, 1, 0);
@@ -181,7 +181,7 @@ public class BloodSovereignAbility extends SelectableAbility {
         if (target == null) {
             AbilityUtil.sendActionBar(entity,
                     Component.translatable("ability.lotmcraft.blood_sovereign.no_target")
-                            .withColor(0x8B0000));
+                            .withColor(0xFFa3070c));
             return;
         }
         if (corrodedEntities.contains(target.getUUID())) return;
@@ -238,7 +238,7 @@ public class BloodSovereignAbility extends SelectableAbility {
                                 * multiplier(entity) * (1 + stage * 0.3);
 
                         if (!AbilityUtil.isTargetSignificantlyStronger(seq, BeyonderData.getSequence(target))) {
-                            target.hurt(ModDamageTypes.source(level, ModDamageTypes.BEYONDER_GENERIC, entity),
+                            target.hurt(ModDamageTypes.source(level, ModDamageTypes.CORROSION, entity),
                                     (float) escalating);
                         }
                         target.addEffect(new MobEffectInstance(MobEffects.POISON,  20 * 3, 2 + stage / 2, false, false));

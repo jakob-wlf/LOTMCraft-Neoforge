@@ -788,4 +788,7 @@ public abstract class PhysicalEnhancementsAbility extends PassiveAbility {
 
         lastKnownSequence.remove(uuid);
     }
+    public List<PhysicalEnhancement> getPhysicalEnhancementsForSequence(int sequenceLevel) {
+        return List.copyOf(getEnhancementsForSequence(sequenceLevel));
+    }
 }

@@ -1,3 +1,4 @@
+
 package de.jakob.lotm.attachments;
 
 import net.minecraft.core.BlockPos;
@@ -17,7 +18,7 @@ import java.util.*;
 
 public class BlockExpiryData extends SavedData {
 
-    private record Entry(long expireAt, BlockState state) {}
+    private record Entry(long expireAt, BlockState state, BlockState originalState) {}
 
     private final Map<BlockPos, Entry> expiries = new HashMap<>();
 
@@ -30,11 +31,14 @@ public class BlockExpiryData extends SavedData {
 
     /** Mark a single block. Captures its current state. Returns false if skipped (unloaded or air). */
     public boolean schedule(ServerLevel level, BlockPos pos, long ticksFromNow) {
+        return schedule(level, pos, ticksFromNow, null);
+    }
+    /** Schedule a temporary block, optionally restoring its original state. */
+    public boolean schedule(ServerLevel level, BlockPos pos, long ticksFromNow, BlockState originalState) {
         if (!level.isLoaded(pos)) return false;
         BlockState state = level.getBlockState(pos);
         if (state.isAir()) return false;
-
-        expiries.put(pos.immutable(), new Entry(level.getGameTime() + ticksFromNow, state));
+        expiries.put(pos.immutable(), new Entry(level.getGameTime() + ticksFromNow, state, originalState));
         setDirty();
         return true;
     }
@@ -54,9 +58,8 @@ public class BlockExpiryData extends SavedData {
 
     public void tick(ServerLevel level) {
         if (expiries.isEmpty()) return;
-        long now = level.getGameTime();
-
         // Collect first, then process, so removals can't cause a ConcurrentModificationException
+        long now = level.getGameTime();
         List<Map.Entry<BlockPos, Entry>> due = new ArrayList<>();
         for (var e : expiries.entrySet()) {
             if (now >= e.getValue().expireAt() && level.isLoaded(e.getKey())) {
@@ -67,9 +70,15 @@ public class BlockExpiryData extends SavedData {
 
         for (var e : due) {
             BlockPos pos = e.getKey();
+            Entry entry = e.getValue();
+
             // Only remove if the block is still exactly what was marked
-            if (level.getBlockState(pos) == e.getValue().state()) {
-                level.removeBlock(pos, false); // or destroyBlock(pos, true) to drop items
+            if (level.getBlockState(pos).equals(entry.state())) {
+                if (entry.originalState() != null) {
+                    level.setBlock(pos, entry.originalState(), Block.UPDATE_ALL);
+                } else {
+                    level.removeBlock(pos, false);
+                }
             }
             expiries.remove(pos);
         }
@@ -84,20 +93,22 @@ public class BlockExpiryData extends SavedData {
             t.putLong("pos", pos.asLong());
             t.putLong("time", entry.expireAt());
             t.put("state", NbtUtils.writeBlockState(entry.state()));
+            if (entry.originalState() != null) t.put("original", NbtUtils.writeBlockState(entry.originalState()));
             list.add(t);
         });
         tag.put("entries", list);
         return tag;
     }
-
     public static BlockExpiryData load(CompoundTag tag, HolderLookup.Provider registries) {
         BlockExpiryData data = new BlockExpiryData();
         HolderGetter<Block> blocks = registries.lookupOrThrow(Registries.BLOCK);
         for (Tag t : tag.getList("entries", Tag.TAG_COMPOUND)) {
             CompoundTag c = (CompoundTag) t;
             BlockState state = NbtUtils.readBlockState(blocks, c.getCompound("state"));
-            data.expiries.put(BlockPos.of(c.getLong("pos")), new Entry(c.getLong("time"), state));
+            BlockState originalState = c.contains("original", Tag.TAG_COMPOUND) ? NbtUtils.readBlockState(blocks, c.getCompound("original")) : null;
+            data.expiries.put(BlockPos.of(c.getLong("pos")), new Entry(c.getLong("time"), state, originalState));
         }
+
         return data;
     }
 }

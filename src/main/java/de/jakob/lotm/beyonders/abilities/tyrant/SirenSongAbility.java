@@ -10,6 +10,8 @@ import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.helper.AbilityUtil;
 import de.jakob.lotm.util.helper.ParticleUtil;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
+import de.jakob.lotm.network.PacketHandler;
+import de.jakob.lotm.network.packets.toServer.AbilitySelectionPacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -23,6 +25,7 @@ import net.minecraft.world.level.Level;
 import java.util.*;
 
 public class SirenSongAbility extends SelectableAbility {
+    private static final int TOTAL_SUB_ABILITIES = 3;
     public SirenSongAbility(String id) {
         super(id, 45);
 
@@ -51,7 +54,31 @@ public class SirenSongAbility extends SelectableAbility {
                 "ability.lotmcraft.siren_song.strengthening_melody",
                 "ability.lotmcraft.siren_song.dazing_song"};
     }
+    @Override
+    public void nextAbility(LivingEntity entity) {
+        cycleToUnlocked(entity);
+    }
+    private void cycleToUnlocked(LivingEntity entity) {
+        int length = getAllAbilityNames().length;
+        if (length == 0) return;
 
+        int selected = selectedAbilities.getOrDefault(entity.getUUID(), 0);
+        for (int i = 0; i < length; i++) {
+            selected = Math.floorMod(selected + 1, length);
+            if (isSubAbilityUnlocked(entity, selected)) break;
+        }
+        selectedAbilities.put(entity.getUUID(), selected);
+        PacketHandler.sendToServer(new AbilitySelectionPacket(getId(), selected));
+    }
+    public boolean isSubAbilityUnlocked(LivingEntity entity, int index) {
+        int seq = AbilityUtil.getSeqWithArt(entity, this);
+        if (seq <= 4) return true;
+        if (seq == 5) return index == getSeq5SubAbility(entity);
+        return false;
+    }
+    private static int getSeq5SubAbility(LivingEntity entity) {
+        return Math.floorMod(entity.getUUID().hashCode(), TOTAL_SUB_ABILITIES);
+    }
     @Override
     public void castSelectedAbility(Level level, LivingEntity entity, int abilityIndex) {
         if(level.isClientSide)
@@ -111,7 +138,6 @@ public class SirenSongAbility extends SelectableAbility {
         entity.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 20 * 20, strengthLevel, false, false, false));
         entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 20 * 20, speedLevel, false, false, false));
 
-        Set<UUID> buff = new HashSet<>();
         ServerScheduler.scheduleForDuration(0,  2, 20 * 20, () -> {
             if(entity.level().isClientSide)
                 return;
@@ -148,7 +174,6 @@ public class SirenSongAbility extends SelectableAbility {
         level.playSound(null, BlockPos.containing(entity.position()), ModSounds.DEATH_MELODY.get(), SoundSource.BLOCKS, 1, 1);
 
         int entitySeq = AbilityUtil.getSeqWithArt(entity, this);
-        float multiplier = multiplier(entity);
         float damage = baseDamage;
 
         final UUID[] posTrackerHolder = new UUID[1];

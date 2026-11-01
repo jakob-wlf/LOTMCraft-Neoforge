@@ -1,5 +1,10 @@
 package de.jakob.lotm.beyonders.abilities.core;
 
+import de.jakob.lotm.beyonders.abilities.abyss.passives.*;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Corroder.BloodlineMindRotterAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.FlameDevil.BloodlineFilthFlameSpiritAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.ShadowShifter.BloodlineShadowShiftAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.CriminalProficiencyAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.FireResistanceAbyssAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.PhysicalEnhancementsAbyssAbility;
@@ -33,6 +38,7 @@ import de.jakob.lotm.beyonders.abilities.sun.passives.PhysicalEnhancementsSunAbi
 import de.jakob.lotm.beyonders.abilities.tyrant.passives.LightningArrowAbility;
 import de.jakob.lotm.beyonders.abilities.tyrant.passives.PhysicalEnhancementsTyrantAbility;
 import de.jakob.lotm.beyonders.abilities.tyrant.passives.RiptideAbility;
+import de.jakob.lotm.beyonders.abilities.tyrant.passives.SeaCreaturesAffinityAbility;
 import de.jakob.lotm.beyonders.abilities.visionary.passives.MetaAwarenessAbility;
 import de.jakob.lotm.beyonders.abilities.visionary.passives.PhysicalEnhancementsVisionaryAbility;
 import de.jakob.lotm.beyonders.abilities.visionary.passives.PureIdealism;
@@ -85,7 +91,19 @@ public class PassiveAbilityHandler {
         // Abyss
         passiveAbilities.add(new CriminalProficiencyAbility("criminal_proficiency_ability"));
         passiveAbilities.add(new FireResistanceAbyssAbility("fire_resistance_abyss_ability"));
+        passiveAbilities.add(new PoisonResistanceAbility("poison_resistance_ability"));
+        passiveAbilities.add(new CurseResistanceAbility("curse_resistance_ability"));
+        passiveAbilities.add(new DevilBloodlineAbility("devil_bloodline_ability"));
+        passiveAbilities.add(new BloodlineShadowShiftAbility("bloodline_shadowshift_ability"));
+        passiveAbilities.add(new BloodlineMindRotterAbility("bloodline_mind_rotter_ability"));
+        passiveAbilities.add(new BloodlineFilthFlameSpiritAbility("bloodline_filth_flame_spirit_ability"));
+        passiveAbilities.add(new AbyssMentalResistanceAbility("abyss_mental_resistance_ability"));
+        passiveAbilities.add(new DemonOfTheBodyAbility("demon_of_the_body_ability"));
         passiveAbilities.add(new WordImmunityAbility("word_immunity_abyss_ability"));
+        passiveAbilities.add(new DomainOfBodyAbility("domain_of_body_ability"));
+        passiveAbilities.add(new UndyingBloodAbility("undying_blood_ability"));
+        passiveAbilities.add(new MaliceAuthorityAbility("malice_authority_ability"));
+        passiveAbilities.add(new SinLordAbility("sin_lord_ability"));
 
         // Door
         passiveAbilities.add(new SpiritWorldAwarenessAbility("spirit_world_awareness_ability"));
@@ -125,6 +143,7 @@ public class PassiveAbilityHandler {
         // Tyrant
         passiveAbilities.add(new LightningArrowAbility("lightning_arrow_ability"));
         passiveAbilities.add(new RiptideAbility("riptide_ability"));
+        passiveAbilities.add(new SeaCreaturesAffinityAbility("sea_creatures_affinity_ability"));
 
         // Death
         passiveAbilities.add(new UndeadIgnoranceAbility("undead_ignorance_ability"));

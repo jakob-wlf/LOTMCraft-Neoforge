@@ -1,6 +1,7 @@
 package de.jakob.lotm.beyonders.abilities.door;
 
 import de.jakob.lotm.LOTMCraft;
+import de.jakob.lotm.beyonders.abilities.abyss.TheCorroderAbility;
 import de.jakob.lotm.attachments.BlockExpiryData;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.util.BeyonderData;
@@ -83,6 +84,7 @@ public class SpatialCageAbility extends SelectableAbility {
         ServerScheduler.scheduleDelayed(18, () -> level.playSound(null, center.x, center.y, center.z, SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, .5f, 1.6f), serverLevel);
 
         ServerScheduler.scheduleForDuration(0, 1,  openFront ? 20 * 20 : 20 * 10, () -> {
+            TheCorroderAbility.corrodeBlocks(cage.level(), cage.barrierBlocks());
             cage.updateCage();
             cage.addSlownessToEntities();
         }, cage::removeCage, serverLevel, () -> AbilityUtil.getTimeInArea(entity, new Location(targetLoc, level)));

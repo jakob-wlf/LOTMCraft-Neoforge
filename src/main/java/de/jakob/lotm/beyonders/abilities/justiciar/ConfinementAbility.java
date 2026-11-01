@@ -1,6 +1,7 @@
 package de.jakob.lotm.beyonders.abilities.justiciar;
 
 import de.jakob.lotm.LOTMCraft;
+import de.jakob.lotm.beyonders.abilities.abyss.TheCorroderAbility;
 import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.beyonders.abilities.core.AbilityUsedEvent;
 import de.jakob.lotm.util.data.Location;
@@ -21,6 +22,7 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.EntityTeleportEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import org.joml.Vector3f;
 
 import java.util.*;
@@ -209,6 +211,15 @@ public class ConfinementAbility extends Ability {
                 .filter(z -> z.ownerId.equals(id))
                 .findFirst()
                 .ifPresent(z -> removeZone(z, serverLevel));
+    }
+    @SubscribeEvent
+    public static void onServerTick(ServerTickEvent.Post event) {
+        for (ConfinementZone zone : ACTIVE_ZONES) {
+            if (!zone.isActive() || zone.barriers.isEmpty()) continue;
+            TheCorroderAbility.corrodeBlocks(zone.level, zone.barriers);
+            // Once the wall is fully eaten the zone ends and its teleport block lifts
+            if (zone.barriers.isEmpty()) removeZone(zone, zone.level);
+        }
     }
 
     public static class ConfinementZone {

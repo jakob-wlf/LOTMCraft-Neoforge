@@ -1,6 +1,7 @@
 package de.jakob.lotm.beyonders.abilities.error;
 
 import de.jakob.lotm.LOTMCraft;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.FlameDevil.BloodlineFilthFlameSpiritAbility;
 import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.beyonders.abilities.error.handler.DeceitHandler;
@@ -92,6 +93,10 @@ public class ParasitationAbility extends SelectableAbility {
             AbilityUtil.sendActionBar(entity, Component.translatable("ability.lotmcraft.parasitation.no_target").withColor(0x3240bf));
             return;
         };
+        if (BloodlineFilthFlameSpiritAbility.shieldSpirit(BeyonderData.getSequence(player), player, target)) {
+            AbilityUtil.sendActionBar(player, Component.literal("§cTheir spirit burns you away!"));
+            return;
+        }
 
         if (concealedMap.containsKey(player.getUUID())) {
             cancelConcealed(serverLevel, player);
@@ -251,6 +256,10 @@ public class ParasitationAbility extends SelectableAbility {
 
         if (target == null) {
             AbilityUtil.sendActionBar(player, Component.translatable("ability.lotmcraft.parasitation.no_target").withColor(0x3240bf));
+            return;
+        }
+        if (BloodlineFilthFlameSpiritAbility.shieldSpirit(BeyonderData.getSequence(player), player, target)) {
+            AbilityUtil.sendActionBar(player, Component.literal("§cTheir spirit burns you away!"));
             return;
         }
 
