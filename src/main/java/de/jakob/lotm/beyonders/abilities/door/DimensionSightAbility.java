@@ -24,6 +24,9 @@ import de.jakob.lotm.util.helper.AbilityUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -138,11 +141,11 @@ public class DimensionSightAbility extends SelectableAbility {
         }
     }
 
-    public static void watchLocation(ServerPlayer player, BlockPos pos) {
+    public static void watchLocation(ServerPlayer player, ResourceLocation dimension, BlockPos pos) {
         Integer mode = pending.remove(player.getUUID());
         if (mode == null || mode != 0) return;
-        ServerLevel level = player.serverLevel();
-        if (!level.getWorldBorder().isWithinBounds(pos)) return;
+        ServerLevel level = player.server.getLevel(ResourceKey.create(Registries.DIMENSION, dimension));
+        if (level == null || !level.getWorldBorder().isWithinBounds(pos)) return;
         level.getChunk(pos.getX() >> 4, pos.getZ() >> 4);
         int surface = level.getHeight(Heightmap.Types.MOTION_BLOCKING, pos.getX(), pos.getZ());
         BlockPos spot = new BlockPos(pos.getX(), Math.clamp(Math.min(pos.getY(), surface), level.getMinBuildHeight(), level.getMaxBuildHeight() - 1), pos.getZ());
