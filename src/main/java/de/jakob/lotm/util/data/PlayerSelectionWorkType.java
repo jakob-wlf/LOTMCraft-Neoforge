@@ -4,5 +4,6 @@ public enum PlayerSelectionWorkType {
     DIVINATION,
     DREAM_TRAVERSAL,
     PROXY,
-    SERVANT_MANAGE
+    SERVANT_MANAGE,
+    DIMENSION_SIGHT
 }

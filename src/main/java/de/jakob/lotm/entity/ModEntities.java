@@ -147,6 +147,10 @@ public class ModEntities {
             ENTITY_TYPES.register("portal", () -> EntityType.Builder.<PortalEntity>of(PortalEntity::new, MobCategory.MISC)
                     .sized(1f, 1f).noSummon().build("portal"));
 
+    public static final Supplier<EntityType<DimensionSightEntity>> DIMENSION_SIGHT =
+            ENTITY_TYPES.register("dimension_sight", () -> EntityType.Builder.<DimensionSightEntity>of(DimensionSightEntity::new, MobCategory.MISC)
+                    .sized(3.5f, 3.5f).clientTrackingRange(64).updateInterval(1).noSave().noSummon().fireImmune().build("dimension_sight"));
+
     public static final Supplier<EntityType<TravelersDoorEntity>> TRAVELERS_DOOR =
             ENTITY_TYPES.register("travelers_door", () -> EntityType.Builder.<TravelersDoorEntity>of(TravelersDoorEntity::new, MobCategory.MISC)
                     .sized(1.5f, 2.5f).noSave().build("travelers_door"));

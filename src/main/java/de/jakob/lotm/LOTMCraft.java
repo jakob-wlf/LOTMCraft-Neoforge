@@ -63,6 +63,7 @@ import de.jakob.lotm.entity.client.ability_entities.volcano.VolcanoRenderer;
 import de.jakob.lotm.entity.client.ability_entities.wheel_of_fortune_pathway.cycle_of_fate.CycleOfFateRenderer;
 import de.jakob.lotm.entity.client.ability_entities.mother_pathway.desolate_area.DesolateAreaRenderer;
 import de.jakob.lotm.entity.client.ability_entities.door_pathway.distortion_field.DistortionFieldRenderer;
+import de.jakob.lotm.entity.client.ability_entities.door_pathway.dimension_sight.DimensionSightRenderer;
 import de.jakob.lotm.entity.client.ability_entities.door_pathway.return_portal.ReturnPortalRenderer;
 import de.jakob.lotm.entity.client.ability_entities.door_pathway.electric_shock.ElectricShockRenderer;
 import de.jakob.lotm.entity.client.ability_entities.tyrant_pathway.electromagnetic_tornado.ElectromagneticTornadoRenderer;
@@ -342,6 +343,7 @@ public class LOTMCraft
             EntityRenderers.register(ModEntities.SUN_KINGDOM.get(), SunKingdomEntityRenderer::new);
             EntityRenderers.register(ModEntities.DEATH_DIVINE_KINGDOM.get(), DeathDivineKingdomEntityRenderer::new);
             EntityRenderers.register(ModEntities.DISTORTION_FIELD.get(), DistortionFieldRenderer::new);
+            EntityRenderers.register(ModEntities.DIMENSION_SIGHT.get(), DimensionSightRenderer::new);
             EntityRenderers.register(ModEntities.SPEAR_OF_DESTRUCTION.get(), SpearOfDestructionProjectileRenderer::new);
             EntityRenderers.register(ModEntities.RETURN_PORTAL.get(), ReturnPortalRenderer::new);
             EntityRenderers.register(ModEntities.AVATAR.get(), ErrorAvatarRenderer::new);

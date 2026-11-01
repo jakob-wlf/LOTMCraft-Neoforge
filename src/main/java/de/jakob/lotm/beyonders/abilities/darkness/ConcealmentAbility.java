@@ -497,6 +497,16 @@ public class ConcealmentAbility extends SelectableAbility {
         return entity.level().getServer().overworld().getGameTime() < mark.until;
     }
 
+    public static boolean veiled(LivingEntity viewer, LivingEntity target) {
+        if (sees(viewer)) return false;
+        Mark mark = concealedOthers.get(target.getUUID());
+        if (mark != null && !mark.caster.equals(viewer.getUUID()) && hiddenFromHarm(target)) return true;
+        for (Veil veil : veils) {
+            if (!veil.caster.equals(viewer.getUUID()) && inside(target, veil)) return true;
+        }
+        return false;
+    }
+
     public static void sealSecret(ServerPlayer player, String word) {
         if (word == null) return;
         String trimmed = word.trim();

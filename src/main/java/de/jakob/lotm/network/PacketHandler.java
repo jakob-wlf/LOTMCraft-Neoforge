@@ -53,6 +53,12 @@ public class PacketHandler {
         );
 
         registrar.playToClient(
+                SyncDimensionSightPacket.TYPE,
+                SyncDimensionSightPacket.STREAM_CODEC,
+                SyncDimensionSightPacket::handle
+        );
+
+        registrar.playToClient(
                 SyncBeyonderDataPacket.TYPE,
                 SyncBeyonderDataPacket.STREAM_CODEC,
                 SyncBeyonderDataPacket::handle
@@ -894,6 +900,12 @@ public class PacketHandler {
                 HoldAbilityPacket.TYPE,
                 HoldAbilityPacket.STREAM_CODEC,
                 HoldAbilityPacket::handle
+        );
+
+        registrar.playToServer(
+                DimensionSightLocationPacket.TYPE,
+                DimensionSightLocationPacket.STREAM_CODEC,
+                DimensionSightLocationPacket::handle
         );
 
         registrar.playToServer(

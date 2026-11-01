@@ -21,6 +21,7 @@ import de.jakob.lotm.gui.custom.quest.QuestAcceptanceScreen;
 import de.jakob.lotm.gui.custom.selection_gui.*;
 import de.jakob.lotm.network.PacketHandler;
 import de.jakob.lotm.network.packets.toClient.*;
+import de.jakob.lotm.entity.custom.ability_entities.door_pathway.DimensionSightEntity;
 import de.jakob.lotm.network.packets.toServer.ShapeShiftingPlayerModelPacket;
 import de.jakob.lotm.beyonders.quest.Quest;
 import de.jakob.lotm.beyonders.quest.QuestRegistry;
@@ -82,6 +83,13 @@ public class ClientHandler {
     public static void setHoldCharge(float charge, int needed) {
         holdCharge = charge;
         holdNeeded = needed;
+    }
+
+    public static void syncDimensionSight(SyncDimensionSightPacket packet) {
+        if (Minecraft.getInstance().level == null) return;
+        if (Minecraft.getInstance().level.getEntity(packet.veil()) instanceof DimensionSightEntity veil) {
+            veil.receive(packet);
+        }
     }
 
     public static float holdCharge() {

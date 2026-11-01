@@ -249,6 +249,7 @@ public class AbilityHandler {
         abilities.add(new ReplicatingAbility("replicating_ability"));
         abilities.add(new DistortionFieldAbility("distortion_field_ability"));
         abilities.add(new AreaMiniaturizationAbility("area_miniaturization_ability"));
+        abilities.add(new DimensionSightAbility("dimension_sight_ability"));
         abilities.add(new TeleportationAuthorityAbility("teleportation_authority_ability"));
         abilities.add(new SpaceDistortionAbility("space_distortion_ability"));
         abilities.add(new PocketDimensionAbility("pocket_dimension_ability"));
