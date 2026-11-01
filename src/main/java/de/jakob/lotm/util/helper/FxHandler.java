@@ -47,12 +47,21 @@ public final class FxHandler {
     }
 
     public static UUID playCancellable(ServerLevel level, String fx, Vec3 pos, double scale) {
+        return playCancellable(level, fx, pos, scale, null);
+    }
+
+    public static UUID playCancellable(ServerLevel level, String fx, Vec3 pos, double scale, Quaternionf rotation) {
         UUID id = UUID.randomUUID();
         BlockPos blockPos = BlockPos.containing(pos);
         PacketHandler.sendToNearbyPlayers(new PlayCancellablePhotonBlockEffectPacket(fx, blockPos,
                 pos.x - blockPos.getX() - 0.5, pos.y - blockPos.getY() - 0.5, pos.z - blockPos.getZ() - 0.5,
-                scale, null, -1, false, true, null, id), level, pos, RANGE);
+                scale, rotation, -1, false, true, null, id), level, pos, RANGE);
         return id;
+    }
+
+    /** Rotation that turns an effect authored facing +Z towards {@code direction}, staying upright. */
+    public static Quaternionf yawTowards(Vec3 direction) {
+        return new Quaternionf().rotateY((float) Math.atan2(direction.x, direction.z));
     }
 
     public static void cancel(ServerLevel level, UUID id) {
