@@ -1,6 +1,7 @@
 package de.jakob.lotm.network.packets.toServer;
 
 import de.jakob.lotm.LOTMCraft;
+import de.jakob.lotm.attachments.DisabledAbilitiesComponent;
 import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.beyonders.abilities.core.AbilityHoldEvent;
@@ -59,6 +60,13 @@ public record HoldAbilityPacket(String abilityId) implements CustomPacketPayload
             long now = player.level().getGameTime();
             if (seen.getOrDefault(id, Long.MIN_VALUE) < now - 2) charge.put(id, 0f);
             seen.put(id, now);
+
+            DisabledAbilitiesComponent disabled = player.getData(ModAttachments.DISABLED_ABILITIES_COMPONENT);
+            boolean sealed = !ability.canAlwaysBeUsed && (disabled.isAbilityUsageDisabled() || disabled.isSpecificAbilityDisabled(ability.getId()));
+            if (sealed) {
+                PacketHandler.sendToPlayer(player, new HoldCastProgressPacket(charge.getOrDefault(id, 0f), needed));
+                return;
+            }
 
             AbilityHoldEvent event = new AbilityHoldEvent(player, ability, subIndex);
             NeoForge.EVENT_BUS.post(event);

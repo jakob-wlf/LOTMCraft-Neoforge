@@ -30,7 +30,7 @@ public class BlinkAfterimageAbility extends ToggleAbility {
 
     @Override
     public Map<String, Integer> getRequirements() {
-        return Map.of("door", 4);
+        return Map.of("door", 2);
     }
 
     @Override
