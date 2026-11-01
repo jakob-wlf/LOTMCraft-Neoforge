@@ -84,6 +84,12 @@ public class PacketHandler {
         );
 
         registrar.playToClient(
+                SyncAbilityCooldownsPacket.TYPE,
+                SyncAbilityCooldownsPacket.STREAM_CODEC,
+                SyncAbilityCooldownsPacket::handle
+        );
+
+        registrar.playToClient(
                 SyncControllingPacket.TYPE,
                 SyncControllingPacket.STREAM_CODEC,
                 SyncControllingPacket::handle

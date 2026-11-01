@@ -1,7 +1,11 @@
 package de.jakob.lotm.attachments;
 
+import de.jakob.lotm.network.PacketHandler;
+import de.jakob.lotm.network.packets.toClient.SyncAbilityCooldownsPacket;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.neoforge.common.util.INBTSerializable;
 
 import java.util.HashMap;
@@ -9,7 +13,15 @@ import java.util.Map;
 
 public class AbilityCooldownComponent implements INBTSerializable<CompoundTag> {
     private final Map<String, Integer> cooldowns = new HashMap<>();
-    
+
+    // Sends the entity's full cooldown map to its client; no-op for non-players
+    public static void syncToClient(LivingEntity entity) {
+        if (entity instanceof ServerPlayer serverPlayer) {
+            Map<String, Integer> cooldowns = new HashMap<>(serverPlayer.getData(ModAttachments.COOLDOWN_COMPONENT).getCooldowns());
+            PacketHandler.sendToPlayer(serverPlayer, new SyncAbilityCooldownsPacket(cooldowns));
+        }
+    }
+
     public void setCooldown(String abilityId, int ticks) {
         cooldowns.put(abilityId, ticks);
     }
@@ -35,6 +47,15 @@ public class AbilityCooldownComponent implements INBTSerializable<CompoundTag> {
         cooldowns.replaceAll((id, ticks) -> Math.max(0, ticks - 1));
         cooldowns.entrySet().removeIf(entry -> entry.getValue() <= 0);
     }
+
+    public Map<String, Integer> getCooldowns(){
+        return cooldowns;
+    }
+
+    public void setCooldowns(Map<String, Integer> newCooldowns) {
+        cooldowns.clear();
+        cooldowns.putAll(newCooldowns);
+    }   
 
     @Override
     public CompoundTag serializeNBT(HolderLookup.Provider provider) {

@@ -10,6 +10,7 @@ import net.minecraft.world.entity.player.Player;
 import java.util.ArrayList;
 
 public class AbilityBarHelper {
+    public static final int MAX_SLOTS = 18;
 
     public static ArrayList<String> getAbilities(LivingEntity entity) {
         return entity.getData(ModAttachments.ABILITY_BAR_COMPONENT).getAbilities();

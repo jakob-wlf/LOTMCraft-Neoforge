@@ -2,6 +2,7 @@ package de.jakob.lotm.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.FloatArgumentType;
+import de.jakob.lotm.attachments.AbilityCooldownComponent;
 import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.util.BeyonderData;
 import net.minecraft.commands.CommandSourceStack;
@@ -27,6 +28,7 @@ public class ResetCooldownsCommand {
                         }
 
                         player.getData(ModAttachments.COOLDOWN_COMPONENT).removeAllCooldowns();
+                        AbilityCooldownComponent.syncToClient(player);
                         source.sendSuccess(() -> Component.literal("Reset cooldowns for " + player.getName().getString()), true);
                         return 1;
                     })
