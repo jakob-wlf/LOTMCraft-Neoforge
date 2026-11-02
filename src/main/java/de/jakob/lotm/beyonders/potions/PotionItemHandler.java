@@ -544,7 +544,7 @@ public class PotionItemHandler {
                     new BeyonderPotion(properties, 1, "death"),
             new Item.Properties().stacksTo(1).rarity(Rarity.EPIC));
 
-    public static DeferredItem<Item> WARRIOR_POTION = ITEMS.registerItem("warrior_potion", properties ->
+    /*public static DeferredItem<Item> WARRIOR_POTION = ITEMS.registerItem("warrior_potion", properties ->
                     new BeyonderPotion(properties, 9, "twilight_giant"),
             new Item.Properties().stacksTo(1).rarity(Rarity.EPIC));
 
@@ -578,7 +578,7 @@ public class PotionItemHandler {
 
     public static DeferredItem<Item> HAND_OF_GOD_POTION = ITEMS.registerItem("hand_of_god_potion", properties ->
                     new BeyonderPotion(properties, 1, "twilight_giant"),
-            new Item.Properties().stacksTo(1).rarity(Rarity.EPIC));
+            new Item.Properties().stacksTo(1).rarity(Rarity.EPIC));*/
 
 
 

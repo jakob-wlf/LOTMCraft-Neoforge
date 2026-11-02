@@ -413,7 +413,7 @@ public class AbilityHandler {
         abilities.add(new DeathFlameAbility("death_flame_ability"));
         abilities.add(new NationOfTheDeadAbility("nation_of_the_dead_ability"));
 
-        //TWILIGHT
+        /*//TWILIGHT
         abilities.add(new LightOfDawnAbility("light_of_dawn_ability"));
         abilities.add(new DawnArmorAbility("dawn_armor_ability"));
         abilities.add(new ArsenalOfDawnAbility("arsenal_of_dawn_ability"));
@@ -437,7 +437,7 @@ public class AbilityHandler {
         abilities.add(new HolinessAuthorityAbility("holiness_authority_ability"));
         abilities.add(new ProxyAbility("proxy_ability"));
         abilities.add(new LastStandAbility("last_stand_ability"));
-        abilities.add(new ServantsAbility("servants_ability"));
+        abilities.add(new ServantsAbility("servants_ability"));*/
 
 
         //abilities.add(new DivineKingdomAbility("divine_kingdom_ability"));
