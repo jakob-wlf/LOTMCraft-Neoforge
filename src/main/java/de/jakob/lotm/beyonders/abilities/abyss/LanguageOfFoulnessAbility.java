@@ -115,49 +115,26 @@ public class LanguageOfFoulnessAbility extends SelectableAbility {
 
         // Death remains single-target.
         if (abilityIndex == 2) {
-            LivingEntity target = AbilityUtil.getTargetEntity(
-                    entity,
-                    15 * (int) Math.max(multiplier(entity) / 4, 1),
-                    2
-            );
-
+            LivingEntity target = AbilityUtil.getTargetEntity(entity, 15 * (int) Math.max(multiplier(entity) / 4, 1), 2);
             if (target == null) {
-                AbilityUtil.sendActionBar(
-                        entity,
-                        Component.translatable("ability.lotmcraft.language_of_foulness.no_target")
-                                .withColor(0xFFa3070c)
-                );
+                AbilityUtil.sendActionBar(entity, Component.translatable("ability.lotmcraft.language_of_foulness.no_target").withColor(0xFFa3070c));
                 return;
             }
-
             speak(serverLevel, entity, abilityIndex);
-            ParticleUtil.spawnParticles(serverLevel, dust, target.getEyePosition(),
-                    120, .5, .5, .5, 0.1);
-            ParticleUtil.spawnParticles(serverLevel, ParticleTypes.SMOKE,
-                    target.getEyePosition(), 120, .5, .5, .5, 0.1);
-
+            ParticleUtil.spawnParticles(serverLevel, dust, target.getEyePosition(), 120, .5, .5, .5, 0.1);
+            ParticleUtil.spawnParticles(serverLevel, ParticleTypes.SMOKE, target.getEyePosition(), 120, .5, .5, .5, 0.1);
             castDeath(serverLevel, entity, target);
             return;
         }
 
         speak(serverLevel, entity, abilityIndex);
-
         double radius = getAoERadius(entity);
-
-        ParticleUtil.spawnParticles(
-                serverLevel, dust, entity.position().add(0, 1, 0),
-                300, radius / 2, .5, radius / 2, 0.05
-        );
-
+        ParticleUtil.spawnParticles(serverLevel, dust, entity.position().add(0, 1, 0), 300, radius / 2, .5, radius / 2, 0.05);
         for (LivingEntity target : AbilityUtil.getNearbyEntities(
                 entity, serverLevel, entity.position(), radius)) {
-
             if (!target.isAlive() || target == entity) continue;
-
-            ParticleUtil.spawnParticles(serverLevel, dust, target.getEyePosition(),
-                    40, .3, .3, .3, 0.05);
-            ParticleUtil.spawnParticles(serverLevel, ParticleTypes.SMOKE,
-                    target.getEyePosition(), 40, .3, .3, .3, 0.05);
+            ParticleUtil.spawnParticles(serverLevel, dust, target.getEyePosition(), 40, .3, .3, .3, 0.05);
+            ParticleUtil.spawnParticles(serverLevel, ParticleTypes.SMOKE, target.getEyePosition(), 40, .3, .3, .3, 0.05);
 
             switch (abilityIndex) {
                 case 0 -> castSlow(serverLevel, entity, target);
