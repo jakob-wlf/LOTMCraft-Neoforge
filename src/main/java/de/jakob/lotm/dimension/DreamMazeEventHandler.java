@@ -58,7 +58,7 @@ public class DreamMazeEventHandler {
         UUID casterUUID = data.getCasterForOccupant(player.getUUID());
         if (casterUUID == null) return;
 
-        int seq = BeyonderData.playerMap.get(casterUUID).get().sequence();
+        int seq = BeyonderData.playerMap.get(casterUUID).map(stored -> stored.sequence()).orElse(LOTMCraft.NON_BEYONDER_SEQ);
 
         // user has no time limit
         if (casterUUID.equals(player.getUUID())) return;

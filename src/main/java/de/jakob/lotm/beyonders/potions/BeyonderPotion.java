@@ -51,6 +51,11 @@ public class BeyonderPotion extends Item {
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+        // A weaker potion of your own pathway has no effect, so don't let it be drunk and wasted
+        if (AdvancementUtil.isWeakerPotionOfOwnPathway(player, pathway, sequence)) {
+            return InteractionResultHolder.fail(player.getItemInHand(hand));
+        }
+
         player.startUsingItem(hand);
         return InteractionResultHolder.consume(player.getItemInHand(hand));
     }

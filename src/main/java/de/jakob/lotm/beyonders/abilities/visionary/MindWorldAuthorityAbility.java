@@ -421,10 +421,13 @@ public class MindWorldAuthorityAbility extends SelectableAbility {
 
             String name = component.names.removeFirst();
             var id = BeyonderData.playerMap.getKeyByName(name);
+            if(id == null) return;
 
             var target = serverLevel.getPlayerByUUID(id);
             if(target == null){
-                var data = BeyonderData.playerMap.get(id).get();
+                var stored = BeyonderData.playerMap.get(id);
+                if(stored.isEmpty()) return;
+                var data = stored.get();
 
                 var pos = data.lastPosition();
 

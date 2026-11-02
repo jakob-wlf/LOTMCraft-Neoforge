@@ -80,22 +80,27 @@ public class BeyonderDataTickHandler {
             return;
         }
 
-        AbilityCooldownComponent component = livingEntity.getData(ModAttachments.COOLDOWN_COMPONENT);
-        de.jakob.lotm.beyonders.abilities.error.handler.TimeHandler.tickCooldowns(livingEntity, component);
+        // hasData() guards: getData() would create (and later save) these attachments on every mob in the world
+        if(livingEntity.hasData(ModAttachments.COOLDOWN_COMPONENT)) {
+            AbilityCooldownComponent component = livingEntity.getData(ModAttachments.COOLDOWN_COMPONENT);
+            de.jakob.lotm.beyonders.abilities.error.handler.TimeHandler.tickCooldowns(livingEntity, component);
+        }
 
         if(livingEntity instanceof ServerPlayer player) {
             VirtualPersonaComponent virtualPersonaComponent = player.getData(ModAttachments.VIRTUAL_PERSONAS);
             virtualPersonaComponent.heal(player);
         }
 
-        DisabledFlightComponent disabledFlightComponent = livingEntity.getData(ModAttachments.FLIGHT_DISABLE_COMPONENT);
-        if(disabledFlightComponent.getCooldownTicks() > 0) {
-            disabledFlightComponent.setCooldownTicks(disabledFlightComponent.getCooldownTicks() - 1);
+        if(livingEntity.hasData(ModAttachments.FLIGHT_DISABLE_COMPONENT)) {
+            DisabledFlightComponent disabledFlightComponent = livingEntity.getData(ModAttachments.FLIGHT_DISABLE_COMPONENT);
+            if(disabledFlightComponent.getCooldownTicks() > 0) {
+                disabledFlightComponent.setCooldownTicks(disabledFlightComponent.getCooldownTicks() - 1);
+            }
         }
 
         if (!livingEntity.level().isClientSide) {
-            FoolingComponent foolingComponent = livingEntity.getData(ModAttachments.FOOLING_COMPONENT);
-            if (foolingComponent.isFooled()) {
+            FoolingComponent foolingComponent = livingEntity.hasData(ModAttachments.FOOLING_COMPONENT) ? livingEntity.getData(ModAttachments.FOOLING_COMPONENT) : null;
+            if (foolingComponent != null && foolingComponent.isFooled()) {
                 if (foolingComponent.getTicksRemaining() % FoolingEffect.STUN_INTERVAL_TICKS == 0) {
                     foolingComponent.applyStun(FoolingEffect.STUN_DURATION_TICKS);
                 }
@@ -113,7 +118,7 @@ public class BeyonderDataTickHandler {
             }
         }
 
-        if(entity.getData(ModAttachments.SANITY_COMPONENT.get()).getSanity() == 0.0f){
+        if(entity.hasData(ModAttachments.SANITY_COMPONENT.get()) && entity.getData(ModAttachments.SANITY_COMPONENT.get()).getSanity() == 0.0f){
             entity.kill();
         }
 
@@ -159,11 +164,13 @@ public class BeyonderDataTickHandler {
                 toggleAbility.prepareTick(livingEntity.level(), livingEntity);
                 PacketHandler.sendToTrackingAndSelf(livingEntity, new SyncToggleAbilityPacket(livingEntity.getId(), toggleAbility.getId(), SyncToggleAbilityPacket.Action.TICK.getValue()));
             });
-        }
-        if(entity.tickCount % 20 == 0) {
-            BeyonderComponent beyonderComponent = entity.getData(ModAttachments.BEYONDER_COMPONENT);
-            SyncBeyonderDataPacket packet = new SyncBeyonderDataPacket(entity.getUUID(), BeyonderData.getPathway(livingEntity), BeyonderData.getSequence(livingEntity), beyonderComponent.getSpirituality(), false, 0.0f, beyonderComponent.getPathwayHistory(), beyonderComponent.getCharacteristicStack(), getMaxWormAmount(BeyonderData.getSequence(livingEntity)), BeyonderData.pledgedSefirot(livingEntity), BeyonderData.hasPlayerPatron(livingEntity));
-            PacketHandler.sendToTrackingAndSelf(entity, packet);
+
+            // Only beyonders are re-synced; clearBeyonderData() tells clients when an entity stops being one
+            if(entity.tickCount % 20 == 0 && !entity.level().isClientSide) {
+                BeyonderComponent beyonderComponent = entity.getData(ModAttachments.BEYONDER_COMPONENT);
+                SyncBeyonderDataPacket packet = new SyncBeyonderDataPacket(entity.getUUID(), BeyonderData.getPathway(livingEntity), BeyonderData.getSequence(livingEntity), beyonderComponent.getSpirituality(), false, 0.0f, beyonderComponent.getPathwayHistory(), beyonderComponent.getCharacteristicStack(), getMaxWormAmount(BeyonderData.getSequence(livingEntity)), BeyonderData.pledgedSefirot(livingEntity), BeyonderData.hasPlayerPatron(livingEntity));
+                PacketHandler.sendToTrackingAndSelf(entity, packet);
+            }
         }
     }
 

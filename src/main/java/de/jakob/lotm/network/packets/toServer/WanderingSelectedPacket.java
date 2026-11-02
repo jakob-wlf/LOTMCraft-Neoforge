@@ -1,7 +1,9 @@
 package de.jakob.lotm.network.packets.toServer;
 
 import de.jakob.lotm.LOTMCraft;
+import de.jakob.lotm.beyonders.abilities.door.WanderingAbility;
 import de.jakob.lotm.dimension.ModDimensions;
+import de.jakob.lotm.network.packets.handlers.PendingSelectionRequests;
 import de.jakob.lotm.particle.ModParticles;
 import de.jakob.lotm.util.helper.ParticleUtil;
 import net.minecraft.core.BlockPos;
@@ -51,9 +53,17 @@ public record WanderingSelectedPacket(String dimensionId) implements CustomPacke
                 return;
             }
 
+            // One trip per use of the ability, and only to a dimension the selection screen offered
+            if (!PendingSelectionRequests.consume(player, WanderingAbility.SELECTION_KIND, packet.dimensionId())) {
+                return;
+            }
+
+            ResourceLocation targetLocation = ResourceLocation.tryParse(packet.dimensionId());
+            if (targetLocation == null) return;
+
             ResourceKey<Level> targetKey = ResourceKey.create(
                     net.minecraft.core.registries.Registries.DIMENSION,
-                    ResourceLocation.parse(packet.dimensionId())
+                    targetLocation
             );
 
             // Validate the target is not a forbidden dimension

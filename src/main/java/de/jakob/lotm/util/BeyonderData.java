@@ -199,6 +199,12 @@ public class BeyonderData {
     }
 
     public static void setBeyonder(LivingEntity entity, String pathway, int sequence, boolean skipCheck, boolean clearPathwayHistory, boolean addToPathwayHistory, boolean clearCharStack, boolean resetSpirituality, boolean putIntoMap) {
+        // Refuse a blocked change before anything is torn down, so a refused change leaves the player untouched.
+        // The player's own map entry doesn't count against the limit, or re-applying their current sequence would fail.
+        if(entity instanceof ServerPlayer player && !skipCheck && !playerMap.check(pathway, sequence, player.getUUID())) {
+            return;
+        }
+
         if(entity.level() instanceof ServerLevel serverLevel) {
             callPassiveEffectsOnRemoved(entity, serverLevel);
         }
@@ -209,8 +215,6 @@ public class BeyonderData {
 
         if(entity instanceof ServerPlayer player) {
             if(!skipCheck) {
-                if (!playerMap.check(pathway, sequence)) return;
-
                 if (!BeyonderData.getPathway(player).equals(pathway)
                         || BeyonderData.getSequence(player) < sequence)
                     playerMap.removeHonorificName(player);
@@ -235,7 +239,8 @@ public class BeyonderData {
             miracleOfResurrectionComponent.setResurrectionAttempts(4);
         }
 
-        boolean griefing = !BeyonderData.isBeyonder(entity) || BeyonderData.isGriefingEnabled(entity);
+        // Keep the player's own preference; isGriefingEnabled() also folds in the gamerule and would overwrite it with false
+        boolean griefing = !BeyonderData.isBeyonder(entity) || component.isGriefingEnabled();
 
         // Detect sequence-up before data changes so we can record missed acting and update cap
         String oldPathway = getPathway(entity);
@@ -609,9 +614,9 @@ public class BeyonderData {
         // Sync to client if this is server-side
         if (!entity.level().isClientSide()) {
             if(entity instanceof ServerPlayer serverPlayer) {
-                // Send empty data to clear client cache
+                // Send empty data to clear client caches; other players need it too, since non-beyonders aren't re-synced periodically
                 SyncBeyonderDataPacket packet = new SyncBeyonderDataPacket(entity.getUUID(), "none", 10, 0.0f, false, 0.0f, new String[10], new int[10], 0, "", false);
-                PacketHandler.sendToPlayer(serverPlayer, packet);
+                PacketHandler.sendToAllPlayers(packet);
             }
             else {
                 SyncLivingEntityBeyonderDataPacket packet =
@@ -624,6 +629,11 @@ public class BeyonderData {
     public static boolean isBeyonder(LivingEntity entity) {
         if (entity.level().isClientSide) {
             return ClientBeyonderCache.isBeyonder(entity.getUUID());
+        }
+
+        // A missing component means default (non-beyonder) data; don't create one on every entity that gets checked
+        if (!entity.hasData(ModAttachments.BEYONDER_COMPONENT)) {
+            return ModEntities.isBeyonderMob(entity);
         }
 
         BeyonderComponent component = entity.getData(ModAttachments.BEYONDER_COMPONENT);

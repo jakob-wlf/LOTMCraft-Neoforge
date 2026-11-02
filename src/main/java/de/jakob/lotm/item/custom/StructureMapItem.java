@@ -1,5 +1,6 @@
 package de.jakob.lotm.item.custom;
 
+import de.jakob.lotm.util.helper.AsyncSearch;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -26,6 +27,8 @@ import java.util.concurrent.CompletableFuture;
 
 public class StructureMapItem extends Item {
 
+    private static final int SEARCH_COOLDOWN_TICKS = 20 * 5;
+
     private final TagKey<Structure> structureTag;
     private final String mapName;
 
@@ -39,6 +42,12 @@ public class StructureMapItem extends Item {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
+        // Stops players from queueing a pile of searches by spamming the item
+        if (player.getCooldowns().isOnCooldown(this)) {
+            return InteractionResultHolder.fail(stack);
+        }
+        player.getCooldowns().addCooldown(this, SEARCH_COOLDOWN_TICKS);
+
         if (level.isClientSide) {
             return InteractionResultHolder.success(stack);
         }
@@ -48,27 +57,47 @@ public class StructureMapItem extends Item {
 
         // Tell the player we're searching so the use doesn't feel broken
         player.displayClientMessage(
-                Component.literal("§SSearching location..."), true);
+                Component.literal("§eSearching location..."), true);
 
         CompletableFuture.runAsync(() -> {
             BlockPos structurePos = serverLevel.findNearestMapStructure(
                     structureTag, playerPos, 1000, false);
 
             serverLevel.getServer().execute(() -> {
+                if (player.isRemoved()) return;
+
                 if (structurePos == null) {
                     player.displayClientMessage(
                             Component.translatable("item.lotmcraft.structure_map.not_found"), true);
                     return;
                 }
 
-                ItemStack filledMap = createStructureMap(serverLevel, structurePos);
-                player.setItemInHand(hand, filledMap);
-            });
-        });
+                // The player may have switched slots or dropped the item while the search ran,
+                // so trade in an unused map they still carry instead of overwriting whatever is in their hand now
+                ItemStack unusedMap = findUnusedMap(player, hand);
+                if (unusedMap.isEmpty()) return;
+                if (!player.hasInfiniteMaterials()) unusedMap.shrink(1);
 
-        // Consume the item optimistically — the async callback will replace it with the map,
-        // or leave the slot empty on failure (shrink by 1 below if you prefer that behaviour)
+                ItemStack filledMap = createStructureMap(serverLevel, structurePos);
+                if (!player.getInventory().add(filledMap)) {
+                    player.drop(filledMap, false);
+                }
+            });
+        }, AsyncSearch.EXECUTOR);
+
         return InteractionResultHolder.success(stack);
+    }
+
+    private ItemStack findUnusedMap(Player player, InteractionHand hand) {
+        ItemStack inHand = player.getItemInHand(hand);
+        if (inHand.is(this)) return inHand;
+        for (ItemStack stack : player.getInventory().items) {
+            if (stack.is(this)) return stack;
+        }
+        for (ItemStack stack : player.getInventory().offhand) {
+            if (stack.is(this)) return stack;
+        }
+        return ItemStack.EMPTY;
     }
 
     private ItemStack createStructureMap(ServerLevel level, BlockPos structurePos) {

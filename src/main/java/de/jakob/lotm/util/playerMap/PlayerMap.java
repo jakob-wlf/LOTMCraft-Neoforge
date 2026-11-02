@@ -297,26 +297,37 @@ public class PlayerMap extends SavedData {
     }
 
     public int count(String path, int seq) {
+        return count(path, seq, null);
+    }
+
+    public int count(String path, int seq, @Nullable UUID exclude) {
         int res = 0;
-        for (var obj : map.values()) {
-            if (obj.pathway().equals(path) && obj.sequence() == seq) {
+        for (var obj : map.entrySet()) {
+            if (obj.getKey().equals(exclude)) continue;
+            StoredData data = obj.getValue();
+            if (data.pathway().equals(path) && data.sequence() == seq) {
                 res++;
-                res += obj.charStack()[seq];
+                res += data.charStack()[seq];
             }
         }
         return res;
     }
 
     public boolean check(String path, int seq){
-        int seq_0 = count(path, 0),
-                seq_1 = count(path, 1),
-                seq_2 = count(path, 2),
-                seq_3 = count(path, 3),
-                seq_4 = count(path, 4),
-                seq_5 = count(path, 5),
-                seq_6 = count(path, 6),
-                seq_7 = count(path, 7),
-                seq_8 = count(path, 8)
+        return check(path, seq, null);
+    }
+
+    /** @param exclude a player whose own entry must not count against the limit, e.g. the one being (re)assigned */
+    public boolean check(String path, int seq, @Nullable UUID exclude){
+        int seq_0 = count(path, 0, exclude),
+                seq_1 = count(path, 1, exclude),
+                seq_2 = count(path, 2, exclude),
+                seq_3 = count(path, 3, exclude),
+                seq_4 = count(path, 4, exclude),
+                seq_5 = count(path, 5, exclude),
+                seq_6 = count(path, 6, exclude),
+                seq_7 = count(path, 7, exclude),
+                seq_8 = count(path, 8, exclude)
         ;
 
         switch (seq) {

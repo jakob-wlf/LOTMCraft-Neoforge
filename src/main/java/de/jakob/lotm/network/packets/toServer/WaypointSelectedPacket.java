@@ -3,6 +3,8 @@ package de.jakob.lotm.network.packets.toServer;
 import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.attachments.WaypointComponent;
+import de.jakob.lotm.beyonders.abilities.door.WaypointAbility;
+import de.jakob.lotm.network.packets.handlers.PendingSelectionRequests;
 import de.jakob.lotm.dimension.ModDimensions;
 import de.jakob.lotm.particle.ModParticles;
 import de.jakob.lotm.rendering.effectRendering.EffectIds;
@@ -63,13 +65,19 @@ public record WaypointSelectedPacket(WaypointComponent.ClientWaypoint waypoint, 
 
             if (server == null) return;
             if(packet.use.equals("teleport")) {
-                ServerLevel destinationLevel = resolveLevel(packet.waypoint.id(), server);
+                if(!PendingSelectionRequests.consume(player, WaypointAbility.TELEPORT_SELECTION)) return;
+
+                // Travel only to a waypoint the player saved, using the server's copy of its position
+                WaypointComponent.Waypoint waypoint = player.getData(ModAttachments.WAYPOINT_COMPONENT).findByClientWaypoint(packet.waypoint, server);
+                if(waypoint == null) return;
+
+                ServerLevel destinationLevel = waypoint.serverLevel();
 
                 serverLevel.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENDERMAN_TELEPORT, SoundSource.BLOCKS, 1, 1);
-                player.teleportTo(destinationLevel, packet.waypoint.x(), packet.waypoint.y(), packet.waypoint.z(), Set.of(), player.getYRot(), player.getXRot());
-                serverLevel.playSound(null, packet.waypoint.x(), packet.waypoint.y(), packet.waypoint.z(), SoundEvents.ENDERMAN_TELEPORT, SoundSource.BLOCKS, 1, 1);
-                EffectManager.playEffect(EffectIds.WAYPOINT, packet.waypoint.x(), packet.waypoint.y() + 1, packet.waypoint.z(), serverLevel);
                 EffectManager.playEffect(EffectIds.WAYPOINT, player.getX(), player.getY() + 1, player.getZ(), serverLevel);
+                player.teleportTo(destinationLevel, waypoint.x(), waypoint.y(), waypoint.z(), Set.of(), player.getYRot(), player.getXRot());
+                destinationLevel.playSound(null, waypoint.x(), waypoint.y(), waypoint.z(), SoundEvents.ENDERMAN_TELEPORT, SoundSource.BLOCKS, 1, 1);
+                EffectManager.playEffect(EffectIds.WAYPOINT, waypoint.x(), waypoint.y() + 1, waypoint.z(), destinationLevel);
             }
             else if (packet.use.equals("delete")) {
                 WaypointComponent waypointComponent = player.getData(ModAttachments.WAYPOINT_COMPONENT);
@@ -86,10 +94,8 @@ public record WaypointSelectedPacket(WaypointComponent.ClientWaypoint waypoint, 
     }
 
     public static ServerLevel resolveLevel(String levelKey, MinecraftServer server) {
-        ResourceKey<Level> key = ResourceKey.create(
-                Registries.DIMENSION,
-                ResourceLocation.parse(levelKey)
-        );
-        return server.getLevel(key);
+        ResourceLocation location = ResourceLocation.tryParse(levelKey);
+        if (location == null) return null;
+        return server.getLevel(ResourceKey.create(Registries.DIMENSION, location));
     }
 }

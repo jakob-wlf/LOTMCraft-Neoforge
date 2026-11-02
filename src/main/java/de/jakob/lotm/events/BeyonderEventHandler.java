@@ -228,7 +228,11 @@ public class BeyonderEventHandler {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
 
         if (!BeyonderData.isBeyonder(player)) return;
-        if (!player.serverLevel().getGameRules().getBoolean(ModGameRules.REGRESS_SEQUENCE_ON_DEATH)) return;
+
+        var envisionedSplitComponent = player.getData(ModAttachments.ENVISION_SPLIT.get());
+        // onDeath regresses envisioned players even when the gamerule is off, so that regression has to be applied here too
+        if (!player.serverLevel().getGameRules().getBoolean(ModGameRules.REGRESS_SEQUENCE_ON_DEATH)
+                && !envisionedSplitComponent.isEnvisioned()) return;
 
         // onDeath (LivingDeathEvent) already handled regression and cleared the revert component.
         // Here we only need to drop the correct characteristic item.
@@ -240,8 +244,6 @@ public class BeyonderEventHandler {
 
         if (playerMap.get(player).isEmpty()) return;
 
-        var envisionedSplitComponent = player.getData(ModAttachments.ENVISION_SPLIT.get());
-
         var data = playerMap.get(player).get();
 
         BeyonderCharacteristicItem charItem = null;
@@ -251,15 +253,21 @@ public class BeyonderEventHandler {
                     .selectCharacteristicOfPathwayAndSequence(BeyonderData.getPathway(player), dropSequence);
 
             BeyonderData.setBeyonder(player, data.pathway(), data.sequence(), true, false, false, false);
+            // The sequence regressed to was already digested once; setBeyonder resets digestion, so restore it
+            if (BeyonderData.isBeyonder(player)) {
+                BeyonderData.setDigestionProgress(player, 1.0f);
+            }
+
+            // The regression undoes the envisioned split, which drops no characteristic
+            if(envisionedSplitComponent.isEnvisioned()){
+                envisionedSplitComponent.setEnvisioned(false);
+                return;
+            }
         }
 
         if (charItem == null) return;
 
         if(PureIdealismUtil.died.containsKey(player.getUUID())){
-            return;
-        }
-        else if(envisionedSplitComponent.isEnvisioned()){
-            envisionedSplitComponent.setEnvisioned(false);
             return;
         }
         else {
@@ -474,7 +482,7 @@ public class BeyonderEventHandler {
             PacketHandler.syncBeyonderDataToPlayer(sp);
         }
 
-        // If digestion is fully drained, 10% chance to regress victim and reward attacker
+        // If digestion is fully drained, 1% chance per hit to regress victim and reward attacker
         if (newDigestion <= 0f && new Random().nextFloat() < 0.01f) {
             // Capture pathway before regression changes it — the dropped characteristic belongs to the old pathway/seq
             String pathwayBeforeRegress = BeyonderData.getPathway(victim);
@@ -489,7 +497,8 @@ public class BeyonderEventHandler {
                 if (victim instanceof ServerPlayer sp && BeyonderData.playerMap.get(sp).isPresent()) {
                     StoredData regressed = BeyonderData.playerMap.get(sp).get().regressSeq();
                     BeyonderData.playerMap.put(sp, regressed);
-                    BeyonderData.setBeyonder(victim, regressed.pathway(), regressed.sequence());
+                    // A regression must never be refused by the sequence limits, or the map and the player drift apart
+                    BeyonderData.setBeyonder(victim, regressed.pathway(), regressed.sequence(), true, false, true, false);
                 } else {
                     BeyonderData.setBeyonder(victim, BeyonderData.getPathway(victim), victimSeq + 1);
                 }
@@ -607,9 +616,9 @@ public class BeyonderEventHandler {
             event.setCanceled(true);
         }
         else if (target == Level.END){
-            if(path.equals("door") && seq > 4)
-                event.setCanceled(true);
-            else if(seq > 3)
+            // Door beyonders may enter one sequence earlier than everyone else
+            int requiredSeq = path.equals("door") ? 4 : 3;
+            if(seq > requiredSeq)
                 event.setCanceled(true);
         }
     }

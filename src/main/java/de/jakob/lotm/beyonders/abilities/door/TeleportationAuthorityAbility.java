@@ -4,6 +4,7 @@ import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.entity.custom.ability_entities.door_pathway.MysticalDoorEntity;
 import de.jakob.lotm.network.PacketHandler;
+import de.jakob.lotm.network.packets.handlers.PendingSelectionRequests;
 import de.jakob.lotm.network.packets.toClient.OpenCoordinateScreenPacket;
 import de.jakob.lotm.particle.ModParticles;
 import de.jakob.lotm.rendering.effectRendering.EffectIds;
@@ -65,11 +66,17 @@ public class TeleportationAuthorityAbility extends SelectableAbility {
         if(!(entity instanceof ServerPlayer)) selectedAbility = 3;
 
         switch (selectedAbility) {
-            case 0 -> PacketHandler.sendToPlayer((ServerPlayer) entity, new OpenCoordinateScreenPacket("teleportation_authority_self"));
-            case 1 -> PacketHandler.sendToPlayer((ServerPlayer) entity, new OpenCoordinateScreenPacket("teleportation_authority_self_and_nearby"));
-            case 2 -> PacketHandler.sendToPlayer((ServerPlayer) entity, new OpenCoordinateScreenPacket("teleportation_authority_targets"));
+            case 0 -> openCoordinateScreen((ServerPlayer) entity, "teleportation_authority_self");
+            case 1 -> openCoordinateScreen((ServerPlayer) entity, "teleportation_authority_self_and_nearby");
+            case 2 -> openCoordinateScreen((ServerPlayer) entity, "teleportation_authority_targets");
             //case 3 -> banishTargets((ServerLevel) level, entity);
         }
+    }
+
+    // UseTeleportationAuthorityPacket only accepts coordinates for a screen opened here
+    private static void openCoordinateScreen(ServerPlayer player, String use) {
+        PendingSelectionRequests.arm(player, use, 20 * 120);
+        PacketHandler.sendToPlayer(player, new OpenCoordinateScreenPacket(use));
     }
 
     private void banishTargets(ServerLevel level, LivingEntity entity) {

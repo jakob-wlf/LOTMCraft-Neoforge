@@ -74,6 +74,9 @@ public abstract class PositionAuthorityAbility extends Ability {
         ServerPlayer caster = event.getPlayer();
         if (!chosen.hasAbility(caster, false)) return;
 
+        // It's a command, not a chat message: don't broadcast who is being targeted
+        event.setCanceled(true);
+
         String name = rest.substring(chosen.command().length()).trim();
         ServerPlayer target = caster.server.getPlayerList().getPlayerByName(name);
         int color = BeyonderData.pathwayInfos.get("door").color();

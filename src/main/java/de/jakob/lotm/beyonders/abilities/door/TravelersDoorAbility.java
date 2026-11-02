@@ -119,7 +119,8 @@ public class TravelersDoorAbility extends SelectableAbility {
 
                 var validatedPos = TeleportationUtil.clampToBorder(serverLevel,
                         travelersDoorUsers.get(player.getUUID()).getBottomCenter());
-                BlockPos pos = new BlockPos((int) validatedPos.x,(int) validatedPos.y,(int) validatedPos.z);
+                // containing() floors; an (int) cast rounds toward zero and lands one block off on negative axes
+                BlockPos pos = BlockPos.containing(validatedPos);
 
                 travelersDoorUsers.remove(player.getUUID());
 

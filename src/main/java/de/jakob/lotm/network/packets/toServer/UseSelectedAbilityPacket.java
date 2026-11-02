@@ -85,13 +85,13 @@ public record UseSelectedAbilityPacket() implements CustomPacketPayload {
         }
     }
 
-    private static boolean isCopied(String s) {
+    static boolean isCopied(String s) {
         String[] parts = s.split(":");
         if (parts.length < 3) return false;
         return parts[2].equals("copied");
     }
 
-    private static boolean isSharedAbility(ServerPlayer player, String abilityId) {
+    static boolean isSharedAbility(ServerPlayer player, String abilityId) {
         TeamComponent team = player.getData(ModAttachments.TEAM_COMPONENT.get());
         if (player.getServer() == null) return false;
 

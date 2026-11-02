@@ -75,6 +75,9 @@ public class AdvancementUtil {
             return;
         }
 
+        // Checked before registering the advancement: a stale entry would hand the potion back on logout
+        if (isWeakerPotionOfOwnPathway(entity, pathway, sequence)) return;
+
         if (entity instanceof Player player) {
             activeAdvancements.put(player.getUUID(), PotionItemHandler.selectPotionOfPathwayAndSequence(null, pathway, sequence));
         }
@@ -94,8 +97,6 @@ public class AdvancementUtil {
             return;
         }
 
-        if (prevSequence < sequence) return;
-
         float digestionProgress = entity instanceof Player p ? BeyonderData.getDigestionProgress(p) : 0f;
         int difference = Math.abs(prevSequence - sequence);
         double failureChance = difference >= 2? 1.0f : calculateFailureChance(difference, digestionProgress, sanity);
@@ -107,6 +108,12 @@ public class AdvancementUtil {
         }
 
         executeAdvancement(entity, pathway, sequence, failureChance, null);
+    }
+
+    /** Drinking such a potion does nothing (creative players can still use it to set their sequence directly) */
+    public static boolean isWeakerPotionOfOwnPathway(LivingEntity entity, String pathway, int sequence) {
+        if (entity instanceof Player player && player.isCreative()) return false;
+        return isBeyonder(entity) && getPathway(entity).equals(pathway) && getSequence(entity) < sequence;
     }
 
     private static void advanceFirstTime(LivingEntity entity, String pathway, int sequence, float sanity) {

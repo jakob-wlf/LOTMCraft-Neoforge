@@ -540,6 +540,11 @@ public class ClientHandler {
             return;
         }
 
+        if(ability instanceof SelectableAbility selectableAbility) {
+            selectableAbility.onClientAbilityUse(level, living, packet.subAbility());
+            return;
+        }
+
         ability.onAbilityUse(level, living);
     }
 

@@ -1,8 +1,11 @@
 package de.jakob.lotm.network.packets.toServer;
 
 import de.jakob.lotm.LOTMCraft;
+import de.jakob.lotm.beyonders.abilities.common.DivinationAbility;
 import de.jakob.lotm.beyonders.abilities.darkness.ConcealmentAuthorityAbility;
+import de.jakob.lotm.network.packets.handlers.PendingSelectionRequests;
 import de.jakob.lotm.util.BeyonderData;
+import de.jakob.lotm.util.helper.AsyncSearch;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -36,6 +39,9 @@ public record BiomeDivinationSelectedPacket(String biomeId) implements CustomPac
     public static void handle(BiomeDivinationSelectedPacket packet, IPayloadContext context) {
         if (!(context.player() instanceof ServerPlayer player)) return;
 
+        // Only answer a screen the divination ability actually opened, and only with one of the offered biomes
+        if (!PendingSelectionRequests.consume(player, DivinationAbility.BIOME_DIVINATION, packet.biomeId())) return;
+
         ServerLevel level = player.serverLevel();
         ResourceLocation biomeKey = ResourceLocation.tryParse(packet.biomeId());
 
@@ -44,17 +50,8 @@ public record BiomeDivinationSelectedPacket(String biomeId) implements CustomPac
             return;
         }
 
-        int playerSequence = BeyonderData.getSequence(player);
-        double worldBorder = player.level().getWorldBorder().getSize();
-        int maxDistance = switch (playerSequence) {
-            case 9, 8, 7, 6, 5 -> 500 * (10 - playerSequence);
-            case 4             -> 5000;
-            case 3             -> 15000;
-            case 2             -> ((int) (worldBorder * 0.001) > 15000) ? (int) (worldBorder * 0.001) : 30000;
-            case 1             -> ((int) (worldBorder * 0.01) > 30000) ? (int) (worldBorder * 0.01) : 60000;
-            case 0             -> ((int) (worldBorder * 0.1) > 60000) ? (int) (worldBorder * 0.01) : 600000;
-            default            -> 100;
-        };
+        int maxDistance = DivinationAbility.getDivinationRange(BeyonderData.getSequence(player), level.getWorldBorder().getSize());
+        BlockPos origin = player.blockPosition();
 
         CompletableFuture.runAsync(() -> {
             var biomeRegistry = level.registryAccess().registryOrThrow(Registries.BIOME);
@@ -64,7 +61,7 @@ public record BiomeDivinationSelectedPacket(String biomeId) implements CustomPac
 
             var result = level.findClosestBiome3d(
                     holder -> holder.equals(biomeHolder),
-                    player.blockPosition(),
+                    origin,
                     maxDistance,
                     64,
                     64
@@ -105,7 +102,7 @@ public record BiomeDivinationSelectedPacket(String biomeId) implements CustomPac
                         distance
                 )));
             });
-        });
+        }, AsyncSearch.EXECUTOR);
     }
 
     private static String getDirection(int dx, int dz) {

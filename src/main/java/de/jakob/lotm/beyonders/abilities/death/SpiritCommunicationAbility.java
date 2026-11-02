@@ -9,6 +9,7 @@ import de.jakob.lotm.util.data.PlayerSelectionWorkType;
 import de.jakob.lotm.util.data.EntityLocation;
 import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.network.PacketHandler;
+import de.jakob.lotm.network.packets.handlers.PendingSelectionRequests;
 import de.jakob.lotm.network.packets.toClient.OpenPlayerDivinationScreenPacket;
 import de.jakob.lotm.network.packets.toClient.OpenStructureDivinationScreenPacket;
 import de.jakob.lotm.network.packets.toClient.SyncDangerPremonitionAbilityPacket;
@@ -117,6 +118,7 @@ public class SpiritCommunicationAbility extends SelectableAbility {
                 .sorted()
                 .toList();
 
+        PendingSelectionRequests.arm(player, DivinationAbility.STRUCTURE_DIVINATION, DivinationAbility.SELECTION_TIMEOUT_TICKS, structureIds);
         PacketDistributor.sendToPlayer(player, new OpenStructureDivinationScreenPacket(structureIds));
     }
 

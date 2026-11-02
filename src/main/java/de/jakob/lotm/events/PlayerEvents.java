@@ -20,6 +20,7 @@ import de.jakob.lotm.gamerule.ModGameRules;
 import de.jakob.lotm.gui.custom.pathway_selection.PathwaySelectionMenu;
 import de.jakob.lotm.item.ModItems;
 import de.jakob.lotm.network.PacketHandler;
+import de.jakob.lotm.network.packets.handlers.PendingSelectionRequests;
 import de.jakob.lotm.network.packets.handlers.PendingTeleportRequests;
 import de.jakob.lotm.network.packets.toClient.ResetClientEffectsPacket;
 import de.jakob.lotm.network.packets.toClient.SyncGriefingGamerulePacket;
@@ -84,6 +85,7 @@ public class PlayerEvents {
                 BeyonderData.playerMap.addLastPosition(player);
 
             PendingTeleportRequests.clear(player.getUUID());
+            PendingSelectionRequests.clear(player.getUUID());
 
             de.jakob.lotm.beyonders.abilities.death.InternalUnderworldAbility.recallSoulsOnLogout(player);
 

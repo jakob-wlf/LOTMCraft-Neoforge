@@ -10,6 +10,7 @@ import de.jakob.lotm.beyonders.abilities.visionary.handlers.VisionaryHandler;
 import de.jakob.lotm.effect.ModEffects;
 import de.jakob.lotm.network.PacketHandler;
 import de.jakob.lotm.network.packets.handlers.ClientHandler;
+import de.jakob.lotm.network.packets.handlers.PendingSelectionRequests;
 import de.jakob.lotm.network.packets.toClient.*;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.data.PlayerSelectionWorkType;
@@ -35,6 +36,9 @@ import java.util.*;
 
 public class DivinationAbility extends SelectableAbility {
     public static final Set<UUID> DIVINATION_IMMUNE = Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<>());
+    public static final String STRUCTURE_DIVINATION = "structure_divination";
+    public static final String BIOME_DIVINATION = "biome_divination";
+    public static final int SELECTION_TIMEOUT_TICKS = 20 * 120;
     private DangerPremonitionDivinationAbility divinationAbility;
 
 
@@ -199,6 +203,7 @@ public class DivinationAbility extends SelectableAbility {
                 .sorted()
                 .toList();
 
+        PendingSelectionRequests.arm(player, STRUCTURE_DIVINATION, SELECTION_TIMEOUT_TICKS, structureIds);
         PacketDistributor.sendToPlayer(
                 player,
                 new OpenStructureDivinationScreenPacket(structureIds)
@@ -229,10 +234,24 @@ public class DivinationAbility extends SelectableAbility {
                 .sorted()
                 .toList();
 
+        PendingSelectionRequests.arm(player, BIOME_DIVINATION, SELECTION_TIMEOUT_TICKS, biomeIds);
         PacketDistributor.sendToPlayer(
                 player,
                 new OpenBiomeDivinationScreenPacket(biomeIds)
         );
+    }
+
+    // Search radius in blocks; every sequence reaches at least as far as the one below it
+    public static int getDivinationRange(int sequence, double worldBorderSize) {
+        return switch (sequence) {
+            case 9, 8, 7, 6, 5 -> 500 * (10 - sequence);
+            case 4             -> 5000;
+            case 3             -> 15000;
+            case 2             -> Math.max(30000, (int) (worldBorderSize * 0.001));
+            case 1             -> Math.max(60000, (int) (worldBorderSize * 0.01));
+            case 0             -> Math.max(600000, (int) (worldBorderSize * 0.1));
+            default            -> 100;
+        };
     }
 
     public static void cleanupOnLogout(Player player) {

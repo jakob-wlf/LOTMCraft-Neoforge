@@ -1,5 +1,6 @@
 package de.jakob.lotm.beyonders.abilities.visionary;
 
+import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.attachments.VirtualPersonaComponent;
 import de.jakob.lotm.beyonders.abilities.abyss.MaliceSeed.MaliceSeedAbility;
@@ -93,13 +94,11 @@ public class PlacateAbility extends SelectableAbility {
             return;
         }
 
-        List<Prophecy> all = new LinkedList<>(
-                BeyonderData.playerMap.get(targetPlayer).get().prophecies()
-        );
+        List<Prophecy> all = new LinkedList<>(prophecies(targetPlayer));
 
         List<Prophecy> matching = all.stream()
                 .filter(obj -> {
-                    int seq = BeyonderData.playerMap.get(obj.casterId()).get().sequence();
+                    int seq = casterSequence(obj);
                     return entitySeq <= obj.trigger().getRequiredSeq()
                             && entitySeq <= obj.trigger().getActionRequiredSeq()
                             && entitySeq <= seq;
@@ -114,14 +113,23 @@ public class PlacateAbility extends SelectableAbility {
 
         int amount = getCuesRemovedPerSeq(entitySeq);
 
-        for (int i = 0; i < amount; i++) {
-            if(all.isEmpty()) break;;
+        for (int i = 0; i < amount && i < matching.size(); i++) {
+            if(all.isEmpty()) break;
 
             Prophecy toRemove = matching.get(i);
             all.remove(toRemove);
         }
 
         BeyonderData.playerMap.setProphecies(targetPlayer.getUUID(), all);
+    }
+
+    private static List<Prophecy> prophecies(LivingEntity entity) {
+        return BeyonderData.playerMap.get(entity).<List<Prophecy>>map(data -> data.prophecies()).orElse(List.of());
+    }
+
+    // A cue whose caster left the map counts as cast by the weakest possible caster
+    private static int casterSequence(Prophecy prophecy) {
+        return BeyonderData.playerMap.get(prophecy.casterId()).map(data -> data.sequence()).orElse(LOTMCraft.NON_BEYONDER_SEQ);
     }
 
     private static int getCuesRemovedPerSeq(int seq){
@@ -162,8 +170,8 @@ public class PlacateAbility extends SelectableAbility {
 
         List<Prophecy> list;
         if(target instanceof ServerPlayer targetPlayer){
-            list = BeyonderData.playerMap.get(targetPlayer).get().prophecies().stream().filter(obj -> {
-                int seq = BeyonderData.playerMap.get(obj.casterId()).get().sequence();
+            list = prophecies(targetPlayer).stream().filter(obj -> {
+                int seq = casterSequence(obj);
                 if(entitySeq <= obj.trigger().getRequiredSeq() && entitySeq <= obj.trigger().getActionRequiredSeq()){
                     return entitySeq <= seq;
                 }
@@ -172,8 +180,8 @@ public class PlacateAbility extends SelectableAbility {
             }).toList();
         }
         else{
-            list = BeyonderData.playerMap.get(entity).get().prophecies().stream().filter(obj -> {
-                int seq = BeyonderData.playerMap.get(obj.casterId()).get().sequence();
+            list = prophecies(entity).stream().filter(obj -> {
+                int seq = casterSequence(obj);
                 if(entitySeq <= obj.trigger().getRequiredSeq() && entitySeq <= obj.trigger().getActionRequiredSeq()){
                     if(entitySeq <= seq)
                         return true;
@@ -192,7 +200,7 @@ public class PlacateAbility extends SelectableAbility {
             player.sendSystemMessage(Component.literal(
                     "Trigger: " + obj.trigger().getType()
                     + ", action: " + obj.trigger().getActionType()
-                    + " set by " + BeyonderData.playerMap.get(obj.casterId()).get().trueName()
+                    + " set by " + BeyonderData.playerMap.get(obj.casterId()).map(data -> data.trueName()).orElse("?")
             ));
         }
     }

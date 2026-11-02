@@ -57,6 +57,28 @@ public abstract class SelectableAbility extends Ability {
         castSelectedAbility(level, entity, selectedAbility);
     }
 
+    /**
+     * Replays a cast on the client with the sub-ability the server actually cast, which can differ from the
+     * client's wheel selection when the cast came from a sub-ability keybind.
+     */
+    public void onClientAbilityUse(Level level, LivingEntity entity, int subAbility) {
+        if(subAbility < 0 || !(entity instanceof Player)) {
+            onAbilityUse(level, entity);
+            return;
+        }
+
+        if(subAbility >= getSequenceDependantAbilityNames(BeyonderData.getSequence(entity)).length) {
+            return;
+        }
+
+        castSelectedAbility(level, entity, subAbility);
+    }
+
+    /** The sub-ability the next cast will use: a pending keybind override, otherwise the wheel selection */
+    public int getCastSubAbilityIndex(LivingEntity entity) {
+        return castedSubAbility.getOrDefault(entity.getUUID(), selectedAbilities.getOrDefault(entity.getUUID(), 0));
+    }
+
     protected abstract void castSelectedAbility(Level level, LivingEntity entity, int selectedAbility);
 
     @Override
@@ -72,10 +94,6 @@ public abstract class SelectableAbility extends Ability {
         int sequence = BeyonderData.getSequence(entity);
         if(getSequenceDependantAbilityNames(sequence).length == 0)
             return;
-
-        for (String sequenceDependantAbilityName : getSequenceDependantAbilityNames(sequence)) {
-            System.out.println("ABILITY: " + sequenceDependantAbilityName);
-        }
 
         if(!selectedAbilities.containsKey(entity.getUUID())) {
             selectedAbilities.put(entity.getUUID(), 0);
@@ -107,7 +125,8 @@ public abstract class SelectableAbility extends Ability {
             selectedAbilities.put(entity.getUUID(), selectedAbility);
         }
 
-        return getAllAbilityNames()[selectedAbility];
+        // Index into the same list the bounds were checked against; it isn't always a prefix of all names
+        return getSequenceDependantAbilityNames(sequence)[selectedAbility];
     }
 
     public void setSelectedAbility(ServerPlayer player, int selectedAbility) {
@@ -122,8 +141,8 @@ public abstract class SelectableAbility extends Ability {
     }
 
     public void previousAbility(LivingEntity entity) {
-        int sequence = entity instanceof Player player && player.hasPermissions(2) ?
-                0 : BeyonderData.getSequence(entity);
+        // Same sequence as nextAbility() and the server's setSelectedAbility(), so both sides agree on the selection
+        int sequence = BeyonderData.getSequence(entity);
 
         if(getSequenceDependantAbilityNames(sequence).length == 0)
             return;

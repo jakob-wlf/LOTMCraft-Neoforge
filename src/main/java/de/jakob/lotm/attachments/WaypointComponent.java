@@ -81,7 +81,11 @@ public class WaypointComponent {
     }
 
     public Waypoint findByClientWaypoint(ClientWaypoint clientWaypoint, MinecraftServer server) {
-        ResourceKey<Level> levelKey = ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(clientWaypoint.levelKey()));
+        ResourceLocation levelLocation = ResourceLocation.tryParse(clientWaypoint.levelKey());
+        if (levelLocation == null) {
+            return null;
+        }
+        ResourceKey<Level> levelKey = ResourceKey.create(Registries.DIMENSION, levelLocation);
         ServerLevel level = server.getLevel(levelKey);
 
         if (level == null) {

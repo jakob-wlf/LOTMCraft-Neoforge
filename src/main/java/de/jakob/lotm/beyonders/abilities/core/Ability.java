@@ -176,11 +176,18 @@ public abstract class Ability {
 
         AuthorityResistanceManager.addToBuffer(entity, seq);
 
-        onAbilityUse(serverLevel, newUser);
+        // Read before casting, since casting consumes a keybind's sub-ability override; the client replays this one
+        int subAbility = this instanceof SelectableAbility selectable && newUser instanceof Player
+                ? selectable.getCastSubAbilityIndex(newUser) : -1;
 
-        baseDamage = damageBackup;
+        try {
+            onAbilityUse(serverLevel, newUser);
+        } finally {
+            // Always restore, otherwise a throwing ability would keep its multiplied damage and compound it on every use
+            baseDamage = damageBackup;
+        }
 
-        if(entity instanceof ServerPlayer player) PacketHandler.sendToPlayer(player, new UseAbilityPacket(getId(), newUser.getId()));
+        if(entity instanceof ServerPlayer player) PacketHandler.sendToPlayer(player, new UseAbilityPacket(getId(), newUser.getId(), subAbility));
 
         if(this.autoClear){
             clearArtifactScaling(entity);

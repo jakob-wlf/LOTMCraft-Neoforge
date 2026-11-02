@@ -3,6 +3,7 @@ package de.jakob.lotm.util.scheduling;
 import net.minecraft.server.level.ServerLevel;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import org.jetbrains.annotations.Nullable;
 
@@ -200,6 +201,12 @@ public class ServerScheduler {
     // -------------------------------------------------------------------------
     // Tick handler
     // -------------------------------------------------------------------------
+
+    // In singleplayer the same JVM hosts the next world, so leftover tasks would run against stale levels and entities
+    @SubscribeEvent
+    public static void onServerStopped(ServerStoppedEvent event) {
+        tasks.clear();
+    }
 
     @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Pre event) {

@@ -39,9 +39,14 @@ public class AbilityHandler {
 
     private final HashSet<Ability> abilities = new HashSet<>();
     private final HashSet<Ability> disabledAbilities = new HashSet<>();
+    // getById() runs several times per tick per player, so it shouldn't scan every registered ability
+    private final HashMap<String, Ability> abilitiesById = new HashMap<>();
 
     public AbilityHandler() {
         registerAbilities();
+        for (Ability ability : abilities) {
+            abilitiesById.put(ability.getId(), ability);
+        }
     }
 
     private void registerAbilities() {
@@ -450,7 +455,7 @@ public class AbilityHandler {
     }
 
     public Ability getById(String id) {
-        return abilities.stream().filter(ability -> ability.getId().equals(id)).findFirst().orElse(null);
+        return abilitiesById.get(id);
     }
 
     public HashSet<Ability> getByPathwayAndSequenceExact(String pathway, int sequence) {

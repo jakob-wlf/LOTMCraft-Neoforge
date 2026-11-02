@@ -2,6 +2,7 @@ package de.jakob.lotm.network.packets.toServer;
 
 import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.beyonders.abilities.door.TeleportationAuthorityAbility;
+import de.jakob.lotm.network.packets.handlers.PendingSelectionRequests;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -37,6 +38,9 @@ public record UseTeleportationAuthorityPacket(String use, double x, double y, do
                     return;
                 }
                 if(!LOTMCraft.abilityHandler.getById("teleportation_authority_ability").hasAbility(context.player(), false))
+                    return;
+                // One teleport per use of the ability: the coordinate screen must have been opened by the server
+                if(!(context.player() instanceof ServerPlayer player) || !PendingSelectionRequests.consume(player, packet.use))
                     return;
                 switch (packet.use) {
                     case "teleportation_authority_self" -> TeleportationAuthorityAbility.teleportSelf((ServerPlayer) context.player(), new Vec3(packet.x, packet.y, packet.z));
