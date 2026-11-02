@@ -7,6 +7,8 @@ import de.jakob.lotm.beyonders.abilities.abyss.MaliceSeed.MaliceSeedAbility;
 import de.jakob.lotm.beyonders.abilities.core.PhysicalEnhancementsAbility;
 import de.jakob.lotm.beyonders.abilities.core.ToggleAbility;
 import de.jakob.lotm.dimension.ModDimensions;
+import de.jakob.lotm.beyonders.abilities.justiciar.LawAbility;
+import de.jakob.lotm.dimension.ModDimensions;
 import de.jakob.lotm.entity.custom.ability_entities.ControlBodyDouble;
 import de.jakob.lotm.events.BeyonderDataTickHandler;
 import de.jakob.lotm.network.PacketHandler;
@@ -271,7 +273,8 @@ public class ControllingUtils {
                     event.getDimension().equals(ModDimensions.SPIRIT_WORLD_DIMENSION_KEY)) return;
         }
         if (event.getDimension().equals(Level.OVERWORLD) ||
-                event.getDimension().equals(ModDimensions.HISTORICAL_VOID_DIMENSION_KEY)) return;
+                event.getDimension().equals(ModDimensions.HISTORICAL_VOID_DIMENSION_KEY) ||
+                event.getDimension().equals(ModDimensions.DREAM_MAZE_DIMENSION_KEY)) return;
         event.setCanceled(true);
     }
 
@@ -288,6 +291,7 @@ public class ControllingUtils {
     @SubscribeEvent
     public static void onDeath(LivingDeathEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer controlledPlayer)) {return;}
+        if (LawAbility.SOLACE_KILLED.contains(controlledPlayer.getUUID())) return;
         EntityControllingComponent component = controlledPlayer.getData(ModAttachments.ENTITY_CONTROLLING_COMPONENT);
         if (!component.isControlled()) {return;}
         ServerPlayer owner = getPlayerByUUID(component.getControllingPlayerUUID());

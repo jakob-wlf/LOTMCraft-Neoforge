@@ -5,6 +5,7 @@ import de.jakob.lotm.beyonders.abilities.abyss.MaliceSeed.MaliceSeedAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Phantom.PhantomDetectionUtil;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Shapeshifter.SpiritDisguiseUtil;
 import de.jakob.lotm.beyonders.abilities.core.ToggleAbility;
+import de.jakob.lotm.beyonders.abilities.darkness.RequiemAbility;
 import de.jakob.lotm.beyonders.abilities.visionary.handlers.VisionaryHandler;
 import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.beyonders.abilities.visionary.handlers.VisionaryLoosingControlHandler;
@@ -74,7 +75,18 @@ public class SpiritVisionAbility extends ToggleAbility {
         }
         return reqs;
     }
+    public void forceStop(ServerLevel level, LivingEntity entity) {
+        if (isActiveForEntity(entity)) cancel(level, entity);
+    }
 
+    @Override
+    public void onAbilityUse(Level level, LivingEntity entity) {
+        if (!level.isClientSide && RequiemAbility.blocksSpiritVision(entity)) {
+            forceStop((ServerLevel) level, entity);
+            return;
+        }
+        super.onAbilityUse(level, entity);
+    }
     @Override
     public void start(Level level, LivingEntity entity) {
         if (!level.isClientSide) {

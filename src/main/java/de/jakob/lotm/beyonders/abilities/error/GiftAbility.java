@@ -9,6 +9,10 @@ import de.jakob.lotm.beyonders.abilities.error.handler.ConceptStorage;
 import de.jakob.lotm.beyonders.abilities.error.handler.ErrorUtil;
 import de.jakob.lotm.beyonders.abilities.error.handler.TheftHandler;
 import de.jakob.lotm.beyonders.abilities.error.handler.TimeHandler;
+import de.jakob.lotm.beyonders.abilities.twilight_giant.handlers.TwilightAging;
+import de.jakob.lotm.attachments.ModAttachments;
+import de.jakob.lotm.network.PacketHandler;
+import de.jakob.lotm.network.packets.toServer.AbilitySelectionPacket;
 import de.jakob.lotm.rendering.effectRendering.EffectIds;
 import de.jakob.lotm.rendering.effectRendering.EffectManager;
 import de.jakob.lotm.util.BeyonderData;
@@ -78,7 +82,8 @@ public class GiftAbility extends SelectableAbility {
                 "ability.lotmcraft.gift_ability.menu",
                 "ability.lotmcraft.gift_ability.health",
                 "ability.lotmcraft.gift_ability.digestion",
-                "ability.lotmcraft.gift_ability.luck"
+                "ability.lotmcraft.gift_ability.luck",
+                "ability.lotmcraft.gift_ability.age"
         };
     }
 
@@ -98,7 +103,25 @@ public class GiftAbility extends SelectableAbility {
             case 2 -> giftHealth(level, entity);
             case 3 -> giftDigestion(level, entity);
             case 4 -> giftLuck(level, entity);
+            case 5 -> giftAge(level, entity);
         }
+    }
+
+    private void giftAge(Level level, LivingEntity entity) {
+        if (!(entity instanceof ServerPlayer player)) return;
+        if (BeyonderData.getSequence(entity) > 0) return;
+        LivingEntity target = AbilityUtil.getTargetEntity(entity, baseDistance, 2, true, true);
+        if (target == null) {
+            AbilityUtil.sendActionBar(entity, Component.translatable("ability.lotmcraft.gift.no_target").withColor(0x6d32a8));
+            return;
+        }
+        float targetYears = TwilightAging.years(target);
+        if (targetYears < 10f || !TwilightAging.setYears(entity, TwilightAging.years(entity) + 10f)) {
+            AbilityUtil.sendActionBar(entity, Component.translatable("ability.lotmcraft.gift.failed").withColor(0x6d32a8));
+            return;
+        }
+        TwilightAging.setYears(target, targetYears - 10f);
+        EffectManager.playEffect(EffectIds.GIFTING_PARTICLES, target.getX(), target.getY() + target.getBbHeight() / 2, target.getZ(), player, entity);
     }
 
     private void openGiftingMenu(Level level, LivingEntity entity) {

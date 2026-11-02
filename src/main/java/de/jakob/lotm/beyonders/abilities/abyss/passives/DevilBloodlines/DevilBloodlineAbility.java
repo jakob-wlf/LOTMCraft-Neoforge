@@ -54,6 +54,8 @@ public class DevilBloodlineAbility extends PassiveAbility {
         Random random = new Random(seed);
         Bloodline bloodline = Bloodline.values()[random.nextInt(Bloodline.values().length)];
         component.setBloodline(bloodline.name());
+        // Mutating the component doesn't sync on its own; without this the client keeps an empty bloodline and hides the abilities
+        entity.syncData(ModAttachments.BLOODLINE_COMPONENT);
     }
     //Hooks
     @SubscribeEvent

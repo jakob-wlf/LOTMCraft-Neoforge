@@ -3,14 +3,17 @@ package de.jakob.lotm.events;
 import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
+import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.beyonders.artifacts.SealedArtifactData;
 import de.jakob.lotm.data.ModDataComponents;
 import de.jakob.lotm.gui.custom.ability_wheel.AbilityWheelScreen;
 import de.jakob.lotm.network.PacketHandler;
+import de.jakob.lotm.network.packets.handlers.ClientHandler;
 import de.jakob.lotm.network.packets.toServer.*;
 import de.jakob.lotm.rendering.AbilityHotBarRenderer;
 import de.jakob.lotm.util.ClientBeyonderCache;
 import de.jakob.lotm.util.data.AbilityWheelClientData;
+import de.jakob.lotm.util.helper.AbilityBarHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -36,9 +39,75 @@ public class KeyInputHandler {
     public static int holdAbilityWheelCooldownTicks = 0;
     public static boolean wasWheelOpenedWithHold = false;
 
+    private static KeyMapping holdKey;
+    private static Runnable holdCast;
+    private static String holdAbility;
+    private static int holdNeeded;
+
+    private static int needed() {
+        int server = ClientHandler.holdNeeded();
+        return server > 0 ? server : holdNeeded;
+    }
+
+    public static float holdProgress(float partialTick) {
+        if (holdKey == null || needed() <= 0) return -1;
+        return Math.min(1f, ClientHandler.holdCharge() / needed());
+    }
+
+    public static int holdTicksLeft() {
+        if (holdKey == null) return 0;
+        return (int) Math.ceil(Math.max(0f, needed() - ClientHandler.holdCharge()));
+    }
+
+    private static void hold(KeyMapping key, int ticks, String abilityId, Runnable cast) {
+        if (ticks < 0) return;
+        if (ticks == 0) {
+            cast.run();
+            return;
+        }
+        if (holdKey != null) return;
+        holdKey = key;
+        holdCast = cast;
+        holdAbility = abilityId;
+        holdNeeded = ticks;
+        ClientHandler.setHoldCharge(0, 0);
+    }
+
+    private static void tickHold(Minecraft mc) {
+        if (holdKey == null) return;
+        if (mc.player == null || mc.screen != null || !mc.player.isAlive()) {
+            holdKey = null;
+            holdCast = null;
+            ClientHandler.setHoldCharge(0, 0);
+            return;
+        }
+        if (holdKey.isDown()) {
+            while (holdKey.consumeClick()) {}
+            if (holdAbility != null) PacketHandler.sendToServer(new HoldAbilityPacket(holdAbility));
+            return;
+        }
+        Runnable cast = holdCast;
+        boolean ready = ClientHandler.holdCharge() >= needed();
+        holdKey = null;
+        holdCast = null;
+        ClientHandler.setHoldCharge(0, 0);
+        if (ready) cast.run();
+    }
+
+    private static int holdTime(Player player, String abilityId) {
+        if (player == null || abilityId == null) return 0;
+        Ability ability = LOTMCraft.abilityHandler.getById(abilityId.split(":")[0]);
+        if (ability == null) return 0;
+        int ticks = ability.getHoldTime(player, getIndex(abilityId));
+        if (ticks > 0 && player.getData(ModAttachments.COOLDOWN_COMPONENT).isOnCooldown(ability.getId())) return -1;
+        return ticks;
+    }
+
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
+
+        tickHold(mc);
 
         if(LOTMCraft.toggleGriefingKey != null && LOTMCraft.toggleGriefingKey.consumeClick()) {
             Player player = Minecraft.getInstance().player;
@@ -158,7 +227,10 @@ public class KeyInputHandler {
 
         // Handle use ability key
         if (LOTMCraft.useSelectedAbilityKey != null && LOTMCraft.useSelectedAbilityKey.consumeClick()) {
-            PacketHandler.sendToServer(new UseSelectedAbilityPacket());
+            List<String> wheel = AbilityWheelClientData.getAbilityWheelAbilities();
+            int selected = AbilityWheelClientData.getSelectedAbility();
+            String abilityId = selected >= 0 && selected < wheel.size() ? wheel.get(selected) : null;
+            hold(LOTMCraft.useSelectedAbilityKey, holdTime(mc.player, abilityId), abilityId, () -> PacketHandler.sendToServer(new UseSelectedAbilityPacket()));
         }
 
         // Open shared ability wheel
@@ -172,7 +244,8 @@ public class KeyInputHandler {
             List<String> sharedWheel = AbilityWheelClientData.getSharedWheelAbilities();
             int idx = AbilityWheelClientData.getSelectedSharedAbility();
             if (!sharedWheel.isEmpty() && idx >= 0 && idx < sharedWheel.size()) {
-                PacketHandler.sendToServer(new UseSharedAbilityPacket(sharedWheel.get(idx)));
+                String abilityId = sharedWheel.get(idx);
+                hold(LOTMCraft.useSharedAbilityKey, holdTime(mc.player, abilityId), abilityId, () -> PacketHandler.sendToServer(new UseSharedAbilityPacket(abilityId)));
             }
         }
 
@@ -221,7 +294,10 @@ public class KeyInputHandler {
         for (int i = 0; i < LOTMCraft.useAbilityBarKeys.length; i++) {
             KeyMapping keyMapping = LOTMCraft.useAbilityBarKeys[i];
             if (keyMapping != null && keyMapping.consumeClick()) {
-                PacketHandler.sendToServer(new UseKeyboundAbilityPacket(i));
+                int slot = i;
+                List<String> bar = mc.player != null ? AbilityBarHelper.getAbilities(mc.player) : List.of();
+                String abilityId = slot < bar.size() ? bar.get(slot) : null;
+                hold(keyMapping, holdTime(mc.player, abilityId), abilityId, () -> PacketHandler.sendToServer(new UseKeyboundAbilityPacket(slot)));
             }
         }
 

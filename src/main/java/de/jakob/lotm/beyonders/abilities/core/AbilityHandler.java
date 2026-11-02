@@ -8,23 +8,26 @@ import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBlo
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Curseling.BloodlineBloodDropAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Curseling.BloodlineCurselingAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Curseling.BloodlineDesireSymbiosisAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Phantom.BloodlinePhantomAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Shapeshifter.BloodlineSkinshifterAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.FlameDevil.FlameCageAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.FlameDevil.FlameSpellsAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.FlameDevil.SwordOfLavaAbility;
-import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Phantom.BloodlinePhantomAbility;
-import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Shapeshifter.BloodlineSkinshifterAbility;
 import de.jakob.lotm.beyonders.abilities.common.*;
+import de.jakob.lotm.beyonders.abilities.common.LuckPerceptionAbility;
 import de.jakob.lotm.beyonders.abilities.justiciar.*;
 import de.jakob.lotm.beyonders.abilities.darkness.*;
 import de.jakob.lotm.beyonders.abilities.death.*;
 import de.jakob.lotm.beyonders.abilities.demoness.*;
 import de.jakob.lotm.beyonders.abilities.door.*;
+import de.jakob.lotm.beyonders.abilities.door.PositionAuthority.*;
 import de.jakob.lotm.beyonders.abilities.error.*;
 import de.jakob.lotm.beyonders.abilities.fool.*;
 import de.jakob.lotm.beyonders.abilities.mother.*;
 import de.jakob.lotm.beyonders.abilities.red_priest.*;
 import de.jakob.lotm.beyonders.abilities.sun.*;
 import de.jakob.lotm.beyonders.abilities.tyrant.*;
+import de.jakob.lotm.beyonders.abilities.twilight_giant.*;
 import de.jakob.lotm.beyonders.abilities.visionary.*;
 import de.jakob.lotm.beyonders.abilities.wheel_of_fortune.*;
 import net.minecraft.world.entity.LivingEntity;
@@ -36,9 +39,14 @@ public class AbilityHandler {
 
     private final HashSet<Ability> abilities = new HashSet<>();
     private final HashSet<Ability> disabledAbilities = new HashSet<>();
+    // getById() runs several times per tick per player, so it shouldn't scan every registered ability
+    private final HashMap<String, Ability> abilitiesById = new HashMap<>();
 
     public AbilityHandler() {
         registerAbilities();
+        for (Ability ability : abilities) {
+            abilitiesById.put(ability.getId(), ability);
+        }
     }
 
     private void registerAbilities() {
@@ -51,6 +59,7 @@ public class AbilityHandler {
         abilities.add(new AngelAuthorityAbility("angel_authority_ability"));
         abilities.add(new AngelFlightAbility("angel_authority_flight"));
         abilities.add(new MythicalCreatureFormAbility("mythical_creature_form_ability"));
+        abilities.add(new LuckPerceptionAbility("luck_perception_ability"));
 
         // SUN PATHWAY
         abilities.add(new HolySongAbility("holy_song_ability"));
@@ -173,6 +182,7 @@ public class AbilityHandler {
         abilities.add(new DivineKingdomAbyssAbility("divine_kingdom_abyss_ability"));
         abilities.add(new AbyssalAwakeningAbility("abyssal_awakening_ability"));
 
+
         // FOOL PATHWAY
         abilities.add(new AirBulletAbility("air_bullet_ability"));
         abilities.add(new PaperEquipmentAbility("paper_equipment_ability"));
@@ -204,9 +214,13 @@ public class AbilityHandler {
         abilities.add(new HorrorAuraAbility("horror_aura_ability"));
         abilities.add(new SurgeOfDarknessAbility("surge_of_darkness_ability"));
         abilities.add(new ConcealmentAbility("concealment_ability"));
+        abilities.add(new ConcealmentAuthorityAbility("concealment_authority_ability"));
         abilities.add(new IdentityConcealmentAbility("identity_concealment_ability"));
         abilities.add(new ConcealedDomainAbility("concealed_domain_ability"));
         abilities.add(new SwordOfDarknessAbility("sword_of_darkness_ability"));
+        abilities.add(new MisfortuneAuthorityAbility("misfortune_authority_ability"));
+        abilities.add(new DarknessAuthorityAbility("darkness_authority_ability"));
+        abilities.add(new SpiritualityTideAbility("spirituality_tide_ability"));
 
         // DEMONESS PATHWAY
         abilities.add(new ShadowConcealmentAbility("shadow_concealment_ability"));
@@ -265,11 +279,16 @@ public class AbilityHandler {
         abilities.add(new SymbolizationAbility("symbolization_ability"));
         abilities.add(new SealingAbility("sealing_ability"));
         abilities.add(new SpatialCageAbility("spatial_cage_ability"));
+        abilities.add(new PositionSummonAbility("position_summon_ability"));
+        abilities.add(new PositionTravelAbility("position_travel_ability"));
+        abilities.add(new PositionCageAbility("position_cage_ability"));
+        abilities.add(new PositionSealAbility("position_seal_ability"));
         abilities.add(new SpaceTearingAbility("space_tearing_ability"));
         abilities.add(new WaypointAbility("waypoint_ability"));
         abilities.add(new ReplicatingAbility("replicating_ability"));
         abilities.add(new DistortionFieldAbility("distortion_field_ability"));
         abilities.add(new AreaMiniaturizationAbility("area_miniaturization_ability"));
+        abilities.add(new DimensionSightAbility("dimension_sight_ability"));
         abilities.add(new TeleportationAuthorityAbility("teleportation_authority_ability"));
         abilities.add(new SpaceDistortionAbility("space_distortion_ability"));
         abilities.add(new PocketDimensionAbility("pocket_dimension_ability"));
@@ -313,7 +332,6 @@ public class AbilityHandler {
         abilities.add(new PsycheStormAbility("psyche_storm_ability"));
         abilities.add(new CalamityAttractionAbility("calamity_attraction_ability"));
         abilities.add(new LuckReleaseAbility("luck_release_ability"));
-        abilities.add(new LuckPerceptionAbility("luck_perception_ability"));
         abilities.add(new MisfortuneGiftingAbility("misfortune_gifting_ability"));
         abilities.add(new MisfortuneFieldAbility("misfortune_field_ability"));
         abilities.add(new BlessingAbility("blessing_ability"));
@@ -390,9 +408,37 @@ public class AbilityHandler {
         abilities.add(new SpiritWorldTraversalAbility("spirit_world_traversal_ability"));
         abilities.add(new DeathSpellsAbility("death_spells_ability"));
         abilities.add(new PaleEyeAbility("pale_eye_ability"));
+        abilities.add(new HandOfLifeAbility("hand_of_life_ability"));
         abilities.add(new HandOfDeathAbility("hand_of_death_ability"));
         abilities.add(new DeathFlameAbility("death_flame_ability"));
         abilities.add(new NationOfTheDeadAbility("nation_of_the_dead_ability"));
+
+        /*//TWILIGHT
+        abilities.add(new LightOfDawnAbility("light_of_dawn_ability"));
+        abilities.add(new DawnArmorAbility("dawn_armor_ability"));
+        abilities.add(new ArsenalOfDawnAbility("arsenal_of_dawn_ability"));
+        abilities.add(new HurricaneOfLightAbility("hurricane_of_light_ability"));
+        abilities.add(new ProtectionAbility("protection_ability"));
+        abilities.add(new EyeOfDemonHuntingAbility("eye_of_demon_hunting_ability"));
+        abilities.add(new KnowledgeAbility("knowledge_ability"));
+        abilities.add(new MindConcealmentAbility("mind_concealment_ability"));
+        abilities.add(new LightOfDawnCoatingAbility("light_of_dawn_coating_ability"));
+        abilities.add(new MercuryLiquefactionAbility("mercury_liquefaction_ability"));
+        abilities.add(new MercuryArmoryAbility("mercury_armory_ability"));
+        abilities.add(new SilverRapierAbility("silver_rapier_ability"));
+        abilities.add(new LightConcealmentAbility("light_concealment_ability"));
+        abilities.add(new SilverArmorAbility("silver_armor_ability"));
+        abilities.add(new GiantificationAbility("giantification_ability"));
+        abilities.add(new BasicTwilightAuthorityAbility("basic_twilight_authority_ability"));
+        abilities.add(new TwilightAuthorityAbility("twilight_authority_ability"));
+        abilities.add(new DevastationAuthorityAbility("devastation_authority_ability"));
+        abilities.add(new CombatAuthorityAbility("combat_authority_ability"));
+        abilities.add(new TwilightSwordAbility("twilight_sword_ability"));
+        abilities.add(new HolinessAuthorityAbility("holiness_authority_ability"));
+        abilities.add(new ProxyAbility("proxy_ability"));
+        abilities.add(new LastStandAbility("last_stand_ability"));
+        abilities.add(new ServantsAbility("servants_ability"));*/
+
 
         //abilities.add(new DivineKingdomAbility("divine_kingdom_ability"));
     }
@@ -409,7 +455,7 @@ public class AbilityHandler {
     }
 
     public Ability getById(String id) {
-        return abilities.stream().filter(ability -> ability.getId().equals(id)).findFirst().orElse(null);
+        return abilitiesById.get(id);
     }
 
     public HashSet<Ability> getByPathwayAndSequenceExact(String pathway, int sequence) {

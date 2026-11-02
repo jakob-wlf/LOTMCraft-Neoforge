@@ -1,5 +1,6 @@
 package de.jakob.lotm.beyonders.abilities.visionary;
 
+import de.jakob.lotm.beyonders.abilities.death.passives.AbsoluteDeathAbility;
 import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
@@ -391,6 +392,7 @@ public class MindWorldAuthorityAbility extends SelectableAbility {
 
             var component = player.getData(ModAttachments.ENVISION_SPLIT.get());
             if(component.isEnvisioned()) return;
+            if (AbsoluteDeathAbility.isEffectedByAbsoluteDeath(player)) return;
 
             if(!component.avatars.isEmpty()) {
                 var id = component.avatars.removeFirst();
@@ -419,10 +421,13 @@ public class MindWorldAuthorityAbility extends SelectableAbility {
 
             String name = component.names.removeFirst();
             var id = BeyonderData.playerMap.getKeyByName(name);
+            if(id == null) return;
 
             var target = serverLevel.getPlayerByUUID(id);
             if(target == null){
-                var data = BeyonderData.playerMap.get(id).get();
+                var stored = BeyonderData.playerMap.get(id);
+                if(stored.isEmpty()) return;
+                var data = stored.get();
 
                 var pos = data.lastPosition();
 

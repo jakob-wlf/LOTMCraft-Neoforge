@@ -353,7 +353,44 @@ public class HeadlessBrideEntity extends Monster {
         }
     }
 
-    private static class BrideCurseAttackGoal extends Goal {
+    public static class BrideCurseAttackGoal extends Goal {
+
+        public static void beginCurse(ServerLevel level, LivingEntity caster, LivingEntity target) {
+            level.playSound(null, caster.blockPosition(), SoundEvents.WITCH_CELEBRATE, caster.getSoundSource(), 1.0F, 0.8F);
+            Vec3 look = new Vec3(caster.getLookAngle().x, 0, caster.getLookAngle().z);
+            if (look.lengthSqr() > 1.0E-4) look = look.normalize();
+            Vec3 effectOrigin = new Vec3(0, caster.getBbHeight() * 0.2, 0).add(look.scale(0.5));
+            PacketHandler.sendToNearbyPlayers(new PlayPhotonEntityEffectPacket(
+                    "headless_bride_curse_start",
+                    caster.getId(),
+                    effectOrigin.x,
+                    effectOrigin.y,
+                    effectOrigin.z,
+                    1.25,
+                    null,
+                    true,
+                    false, UUID.randomUUID(), true
+            ), level, caster.position(), 128);
+            Vec3 targetOrigin = new Vec3(0, -target.getBbHeight(), 0);
+            PacketHandler.sendToNearbyPlayers(new PlayPhotonEntityEffectPacket(
+                    "headless_bride_curse",
+                    target.getId(),
+                    targetOrigin.x,
+                    targetOrigin.y,
+                    targetOrigin.z,
+                    1.75,
+                    null,
+                    true,
+                    false, UUID.randomUUID(), true
+            ), level, target.position(), 128);
+        }
+
+        public static void curse(ServerLevel level, LivingEntity caster, LivingEntity target) {
+            target.hurt(ModDamageTypes.source(level, ModDamageTypes.CURSE, caster), CURSE_DAMAGE);
+            target.addEffect(new MobEffectInstance(MobEffects.WITHER, CURSE_WITHER_DURATION, 0, false, true));
+            target.addEffect(new MobEffectInstance(MobEffects.UNLUCK, CURSE_UNLUCK_DURATION, 0, false, true));
+            target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, CURSE_WEAKNESS_DURATION, 0, false, true));
+        }
 
         private final HeadlessBrideEntity bride;
         private int windupRemaining = 0;
@@ -386,38 +423,9 @@ public class HeadlessBrideEntity extends Monster {
         public void start() {
             windupRemaining = CURSE_WINDUP_TICKS;
             bride.triggerCurseAnimation();
-            bride.playSound(SoundEvents.WITCH_CELEBRATE, 1.0F, 0.8F);
-
-            if(bride.level() instanceof ServerLevel serverLevel) {
-                Vec3 lookOffset = new Vec3(bride.getLookAngle().x, 0, bride.getLookAngle().z).normalize().scale(0.5);
-                Vec3 effectOrigin = new Vec3(0, bride.getBbHeight() * 0.2, 0).add(lookOffset);
-                PacketHandler.sendToNearbyPlayers(new PlayPhotonEntityEffectPacket(
-                        "headless_bride_curse_start",
-                        bride.getId(),
-                        effectOrigin.x,
-                        effectOrigin.y,
-                        effectOrigin.z,
-                        1.25,
-                        null,
-                        true,
-                        false, UUID.randomUUID(), true
-                ), serverLevel, bride.position(), 128);
-            }
-
             LivingEntity target = bride.getTarget();
-            if(target != null && target.level() instanceof ServerLevel serverLevel) {
-                Vec3 effectOrigin = new Vec3(0, -target.getBbHeight(), 0);
-                PacketHandler.sendToNearbyPlayers(new PlayPhotonEntityEffectPacket(
-                        "headless_bride_curse",
-                        target.getId(),
-                        effectOrigin.x,
-                        effectOrigin.y,
-                        effectOrigin.z,
-                        1.75,
-                        null,
-                        true,
-                        false, UUID.randomUUID(), true
-                ), serverLevel, target.position(), 128);
+            if (target != null && bride.level() instanceof ServerLevel serverLevel) {
+                beginCurse(serverLevel, bride, target);
             }
         }
 
@@ -428,12 +436,8 @@ public class HeadlessBrideEntity extends Monster {
                 bride.getLookControl().setLookAt(target, 30F, 30F);
             }
             windupRemaining--;
-            if (windupRemaining == 0 && target != null) {
-                DamageSource source = ModDamageTypes.source(bride.level(), ModDamageTypes.CURSE, bride);
-                target.hurt(source, CURSE_DAMAGE);
-                target.addEffect(new MobEffectInstance(MobEffects.WITHER, CURSE_WITHER_DURATION, 0, false, true));
-                target.addEffect(new MobEffectInstance(MobEffects.UNLUCK, CURSE_UNLUCK_DURATION, 0, false, true));
-                target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, CURSE_WEAKNESS_DURATION, 0, false, true));
+            if (windupRemaining == 0 && target != null && bride.level() instanceof ServerLevel serverLevel) {
+                curse(serverLevel, bride, target);
                 bride.curseCooldown = CURSE_COOLDOWN;
             }
         }

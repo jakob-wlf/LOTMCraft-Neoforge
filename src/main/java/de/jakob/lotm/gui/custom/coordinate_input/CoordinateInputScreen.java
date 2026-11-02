@@ -6,17 +6,24 @@ import de.jakob.lotm.network.packets.handlers.TeleportUse;
 import de.jakob.lotm.network.packets.toServer.*;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.border.WorldBorder;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
 public class CoordinateInputScreen extends Screen {
     private EditBox xBox, yBox, zBox;
+    private CycleButton<ResourceKey<Level>> dimension;
 
     private final LivingEntity entity;
     private final String use;
@@ -48,6 +55,17 @@ public class CoordinateInputScreen extends Screen {
         this.zBox.setMaxLength(10);
         this.addRenderableWidget(this.zBox);
 
+        if (use.equals("dimension_sight") && this.minecraft != null && this.minecraft.getConnection() != null) {
+            List<ResourceKey<Level>> levels = new ArrayList<>(this.minecraft.getConnection().levels());
+            levels.sort(Comparator.comparing(key -> key.location().toString()));
+            this.dimension = CycleButton.<ResourceKey<Level>>builder(key -> Component.literal(key.location().toString()))
+                    .withValues(levels)
+                    .withInitialValue(entity.level().dimension())
+                    .displayOnlyValue()
+                    .create(centerX - 60, centerY - 55, 120, 20, Component.literal("Dimension"));
+            this.addRenderableWidget(this.dimension);
+        }
+
         // Confirm button
         Button confirmButton = Button.builder(Component.literal("Confirm"), this::onConfirm)
                 .bounds(centerX - 50, centerY + 50, 100, 20)
@@ -77,6 +95,12 @@ public class CoordinateInputScreen extends Screen {
 
             Level level = entity.level();
             WorldBorder border = level.getWorldBorder();
+
+            if (this.dimension != null) {
+                PacketHandler.sendToServer(new DimensionSightLocationPacket(this.dimension.getValue().location(), x, y, z));
+                this.onClose();
+                return;
+            }
 
             if (!border.isWithinBounds(x, z) || y < -64 || y > 320) {
                 this.onClose();

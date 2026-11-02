@@ -21,6 +21,8 @@ import de.jakob.lotm.gui.custom.ritualistic_table.RitualMenu;
 import de.jakob.lotm.gui.custom.sefirah.SefirahMenu;
 import de.jakob.lotm.gui.custom.trades.BeyonderTradeMenu;
 import de.jakob.lotm.gui.custom.historical_void.HistoricalVoidMenu;
+import de.jakob.lotm.gui.custom.spirit_command.SpiritCommandMenu;
+import de.jakob.lotm.gui.custom.spirit_housing.SpiritManageMenu;
 import de.jakob.lotm.gui.custom.malice_seed.MaliceSeedMenu;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
@@ -110,6 +112,14 @@ public class ModMenuTypes {
     public static final DeferredHolder<MenuType<?>, MenuType<MassPuppeteeringMenu>> MASS_PUPPETEERING_MENU =
             MENU_TYPES.register("mass_puppeteering_menu", () ->
                     IMenuTypeExtension.create(MassPuppeteeringMenu::new));
+
+    public static final DeferredHolder<MenuType<?>, MenuType<SpiritManageMenu>> SPIRIT_MANAGE_MENU =
+            MENU_TYPES.register("spirit_manage_menu", () ->
+                    IMenuTypeExtension.create((containerId, inv, buf) -> new SpiritManageMenu(containerId, inv)));
+
+    public static final DeferredHolder<MenuType<?>, MenuType<SpiritCommandMenu>> SPIRIT_COMMAND_MENU =
+            MENU_TYPES.register("spirit_command_menu", () ->
+                    IMenuTypeExtension.create(SpiritCommandMenu::new));
 
     public static final DeferredHolder<MenuType<?>, MenuType<ArtifactWheelMenu>> ARTIFACT_WHEEL_MENU = MENU_TYPES.register(
             "artifact_wheel_menu",

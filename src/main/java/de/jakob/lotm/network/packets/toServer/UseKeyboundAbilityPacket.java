@@ -6,6 +6,7 @@ import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.attachments.AbilityBarComponent;
 import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.util.BeyonderData;
+import de.jakob.lotm.util.helper.CopiedAbilityHelper;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -49,13 +50,20 @@ public record UseKeyboundAbilityPacket(int selectedAbility) implements CustomPac
             if (packet.selectedAbility() < 0 || packet.selectedAbility() >= abilityBarComponent.getAbilities().size()) {
                 return;
             }
-            Ability ability = LOTMCraft.abilityHandler.getById(abilityBarComponent.getAbilities().get(packet.selectedAbility()).split(":")[0]);
+            String entry = abilityBarComponent.getAbilities().get(packet.selectedAbility());
+            String abilityId = entry.split(":")[0];
+            Ability ability = LOTMCraft.abilityHandler.getById(abilityId);
+            // Stale ids (renamed or removed abilities) can still be saved on the bar
+            if (ability == null) return;
 
-            if(ability instanceof SelectableAbility && getIndex(abilityBarComponent.getAbilities().get(packet.selectedAbility())) != -1) {
-                ((SelectableAbility) ability).addSubAbilityOverride(player, getIndex(abilityBarComponent.getAbilities().get(packet.selectedAbility())));
+            if(ability instanceof SelectableAbility && getIndex(entry) != -1) {
+                ((SelectableAbility) ability).addSubAbilityOverride(player, getIndex(entry));
             }
 
-            ability.useAbility(player.serverLevel(), player);
+            // Same rules as the ability wheel, so copied and shared abilities also work from the bar
+            boolean isSharedAbility = UseSelectedAbilityPacket.isSharedAbility(player, abilityId);
+            boolean isCopied = UseSelectedAbilityPacket.isCopied(entry) && CopiedAbilityHelper.hasCopiedAbility(player, abilityId);
+            ability.useAbility(player.serverLevel(), player, true, !isSharedAbility, true, isCopied);
         });
     }
 

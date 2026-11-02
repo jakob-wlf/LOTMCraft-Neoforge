@@ -155,7 +155,8 @@ public class StealCharacteristicAbility extends SelectableAbility {
             if (entity instanceof ServerPlayer player && BeyonderData.playerMap.get(player).isPresent()) {
                 StoredData regressed = BeyonderData.playerMap.get(player).get().regressSeq();
                 BeyonderData.playerMap.put(player, regressed);
-                BeyonderData.setBeyonder(player, regressed.pathway(), regressed.sequence());
+                // A regression must never be refused by the sequence limits, or the map and the player drift apart
+                BeyonderData.setBeyonder(player, regressed.pathway(), regressed.sequence(), true, false, true, false);
             } else if (currentSeq >= 9) {
                 BeyonderData.clearBeyonderData(entity);
             } else {

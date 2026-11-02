@@ -87,18 +87,21 @@ public class PlayerTeleportationAbility extends SelectableAbility {
 //            player.sendSystemMessage(Component.literal("Failed to locate the target"));
 //            return;
 //        }
-        if ((targetPlayer.level().dimension().location().equals(ModDimensions.SEFIRAH_CASTLE_TYPE_KEY.location()))
-                //|| (targetPlayer.level().dimension().location().equals(ModDimensions.SPACE_TYPE_KEY.location()))
-                || (targetPlayer.level().dimension().equals(ModDimensions.CONCEALMENT_WORLD_DIMENSION_KEY))
-                //|| (targetPlayer.level().dimension().location().equals(ModDimensions.WORLD_CREATION_LEVEL_KEY.location()))
-                || (targetPlayer.level().dimension().equals(ModDimensions.DREAM_MAZE_DIMENSION_KEY))
-        ) {
+        if (unreachable(targetPlayer)) {
             return;
         }
 
         player.teleportTo(targetLevel, targetPlayer.getX(), targetPlayer.getY(), targetPlayer.getZ(), Set.of(), player.getYRot(), player.getXRot());
         targetLevel.playSound(null, targetPlayer.getX(), targetPlayer.getY(), targetPlayer.getZ(), SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 1, 1);
         EffectManager.playEffect(EffectIds.WAYPOINT, targetPlayer.getX(), targetPlayer.getY() + 1, targetPlayer.getZ(), targetLevel);
+    }
+
+    public static boolean unreachable(ServerPlayer player) {
+        return player.level().dimension().location().equals(ModDimensions.SEFIRAH_CASTLE_TYPE_KEY.location())
+                //|| (player.level().dimension().location().equals(ModDimensions.SPACE_TYPE_KEY.location()))
+                || player.level().dimension().equals(ModDimensions.CONCEALMENT_WORLD_DIMENSION_KEY)
+                //|| (player.level().dimension().location().equals(ModDimensions.WORLD_CREATION_LEVEL_KEY.location()))
+                || player.level().dimension().equals(ModDimensions.DREAM_MAZE_DIMENSION_KEY);
     }
 
     @Override

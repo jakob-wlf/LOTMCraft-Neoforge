@@ -1,21 +1,31 @@
 package de.jakob.lotm.beyonders.abilities.core;
 
-import de.jakob.lotm.beyonders.abilities.abyss.passives.*;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.AbyssMentalResistanceAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.CriminalProficiencyAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.CurseResistanceAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DemonOfTheBodyAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Corroder.BloodlineMindRotterAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.FlameDevil.BloodlineFilthFlameSpiritAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.ShadowShifter.BloodlineShadowShiftAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbility;
-import de.jakob.lotm.beyonders.abilities.abyss.passives.CriminalProficiencyAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.DomainOfBodyAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.FireResistanceAbyssAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.MaliceAuthorityAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.PhysicalEnhancementsAbyssAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.PoisonResistanceAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.SinLordAbility;
+import de.jakob.lotm.beyonders.abilities.abyss.passives.UndyingBloodAbility;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.WordImmunityAbility;
+import de.jakob.lotm.beyonders.abilities.darkness.passives.ConcealmentSenseAbility;
 import de.jakob.lotm.beyonders.abilities.darkness.passives.DarknessRevivalAbility;
 import de.jakob.lotm.beyonders.abilities.darkness.passives.NocturnalityAbility;
 import de.jakob.lotm.beyonders.abilities.darkness.passives.PhysicalEnhancementsDarknessAbility;
 import de.jakob.lotm.beyonders.abilities.death.passives.PhysicalEnhancementsDeathAbility;
 import de.jakob.lotm.beyonders.abilities.death.passives.ReincarnationAbility;
 import de.jakob.lotm.beyonders.abilities.death.passives.SolarSensitivityAbility;
+import de.jakob.lotm.beyonders.abilities.death.passives.AbsoluteDeathAbility;
 import de.jakob.lotm.beyonders.abilities.death.passives.UndeadIgnoranceAbility;
+import de.jakob.lotm.beyonders.abilities.twilight_giant.passives.*;
 import de.jakob.lotm.beyonders.abilities.demoness.passives.BloodLossAbility;
 import de.jakob.lotm.beyonders.abilities.demoness.passives.FeatherFallAbility;
 import de.jakob.lotm.beyonders.abilities.demoness.passives.MirrorRevivalAbility;
@@ -27,7 +37,6 @@ import de.jakob.lotm.beyonders.abilities.error.passives.*;
 import de.jakob.lotm.beyonders.abilities.fool.passives.*;
 import de.jakob.lotm.beyonders.abilities.justiciar.passives.ChaosHuntingAbility;
 import de.jakob.lotm.beyonders.abilities.justiciar.passives.EnhancedMentalAttributesAbility;
-import de.jakob.lotm.beyonders.abilities.justiciar.passives.OrderJusticiarAbility;
 import de.jakob.lotm.beyonders.abilities.justiciar.passives.PhysicalEnhancementsJusticiarAbility;
 import de.jakob.lotm.beyonders.abilities.mother.passives.PhysicalEnhancementsMotherAbility;
 import de.jakob.lotm.beyonders.abilities.red_priest.passive.FireResistanceAbility;
@@ -75,9 +84,13 @@ public class PassiveAbilityHandler {
         passiveAbilities.add(new PhysicalEnhancementsWheelOfFortuneAbility("physical_enhancements_wheel_of_fortune_ability"));
         passiveAbilities.add(new PhysicalEnhancementsJusticiarAbility("physical_enhancements_justiciar_ability"));
         passiveAbilities.add(new PhysicalEnhancementsDeathAbility("physical_enhancements_death_ability"));
+        passiveAbilities.add(new PhysicalEnhancementsTwilightGiantAbility("physical_enhancements_twilight_giant_ability"));
+        passiveAbilities.add(new ChaosHuntingAbility("chaos_hunting_justiciar_ability"));
+
+        passiveAbilities.add(new FlamingHitAbility("flaming_hit_ability"));
+        passiveAbilities.add(new FireResistanceAbility("fire_resistance_ability"));
 
         // Justiciar
-        passiveAbilities.add(new OrderJusticiarAbility("order_justiciar_ability"));
         passiveAbilities.add(new EnhancedMentalAttributesAbility("enhanced_mental_attributes_justiciar_ability"));
         passiveAbilities.add(new ChaosHuntingAbility("chaos_hunting_justiciar_ability"));
 
@@ -124,6 +137,7 @@ public class PassiveAbilityHandler {
         // Darkness
         passiveAbilities.add(new NocturnalityAbility("nocturnality_ability"));
         passiveAbilities.add(new DarknessRevivalAbility("darkness_revival_ability"));
+        passiveAbilities.add(new ConcealmentSenseAbility("concealment_sense_ability"));
 
         // Error
         passiveAbilities.add(new AgileHandsAbility("agile_hands_ability"));
@@ -147,8 +161,17 @@ public class PassiveAbilityHandler {
 
         // Death
         passiveAbilities.add(new UndeadIgnoranceAbility("undead_ignorance_ability"));
+        passiveAbilities.add(new AbsoluteDeathAbility("absolute_death_ability"));
         passiveAbilities.add(new SolarSensitivityAbility("solar_sensitivity_ability"));
         passiveAbilities.add(new ReincarnationAbility("reincarnation_ability"));
+
+
+        //Twilight
+        passiveAbilities.add(new CombatMasteryAbility("combat_mastery_ability"));
+        passiveAbilities.add(new SupernaturalResistanceAbility("supernatural_resistance_ability"));
+        passiveAbilities.add(new WeaponMasteryAbility("weapon_mastery_ability"));
+        passiveAbilities.add(new StrengthOfGiantsAbility("strength_of_giants_ability"));
+        passiveAbilities.add(new IllusionImmunityAbility("illusion_immunity_ability"));
 
         // Visionary
         passiveAbilities.add(new MetaAwarenessAbility("meta_awareness_ability"));

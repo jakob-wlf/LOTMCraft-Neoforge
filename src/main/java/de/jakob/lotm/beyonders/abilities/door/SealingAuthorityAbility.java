@@ -4,6 +4,7 @@ import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.attachments.DisabledAbilitiesComponent;
 import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.attachments.SealedDimensionData;
+import de.jakob.lotm.beyonders.abilities.darkness.NightmareAbility;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.beyonders.abilities.core.interaction.InteractionHandler;
 import de.jakob.lotm.data.ModDataComponents;
@@ -144,6 +145,10 @@ public class SealingAuthorityAbility extends SelectableAbility {
         }
 
         ServerLevel serverLevel = (ServerLevel) level;
+        if (NightmareAbility.occupies(serverLevel)) {
+            AbilityUtil.sendActionBar(entity, Component.literal("You cant seal a nightmare.").withColor(BeyonderData.pathwayInfos.get("door").color()));
+            return;
+        }
 
         level.playSound(null,
                 entity.getX(), entity.getY(), entity.getZ(),

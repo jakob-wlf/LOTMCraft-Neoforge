@@ -1,7 +1,11 @@
 package de.jakob.lotm.network.packets.toServer;
 
 import de.jakob.lotm.LOTMCraft;
+import de.jakob.lotm.beyonders.abilities.common.DivinationAbility;
+import de.jakob.lotm.beyonders.abilities.darkness.ConcealmentAuthorityAbility;
+import de.jakob.lotm.network.packets.handlers.PendingSelectionRequests;
 import de.jakob.lotm.util.BeyonderData;
+import de.jakob.lotm.util.helper.AsyncSearch;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.registries.Registries;
@@ -37,6 +41,9 @@ public record StructureDivinationSelectedPacket(String structureId) implements C
     public static void handle(StructureDivinationSelectedPacket packet, IPayloadContext context) {
         if (!(context.player() instanceof ServerPlayer player)) return;
 
+        // Only answer a screen the divination ability actually opened, and only with one of the offered structures
+        if (!PendingSelectionRequests.consume(player, DivinationAbility.STRUCTURE_DIVINATION, packet.structureId())) return;
+
         ServerLevel level = player.serverLevel();
         ResourceLocation structureKey = ResourceLocation.tryParse(packet.structureId());
 
@@ -45,17 +52,10 @@ public record StructureDivinationSelectedPacket(String structureId) implements C
             return;
         }
 
-        int playerSequence = BeyonderData.getSequence(player);
-        double worldBorder = player.level().getWorldBorder().getSize();
-        int maxDistance = switch (playerSequence) {
-            case 9, 8, 7, 6, 5 -> 500 * (10 - playerSequence);
-            case 4             -> 5000;
-            case 3             -> 15000;
-            case 2             -> ((int) (worldBorder * 0.001) > 15000) ? (int) (worldBorder * 0.001) : 30000;
-            case 1             -> ((int) (worldBorder * 0.01) > 30000) ? (int) (worldBorder * 0.01) : 60000;
-            case 0             -> ((int) (worldBorder * 0.1) > 60000) ? (int) (worldBorder * 0.01) : 600000;
-            default            -> 100;
-        };
+        int maxDistance = DivinationAbility.getDivinationRange(BeyonderData.getSequence(player), level.getWorldBorder().getSize());
+        // findNearestMapStructure takes its search radius in chunks
+        int searchRadiusChunks = Math.max(1, maxDistance >> 4);
+        BlockPos origin = player.blockPosition();
 
         CompletableFuture.runAsync(() -> {
             var structureRegistry = level.registryAccess().registryOrThrow(Registries.STRUCTURE);
@@ -68,14 +68,14 @@ public record StructureDivinationSelectedPacket(String structureId) implements C
                     .findNearestMapStructure(
                             level,
                             HolderSet.direct(structureHolder),
-                            player.blockPosition(),
-                            maxDistance,
+                            origin,
+                            searchRadiusChunks,
                             false
                     );
 
             context.enqueueWork(() -> {
                 if (result == null) {
-                    player.sendSystemMessage(Component.literal("§cNo structure nearby in 5000 blocks"));
+                    player.sendSystemMessage(Component.literal(String.format("§cNo structure nearby in %d blocks", maxDistance)));
                     return;
                 }
 
@@ -85,6 +85,12 @@ public record StructureDivinationSelectedPacket(String structureId) implements C
                 int dx = structurePos.getX() - playerPos.getX();
                 int dz = structurePos.getZ() - playerPos.getZ();
                 int distance = (int) Math.sqrt(dx * dx + dz * dz);
+
+                String mislead = ConcealmentAuthorityAbility.misleadPlace(player, structurePos);
+                if (mislead != null) {
+                    player.sendSystemMessage(Component.literal(mislead));
+                    return;
+                }
 
                 String direction = getDirection(dx, dz);
                 String structureName = packet.structureId();
@@ -102,7 +108,7 @@ public record StructureDivinationSelectedPacket(String structureId) implements C
                         distance
                 )));
             });
-        });
+        }, AsyncSearch.EXECUTOR);
     }
 
     private static String getDirection(int dx, int dz) {

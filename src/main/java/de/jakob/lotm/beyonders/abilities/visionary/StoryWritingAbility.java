@@ -160,12 +160,24 @@ public class StoryWritingAbility extends ToggleAbility {
             LinkedList<Prophecy> buff2 = new LinkedList<>(prophecies);
 
             for (var obj : buff2) {
+                // The actions look up the caster's data; a caster who left the map can no longer sustain the cue
+                if (!BeyonderData.playerMap.contains(obj.casterId())) {
+                    buff1.add(obj);
+                    continue;
+                }
+
                 if (!obj.trigger().isGeneralLoop()) continue;
 
                 int result = obj.checkAndPerform(player.level(), player);
                 if (result == 1 || result == -1) {
                     buff1.add(obj);
                 }
+            }
+
+            // Nothing was removed: skip rebuilding the stored entry, only mark trigger progress for saving
+            if (buff1.isEmpty()) {
+                if (!prophecies.isEmpty()) BeyonderData.playerMap.setDirty();
+                return;
             }
 
             prophecies.removeAll(buff1);

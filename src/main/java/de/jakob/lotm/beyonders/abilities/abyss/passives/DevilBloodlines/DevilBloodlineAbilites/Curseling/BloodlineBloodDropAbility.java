@@ -57,7 +57,7 @@ public class BloodlineBloodDropAbility extends ToggleAbility {
         if (level.isClientSide()) return;
         entity.getPersistentData().remove(ACTIVE_TAG);
         if (entity instanceof ServerPlayer player) {
-            player.displayClientMessage(Component.literal("ability.lotmcraft.blood_drop.off"), true);
+            player.displayClientMessage(Component.translatable("ability.lotmcraft.blood_drop.off"), true);
         }
     }
     @SubscribeEvent

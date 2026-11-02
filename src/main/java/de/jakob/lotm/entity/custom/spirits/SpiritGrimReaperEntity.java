@@ -34,8 +34,6 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
-
 public class SpiritGrimReaperEntity extends Monster {
 
     public final AnimationState IDLE_ANIMATION = new AnimationState();
@@ -112,9 +110,13 @@ public class SpiritGrimReaperEntity extends Monster {
         this.heal(damageDealt * LIFESTEAL_PERCENT);
     }
 
+    private static void souls(ServerLevel level, double x, double y, double z, int count) {
+        level.sendParticles(ParticleTypes.SOUL, x, y, z, count, 0.3, 0.4, 0.3, 0.02);
+    }
+
     private void spawnSoulParticles(double x, double y, double z, int count) {
         if (this.level() instanceof ServerLevel serverLevel) {
-            serverLevel.sendParticles(ParticleTypes.SOUL, x, y, z, count, 0.3, 0.4, 0.3, 0.02);
+            souls(serverLevel, x, y, z, count);
         }
     }
 
@@ -165,7 +167,19 @@ public class SpiritGrimReaperEntity extends Monster {
         return SoundEvents.WITHER_SKELETON_DEATH;
     }
 
-    private static class DeathTouchGoal extends Goal {
+    public static class DeathTouchGoal extends Goal {
+
+        public static void attack(ServerLevel level, LivingEntity caster, LivingEntity target, float attackDamage) {
+            souls(level, caster.getX(), caster.getY(0.5), caster.getZ(), 20);
+            boolean hit = target.hurt(caster.damageSources().mobAttack(caster), attackDamage);
+            if (!hit) return;
+            target.addEffect(new MobEffectInstance(MobEffects.WITHER, WITHER_DURATION, WITHER_AMPLIFIER, false, true));
+            caster.heal(attackDamage * LIFESTEAL_PERCENT);
+            souls(level, target.getX(), target.getY(1.0), target.getZ(), 12);
+            target.addEffect(new MobEffectInstance(MobEffects.WITHER, DEATH_TOUCH_WITHER_DURATION, WITHER_AMPLIFIER + 1, false, true));
+            target.hurt(ModDamageTypes.source(level, ModDamageTypes.SOUL_BASED, caster), attackDamage * (DEATH_TOUCH_DAMAGE_MULTIPLIER - 1f));
+            souls(level, target.getX(), target.getY(1.0), target.getZ(), 20);
+        }
 
         private final SpiritGrimReaperEntity spirit;
 
@@ -194,8 +208,6 @@ public class SpiritGrimReaperEntity extends Monster {
             LivingEntity target = spirit.getTarget();
             if (target == null) return;
 
-            spirit.spawnSoulParticles(spirit.getX(), spirit.getY(0.5), spirit.getZ(), 20);
-
             Vec3 lookDir = target.getLookAngle();
             Vec3 besideTarget = target.position()
                     .subtract(lookDir.x, 0, lookDir.z)
@@ -211,15 +223,8 @@ public class SpiritGrimReaperEntity extends Monster {
             spirit.getLookControl().setLookAt(target, 180F, 180F);
             spirit.swing(spirit.getUsedItemHand());
 
-            boolean hit = spirit.doHurtTarget(target);
-            if (hit) {
-                spirit.applyDeathTouch(target, DEATH_TOUCH_WITHER_DURATION, WITHER_AMPLIFIER + 1);
-                float bonusDamage = (float) spirit.getAttributeValue(Attributes.ATTACK_DAMAGE)
-                        * (DEATH_TOUCH_DAMAGE_MULTIPLIER - 1.0F);
-
-                DamageSource source = ModDamageTypes.source(spirit.level(), ModDamageTypes.SOUL_BASED, spirit);
-                target.hurt(source, bonusDamage);
-                spirit.spawnSoulParticles(target.getX(), target.getY(1.0), target.getZ(), 20);
+            if (spirit.level() instanceof ServerLevel serverLevel) {
+                attack(serverLevel, spirit, target, (float) spirit.getAttributeValue(Attributes.ATTACK_DAMAGE));
             }
 
             spirit.deathTouchCooldown = DEATH_TOUCH_COOLDOWN;
@@ -250,21 +255,15 @@ public class SpiritGrimReaperEntity extends Monster {
 
         @Override
         public void start() {
-            AABB pulseArea = spirit.getBoundingBox().inflate(SOUL_PULSE_RADIUS);
-            List<LivingEntity> nearby = spirit.level().getEntitiesOfClass(
-                    LivingEntity.class,
-                    pulseArea,
-                    entity -> entity != spirit && entity.isAlive()
-            );
-
-            for (LivingEntity entity : nearby) {
-                DamageSource source = ModDamageTypes.source(spirit.level(), ModDamageTypes.SOUL_BASED, spirit);
-                entity.hurt(source, SOUL_PULSE_DAMAGE);
-                entity.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, SOUL_PULSE_WEAKNESS_DURATION, 1, false, true));
-                entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, SOUL_PULSE_WEAKNESS_DURATION, 1, false, true));
+            if (spirit.level() instanceof ServerLevel serverLevel) {
+                AABB pulseArea = spirit.getBoundingBox().inflate(SOUL_PULSE_RADIUS);
+                for (LivingEntity entity : serverLevel.getEntitiesOfClass(LivingEntity.class, pulseArea, e -> e != spirit && e.isAlive())) {
+                    entity.hurt(ModDamageTypes.source(serverLevel, ModDamageTypes.SOUL_BASED, spirit), SOUL_PULSE_DAMAGE);
+                    entity.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, SOUL_PULSE_WEAKNESS_DURATION, 1, false, true));
+                    entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, SOUL_PULSE_WEAKNESS_DURATION, 1, false, true));
+                }
+                souls(serverLevel, spirit.getX(), spirit.getY(0.5), spirit.getZ(), 40);
             }
-
-            spirit.spawnSoulParticles(spirit.getX(), spirit.getY(0.5), spirit.getZ(), 40);
             spirit.soulPulseCooldown = SOUL_PULSE_COOLDOWN;
         }
     }

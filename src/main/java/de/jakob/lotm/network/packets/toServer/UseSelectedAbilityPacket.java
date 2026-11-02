@@ -16,6 +16,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.apache.logging.log4j.core.jackson.ListOfMapEntryDeserializer;
+
+import java.util.Arrays;
 
 public record UseSelectedAbilityPacket() implements CustomPacketPayload {
 
@@ -82,13 +85,13 @@ public record UseSelectedAbilityPacket() implements CustomPacketPayload {
         }
     }
 
-    private static boolean isCopied(String s) {
+    static boolean isCopied(String s) {
         String[] parts = s.split(":");
         if (parts.length < 3) return false;
         return parts[2].equals("copied");
     }
 
-    private static boolean isSharedAbility(ServerPlayer player, String abilityId) {
+    static boolean isSharedAbility(ServerPlayer player, String abilityId) {
         TeamComponent team = player.getData(ModAttachments.TEAM_COMPONENT.get());
         if (player.getServer() == null) return false;
 

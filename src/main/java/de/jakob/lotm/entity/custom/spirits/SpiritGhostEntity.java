@@ -6,6 +6,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -76,17 +77,8 @@ public class SpiritGhostEntity extends Animal {
 
     @Override
     public boolean doHurtTarget(@NotNull Entity target) {
-        boolean hit = super.doHurtTarget(target);
-        if (hit && target instanceof LivingEntity livingTarget) {
-            livingTarget.addEffect(new MobEffectInstance(
-                    MobEffects.BLINDNESS,
-                    BLINDNESS_DURATION,
-                    1,
-                    false,
-                    true
-            ));
-        }
-        return hit;
+        if (!(target instanceof LivingEntity living)) return false;
+        return RamAndFleeGoal.attack(this, living, (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE));
     }
 
     @Override
@@ -139,7 +131,7 @@ public class SpiritGhostEntity extends Animal {
         super.tick();
     }
 
-    private static class RamAndFleeGoal extends Goal {
+    public static class RamAndFleeGoal extends Goal {
 
         private enum Phase { CHARGING, FLEEING }
 
@@ -147,6 +139,15 @@ public class SpiritGhostEntity extends Animal {
         private Phase phase = Phase.CHARGING;
         private int fleeTimer = 0;
         private Vec3 fleeTarget = null;
+
+        public static boolean attack(LivingEntity caster, LivingEntity target, float damage) {
+            if (caster instanceof SpiritGhostEntity ghost) ghost.swing(InteractionHand.MAIN_HAND);
+            boolean hit = target.hurt(caster.damageSources().mobAttack(caster), damage);
+            if (hit) {
+                target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, BLINDNESS_DURATION, 1, false, true));
+            }
+            return hit;
+        }
 
         public RamAndFleeGoal(SpiritGhostEntity spirit) {
             this.spirit = spirit;
@@ -192,7 +193,7 @@ public class SpiritGhostEntity extends Animal {
                 double distanceSq = spirit.distanceToSqr(target);
 
                 if (distanceSq <= RAM_HIT_DISTANCE * RAM_HIT_DISTANCE) {
-                    spirit.doHurtTarget(target);
+                    attack(spirit, target, (float) spirit.getAttributeValue(Attributes.ATTACK_DAMAGE));
                     beginFlee(target);
                 }
 

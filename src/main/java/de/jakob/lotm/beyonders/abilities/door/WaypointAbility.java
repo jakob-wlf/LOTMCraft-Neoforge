@@ -4,6 +4,7 @@ import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.attachments.WaypointComponent;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.network.PacketHandler;
+import de.jakob.lotm.network.packets.handlers.PendingSelectionRequests;
 import de.jakob.lotm.network.packets.toClient.OpenWaypointSelectionScreenPacket;
 import de.jakob.lotm.rendering.effectRendering.EffectIds;
 import de.jakob.lotm.rendering.effectRendering.EffectManager;
@@ -20,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 
 public class WaypointAbility extends SelectableAbility {
+    public static final String TELEPORT_SELECTION = "waypoint_teleport";
+
     public WaypointAbility(String id) {
         super(id, 1);
         canBeCopied = false;
@@ -68,6 +71,8 @@ public class WaypointAbility extends SelectableAbility {
 
         List<WaypointComponent.ClientWaypoint> waypoints = entity.getData(ModAttachments.WAYPOINT_COMPONENT).getWaypoints().stream().map(WaypointComponent.ClientWaypoint::fromWaypoint).toList();
 
+        // WaypointSelectedPacket only teleports once per opened selection screen
+        PendingSelectionRequests.arm(serverPlayer, TELEPORT_SELECTION, 20 * 120);
         PacketHandler.sendToPlayer(serverPlayer, new OpenWaypointSelectionScreenPacket(waypoints, "teleport"));
     }
 

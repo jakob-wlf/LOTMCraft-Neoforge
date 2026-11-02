@@ -6,7 +6,10 @@ import de.jakob.lotm.beyonders.abilities.core.PassiveAbility;
 import de.jakob.lotm.beyonders.abilities.core.PhysicalEnhancementsAbility;
 import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.beyonders.abilities.core.ToggleAbility;
+import de.jakob.lotm.beyonders.abilities.darkness.SpiritualityTideAbility;
+import de.jakob.lotm.dimension.ModDimensions;
 import de.jakob.lotm.beyonders.abilities.door.passives.VoidImmunityAbility;
+import de.jakob.lotm.beyonders.abilities.twilight_giant.ProxyAbility;
 import de.jakob.lotm.beyonders.abilities.wheel_of_fortune.passives.PassiveLuckAbility;
 import de.jakob.lotm.attachments.*;
 import de.jakob.lotm.effect.FoolingEffect;
@@ -77,22 +80,27 @@ public class BeyonderDataTickHandler {
             return;
         }
 
-        AbilityCooldownComponent component = livingEntity.getData(ModAttachments.COOLDOWN_COMPONENT);
-        de.jakob.lotm.beyonders.abilities.error.handler.TimeHandler.tickCooldowns(livingEntity, component);
+        // hasData() guards: getData() would create (and later save) these attachments on every mob in the world
+        if(livingEntity.hasData(ModAttachments.COOLDOWN_COMPONENT)) {
+            AbilityCooldownComponent component = livingEntity.getData(ModAttachments.COOLDOWN_COMPONENT);
+            de.jakob.lotm.beyonders.abilities.error.handler.TimeHandler.tickCooldowns(livingEntity, component);
+        }
 
         if(livingEntity instanceof ServerPlayer player) {
             VirtualPersonaComponent virtualPersonaComponent = player.getData(ModAttachments.VIRTUAL_PERSONAS);
             virtualPersonaComponent.heal(player);
         }
 
-        DisabledFlightComponent disabledFlightComponent = livingEntity.getData(ModAttachments.FLIGHT_DISABLE_COMPONENT);
-        if(disabledFlightComponent.getCooldownTicks() > 0) {
-            disabledFlightComponent.setCooldownTicks(disabledFlightComponent.getCooldownTicks() - 1);
+        if(livingEntity.hasData(ModAttachments.FLIGHT_DISABLE_COMPONENT)) {
+            DisabledFlightComponent disabledFlightComponent = livingEntity.getData(ModAttachments.FLIGHT_DISABLE_COMPONENT);
+            if(disabledFlightComponent.getCooldownTicks() > 0) {
+                disabledFlightComponent.setCooldownTicks(disabledFlightComponent.getCooldownTicks() - 1);
+            }
         }
 
         if (!livingEntity.level().isClientSide) {
-            FoolingComponent foolingComponent = livingEntity.getData(ModAttachments.FOOLING_COMPONENT);
-            if (foolingComponent.isFooled()) {
+            FoolingComponent foolingComponent = livingEntity.hasData(ModAttachments.FOOLING_COMPONENT) ? livingEntity.getData(ModAttachments.FOOLING_COMPONENT) : null;
+            if (foolingComponent != null && foolingComponent.isFooled()) {
                 if (foolingComponent.getTicksRemaining() % FoolingEffect.STUN_INTERVAL_TICKS == 0) {
                     foolingComponent.applyStun(FoolingEffect.STUN_DURATION_TICKS);
                 }
@@ -110,7 +118,7 @@ public class BeyonderDataTickHandler {
             }
         }
 
-        if(entity.getData(ModAttachments.SANITY_COMPONENT.get()).getSanity() == 0.0f){
+        if(entity.hasData(ModAttachments.SANITY_COMPONENT.get()) && entity.getData(ModAttachments.SANITY_COMPONENT.get()).getSanity() == 0.0f){
             entity.kill();
         }
 
@@ -156,12 +164,20 @@ public class BeyonderDataTickHandler {
                 toggleAbility.prepareTick(livingEntity.level(), livingEntity);
                 PacketHandler.sendToTrackingAndSelf(livingEntity, new SyncToggleAbilityPacket(livingEntity.getId(), toggleAbility.getId(), SyncToggleAbilityPacket.Action.TICK.getValue()));
             });
+
+            // Only beyonders are re-synced; clearBeyonderData() tells clients when an entity stops being one
+            if(entity.tickCount % 20 == 0 && !entity.level().isClientSide) {
+                BeyonderComponent beyonderComponent = entity.getData(ModAttachments.BEYONDER_COMPONENT);
+                SyncBeyonderDataPacket packet = new SyncBeyonderDataPacket(entity.getUUID(), BeyonderData.getPathway(livingEntity), BeyonderData.getSequence(livingEntity), beyonderComponent.getSpirituality(), false, 0.0f, beyonderComponent.getPathwayHistory(), beyonderComponent.getCharacteristicStack(), getMaxWormAmount(BeyonderData.getSequence(livingEntity)), BeyonderData.pledgedSefirot(livingEntity), BeyonderData.hasPlayerPatron(livingEntity));
+                PacketHandler.sendToTrackingAndSelf(entity, packet);
+            }
         }
-        if(entity.tickCount % 20 == 0) {
-            BeyonderComponent beyonderComponent = entity.getData(ModAttachments.BEYONDER_COMPONENT);
-            SyncBeyonderDataPacket packet = new SyncBeyonderDataPacket(entity.getUUID(), BeyonderData.getPathway(livingEntity), BeyonderData.getSequence(livingEntity), beyonderComponent.getSpirituality(), false, 0.0f, beyonderComponent.getPathwayHistory(), beyonderComponent.getCharacteristicStack(), getMaxWormAmount(BeyonderData.getSequence(livingEntity)));
-            PacketHandler.sendToTrackingAndSelf(entity, packet);
-        }
+    }
+
+    private static float spiritualityMultiplier(LivingEntity entity) {
+        if (entity != null && entity.level().dimension().equals(ModDimensions.SPIRIT_WORLD_DIMENSION_KEY)) return 10f;
+        if (entity != null && "darkness".equals(BeyonderData.getPathway(entity)) && BeyonderData.getSequence(entity) == 0) return 1.5f;
+        return Math.max(0f, 1f + 0.5f * SpiritualityTideAbility.tide());
     }
 
     private static int getWormRecoverTime(LivingEntity entity) {
@@ -186,7 +202,7 @@ public class BeyonderDataTickHandler {
         if (BeyonderData.isBeyonder(player)) {
             // Regenerate Spirituality
             float amount = BeyonderData.getMaxSpirituality(BeyonderData.getPathway(player, true),
-                    BeyonderData.getSequence(player, false, true), player) * 0.0006f;
+                    BeyonderData.getSequence(player, false, true), player) * 0.0006f * spiritualityMultiplier(player);
 
             var disabler = player.getData(ModAttachments.REGEN_DISABLER.get());
             if(disabler.isDisabled())

@@ -310,8 +310,6 @@ public class NationOfTheDeadAbility extends Ability {
                     return;
                 }
 
-                PhysicalEnhancementsAbility.suppressRegen(target, 2000);
-
                 target.addEffect(new MobEffectInstance(MobEffects.WITHER, 40, 1, false, false, false));
                 target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 2, false, false, false));
                 target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 40, 1, false, false, false));
@@ -326,7 +324,8 @@ public class NationOfTheDeadAbility extends Ability {
                 if (damagePercent <= 0) return;
 
                 float damage = target.getMaxHealth() * damagePercent;
-                ModDamageTypes.trueDamage(target, damage, serverLevel, entity);
+                target.invulnerableTime = 0;
+                target.hurt(ModDamageTypes.source(serverLevel, ModDamageTypes.SOUL_BASED, entity), damage);
 
                 Vec3 targetPos = target.position();
                 spawnShellParticles(serverLevel, ParticleTypes.SOUL, targetPos, 1.5, 16);

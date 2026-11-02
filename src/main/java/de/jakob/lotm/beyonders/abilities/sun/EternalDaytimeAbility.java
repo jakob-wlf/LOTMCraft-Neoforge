@@ -6,6 +6,7 @@ import de.jakob.lotm.beyonders.abilities.core.AbilityUseEvent;
 import de.jakob.lotm.beyonders.abilities.core.AbilityUsedEvent;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.beyonders.abilities.core.ToggleAbility;
+import de.jakob.lotm.beyonders.abilities.darkness.ConcealmentAbility;
 import de.jakob.lotm.beyonders.abilities.demoness.InvisibilityAbility;
 import de.jakob.lotm.beyonders.abilities.demoness.ShadowConcealmentAbility;
 import de.jakob.lotm.effect.ModEffects;
@@ -156,6 +157,7 @@ public class EternalDaytimeAbility extends Ability {
 
             affectEntities(level, domain);
             revealConcealedDomains(level, domain);
+            ConcealmentAbility.dispel(level, domain.center, domain.radius, domain.casterSequence);
 
             if(gameTime % 20 == 0) {
                 postInteraction(level, domain);

@@ -1,9 +1,21 @@
 package de.jakob.lotm.beyonders.abilities.darkness;
 
 import com.google.common.util.concurrent.AtomicDouble;
+import com.zigythebird.playeranimcore.math.Vec3f;
 import de.jakob.lotm.LOTMCraft;
+import de.jakob.lotm.attachments.FogComponent;
+import de.jakob.lotm.attachments.ModAttachments;
+import de.jakob.lotm.beyonders.abilities.core.PassiveAbility;
+import de.jakob.lotm.beyonders.abilities.core.PassiveAbilityHandler;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
+import de.jakob.lotm.beyonders.abilities.fool.marionettes.ControllingUtils;
+import de.jakob.lotm.beyonders.abilities.fool.passives.DangerPremonitionAbility;
+import de.jakob.lotm.beyonders.abilities.visionary.PsychologicalInvisibilityAbility;
 import de.jakob.lotm.dimension.ModDimensions;
+import de.jakob.lotm.entity.custom.BeyonderNPCEntity;
+import de.jakob.lotm.network.PacketHandler;
+import de.jakob.lotm.network.packets.toClient.OpenConcealSecretScreenPacket;
+import de.jakob.lotm.network.packets.toClient.SyncConcealmentVeilsPacket;
 import de.jakob.lotm.rendering.effectRendering.EffectIds;
 import de.jakob.lotm.rendering.effectRendering.EffectManager;
 import de.jakob.lotm.sound.ModSounds;
@@ -17,21 +29,38 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.ServerChatEvent;
+import net.neoforged.neoforge.event.entity.living.EffectParticleModificationEvent;
+import net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 import java.util.*;
+import java.util.regex.Pattern;
 
+@EventBusSubscriber(modid = LOTMCraft.MOD_ID)
 public class ConcealmentAbility extends SelectableAbility {
     public ConcealmentAbility(String id) {
         super(id, 5);
@@ -63,24 +92,32 @@ public class ConcealmentAbility extends SelectableAbility {
     @Override
     protected String[] getAllAbilityNames() {
         return new String[]{
-                "ability.lotmcraft.concealment.surroundings",
-                "ability.lotmcraft.concealment.enter_concealed_area",
-                "ability.lotmcraft.concealment.conceal_thoughts"
+                "ability.lotmcraft.concealment.conceal_others",
+                "ability.lotmcraft.concealment.conceal_area",
+                "ability.lotmcraft.concealment.conceal_ground",
+                "ability.lotmcraft.concealment.conceal_secrets",
+                "ability.lotmcraft.concealment.reverse",
+                "ability.lotmcraft.concealment.presence_of_peace",
+                "ability.lotmcraft.concealment.possess_projection"
         };
     }
 
     @Override
     protected void castSelectedAbility(Level level, LivingEntity entity, int abilityIndex) {
-
-        if(!(entity instanceof Player)) abilityIndex = 0;
-        switch(abilityIndex) {
-            case 0 -> concealSurroundings(level, entity);
-            case 1 -> enterConcealedArea(level, entity);
-            case 2 -> concealThoughts(level,entity);
+        if (!(entity instanceof Player)) abilityIndex = 0;
+        switch (abilityIndex) {
+            case 0 -> concealOthers(level, entity);
+            case 1 -> concealArea(level, entity, false);
+            case 2 -> concealArea(level, entity, true);
+            case 3 -> concealSecrets(entity);
+            case 4 -> reverse(level, entity);
+            case 5 -> presenceOfPeace(entity);
+            case 6 -> possessProjection(entity);
         }
     }
 
-    private void enterConcealedArea(Level level, LivingEntity entity) {
+    public void enterConcealedArea(Level level, LivingEntity entity) {
+        if (BeyonderData.getSequence(entity) > 0) return;
         if(!(level instanceof ServerLevel serverLevel)) {
             return;
         }
@@ -225,7 +262,8 @@ public class ConcealmentAbility extends SelectableAbility {
         return new BlockPos(x, 65, z);
     }
 
-    private void concealSurroundings(Level level, LivingEntity entity) {
+    public void concealSurroundings(Level level, LivingEntity entity) {
+        if (BeyonderData.getSequence(entity) > 0) return;
         if(!(level instanceof ServerLevel serverLevel)) {
             return;
         }
@@ -353,7 +391,8 @@ public class ConcealmentAbility extends SelectableAbility {
     }
 
     private static final HashSet<UUID> thoughtconcealedEntities = new HashSet<>();
-    private void concealThoughts(Level level, LivingEntity entity) {
+    public void concealThoughts(Level level, LivingEntity entity) {
+        if (BeyonderData.getSequence(entity) > 0) return;
         if(!(level instanceof ServerLevel serverLevel)) {
             return;
         }
@@ -419,6 +458,603 @@ public class ConcealmentAbility extends SelectableAbility {
 
 
         ServerScheduler.scheduleDelayed(duration, () -> thoughtconcealedEntities.remove(targetEntity.getUUID()));
+    }
+
+    private record Veil(UUID caster, ResourceKey<Level> dimension, double x, double y, double z, double radius, int casterSeq, boolean ground, long until) {}
+
+    private record Secret(UUID caster, int casterSeq, ResourceKey<Level> dimension, double x, double z, String word) {}
+
+    private record Mark(UUID caster, int casterSeq, long until) {}
+
+    private static final List<Veil> veils = new ArrayList<>();
+    private static final Set<UUID> intruders = new HashSet<>();
+    private static final Map<UUID, Mark> concealedOthers = new HashMap<>();
+    private static final Set<UUID> peaceful = new HashSet<>();
+    private static final List<Secret> secrets = new ArrayList<>();
+    private static final Map<UUID, UUID> pendingProjections = new HashMap<>();
+    private static final int GROUND_DROP = 16;
+    private static final int GROUND_TICKS = 20 * 30;
+    private static final int SECRET_REACH = 500;
+    private static final int SECRET_REACH_SEQ1 = 5000;
+
+    public static boolean sees(LivingEntity entity) {
+        PassiveAbility sense = PassiveAbilityHandler.getById("concealment_sense_ability");
+        if (sense != null && sense.shouldApplyTo(entity)) return true;
+        if (hiddenFromHarm(entity)) return true;
+        for (Veil veil : veils) {
+            if (veil.caster.equals(entity.getUUID())) return true;
+        }
+        return false;
+    }
+
+    public static boolean peaceful(LivingEntity entity) {
+        return entity != null && peaceful.contains(entity.getUUID());
+    }
+
+    public static boolean hiddenFromHarm(LivingEntity entity) {
+        Mark mark = concealedOthers.get(entity.getUUID());
+        if (mark == null || entity.level().getServer() == null) return false;
+        return entity.level().getServer().overworld().getGameTime() < mark.until;
+    }
+
+    public static boolean veiled(LivingEntity viewer, LivingEntity target) {
+        if (sees(viewer)) return false;
+        Mark mark = concealedOthers.get(target.getUUID());
+        if (mark != null && !mark.caster.equals(viewer.getUUID()) && hiddenFromHarm(target)) return true;
+        for (Veil veil : veils) {
+            if (!veil.caster.equals(viewer.getUUID()) && inside(target, veil)) return true;
+        }
+        return false;
+    }
+
+    public static void sealSecret(ServerPlayer player, String word) {
+        if (word == null) return;
+        String trimmed = word.trim();
+        if (trimmed.isEmpty() || trimmed.length() > 64) return;
+        secrets.add(new Secret(player.getUUID(), BeyonderData.getSequence(player), player.level().dimension(), player.getX(), player.getZ(), trimmed));
+        bar(player, "That word is concealed.");
+    }
+
+    public static void releaseSecret(ServerPlayer player, int index) {
+        if (index < 0) return;
+        int seen = 0;
+        for (int i = 0; i < secrets.size(); i++) {
+            if (!secrets.get(i).caster.equals(player.getUUID())) continue;
+            if (seen == index) {
+                secrets.remove(i);
+                bar(player, "That secret is revealed.");
+                return;
+            }
+            seen++;
+        }
+    }
+
+    public static void projectionSummoned(ServerLevel level, ServerPlayer summoner, BeyonderNPCEntity npc) {
+        UUID ownerId = npc.getTargetPlayerUUID().orElse(null);
+        if (ownerId == null || level.getServer() == null) return;
+        ServerPlayer owner = level.getServer().getPlayerList().getPlayer(ownerId);
+        if (owner == null) return;
+        PassiveAbility sense = PassiveAbilityHandler.getById("concealment_sense_ability");
+        if (sense == null || !sense.shouldApplyTo(owner)) return;
+        pendingProjections.put(ownerId, npc.getUUID());
+        owner.sendSystemMessage(Component.translatable("lotmcraft.concealment.projection_prayer", summoner.getName()).withColor(0xFF3300b5));
+    }
+
+    private void concealOthers(Level level, LivingEntity entity) {
+        if (!(level instanceof ServerLevel serverLevel)) return;
+        LivingEntity target = AbilityUtil.getTargetEntity(entity, 16 * (int) Math.max(multiplier(entity) / 2, 1), 2);
+        if (target == null) {
+            if (entity instanceof ServerPlayer player) bar(player, "No target in sight.");
+            return;
+        }
+        int casterSeq = AbilityUtil.getSeqWithArt(entity, this);
+        int targetSeq = BeyonderData.getSequence(target);
+        int duration;
+        if (casterSeq < targetSeq && !"darkness".equals(BeyonderData.getPathway(target))) duration = 20;
+        else if (casterSeq > targetSeq) duration = 20 * 10;
+        else duration = 20 * 4;
+        long until = serverLevel.getServer().overworld().getGameTime() + duration;
+        concealedOthers.put(target.getUUID(), new Mark(entity.getUUID(), casterSeq, until));
+        syncVeils(serverLevel.getServer());
+        if (target instanceof ServerPlayer playerTarget) {
+            playerTarget.getData(ModAttachments.FOG_COMPONENT.get()).concealFor(duration * 50L, playerTarget);
+            bar(playerTarget, "Darkness covers your eyes.");
+        }
+        if (entity instanceof ServerPlayer player) bar(player, "They are concealed.");
+    }
+
+    private void concealArea(Level level, LivingEntity entity, boolean ground) {
+        if (!(entity instanceof ServerPlayer player) || !(level instanceof ServerLevel)) return;
+        int seq = AbilityUtil.getSeqWithArt(entity, this);
+        if (ground || seq > 0) {
+            boolean removed = veils.removeIf(veil -> veil.caster.equals(player.getUUID()) && veil.ground == ground);
+            if (removed) {
+                syncVeils(player.server);
+                bar(player, "The concealment lifts.");
+                return;
+            }
+        }
+        double radius = ground ? 4 : 10 + Math.max(0, 2 - seq) * 4.0;
+        long until = ground ? ((ServerLevel) level).getServer().overworld().getGameTime() + GROUND_TICKS : Long.MAX_VALUE;
+        veils.add(new Veil(player.getUUID(), level.dimension(), player.getX(), player.getY(), player.getZ(), radius, seq, ground, until));
+        syncVeils(player.server);
+        bar(player, ground ? "The ground gives way." : "The area slips out of sight.");
+    }
+
+    private void concealSecrets(LivingEntity entity) {
+        if (!(entity instanceof ServerPlayer player)) return;
+        ArrayList<String> words = new ArrayList<>();
+        for (Secret secret : secrets) {
+            if (secret.caster.equals(player.getUUID())) words.add(secret.word);
+        }
+        PacketHandler.sendToPlayer(player, new OpenConcealSecretScreenPacket(words));
+    }
+
+    private void reverse(Level level, LivingEntity entity) {
+        if (!(entity instanceof ServerPlayer player)) return;
+        int seq = AbilityUtil.getSeqWithArt(entity, this);
+        LivingEntity target = AbilityUtil.getTargetEntity(entity, 16, 2);
+        if (target != null && hiddenFromHarm(target)) {
+            Mark mark = concealedOthers.get(target.getUUID());
+            if (mark != null && !canErase(player, seq, mark.caster, mark.casterSeq)) {
+                bar(player, "Their concealment holds.");
+                return;
+            }
+            clearOthers(target);
+            bar(player, "Their concealment is gone.");
+            return;
+        }
+        boolean erased = false;
+        boolean held = false;
+        var veilsLeft = veils.iterator();
+        while (veilsLeft.hasNext()) {
+            Veil veil = veilsLeft.next();
+            if (!veil.dimension.equals(player.level().dimension()) || !inside(player, veil)) continue;
+            if (!canErase(player, seq, veil.caster, veil.casterSeq)) {
+                held = true;
+                continue;
+            }
+            veilsLeft.remove();
+            erased = true;
+        }
+        var secretsLeft = secrets.iterator();
+        while (secretsLeft.hasNext()) {
+            Secret secretEntry = secretsLeft.next();
+            if (!secretEntry.caster.equals(player.getUUID()) || !secretCovers(secretEntry, player)) continue;
+            if (!canErase(player, seq, secretEntry.caster, secretEntry.casterSeq)) {
+                held = true;
+                continue;
+            }
+            secretsLeft.remove();
+            erased = true;
+        }
+        if (erased) bar(player, "The concealment is erased.");
+        else if (held) bar(player, "Their concealment holds.");
+        else bar(player, "Nothing here is concealed.");
+    }
+
+    private static boolean canErase(ServerPlayer player, int seq, UUID caster, int casterSeq) {
+        return caster.equals(player.getUUID()) || casterSeq >= seq;
+    }
+
+    private void presenceOfPeace(LivingEntity entity) {
+        if (!(entity instanceof ServerPlayer player)) return;
+        if (peaceful.contains(player.getUUID())) {
+            endPeace(player);
+            return;
+        }
+        peaceful.add(player.getUUID());
+        PsychologicalInvisibilityAbility.addInvisFromOtherSkills(player, BeyonderData.getSequence(player));
+        bar(player, "A quiet presence settles.");
+    }
+
+    private static void endPeace(LivingEntity entity) {
+        if (!peaceful.remove(entity.getUUID())) return;
+        PsychologicalInvisibilityAbility.removeInvisFromOtherSkills(entity);
+        entity.setInvisible(false);
+        if (entity instanceof ServerPlayer player) bar(player, "The quiet presence fades.");
+    }
+
+    private void possessProjection(LivingEntity entity) {
+        if (!(entity instanceof ServerPlayer player) || player.getServer() == null) return;
+        UUID npcId = pendingProjections.get(player.getUUID());
+        if (npcId == null) {
+            bar(player, "No projection answers.");
+            return;
+        }
+        BeyonderNPCEntity npc = findProjection(player.getServer(), npcId);
+        if (npc == null || !npc.isAlive()) {
+            pendingProjections.remove(player.getUUID());
+            bar(player, "No projection answers.");
+            return;
+        }
+        if (npc.level() != player.level() && npc.level() instanceof ServerLevel npcLevel) {
+            player.teleportTo(npcLevel, npc.getX(), npc.getY(), npc.getZ(), player.getYRot(), player.getXRot());
+        }
+        if (!ControllingUtils.startControlling(player, npc, true, true)) {
+            bar(player, "The projection does not answer.");
+            return;
+        }
+        pendingProjections.remove(player.getUUID());
+    }
+
+    private static BeyonderNPCEntity findProjection(MinecraftServer server, UUID npcId) {
+        for (ServerLevel level : server.getAllLevels()) {
+            Entity found = level.getEntity(npcId);
+            if (found instanceof BeyonderNPCEntity npc) return npc;
+        }
+        return null;
+    }
+
+    public static void dispel(ServerLevel level, Vec3 center, double radius, int casterSequence) {
+        boolean changed = false;
+        var veilsLeft = veils.iterator();
+        while (veilsLeft.hasNext()) {
+            Veil veil = veilsLeft.next();
+            if (!veil.dimension.equals(level.dimension()) || veil.casterSeq < casterSequence) continue;
+            double dx = veil.x - center.x;
+            double dz = veil.z - center.z;
+            double reach = radius + veil.radius;
+            if (dx * dx + dz * dz > reach * reach) continue;
+            veilsLeft.remove();
+            changed = true;
+        }
+        var secretsLeft = secrets.iterator();
+        while (secretsLeft.hasNext()) {
+            Secret secret = secretsLeft.next();
+            if (!secret.dimension.equals(level.dimension()) || secret.casterSeq < casterSequence) continue;
+            if (secret.casterSeq > 0) {
+                double dx = secret.x - center.x;
+                double dz = secret.z - center.z;
+                int reach = secret.casterSeq == 1 ? SECRET_REACH_SEQ1 : SECRET_REACH;
+                if (dx * dx + dz * dz > (radius + reach) * (radius + reach)) continue;
+            }
+            secretsLeft.remove();
+            changed = true;
+        }
+        long time = level.getServer().overworld().getGameTime();
+        AABB area = new AABB(center.x - radius, level.getMinBuildHeight(), center.z - radius, center.x + radius, level.getMaxBuildHeight(), center.z + radius);
+        for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, area, entity -> {
+            double dx = entity.getX() - center.x;
+            double dz = entity.getZ() - center.z;
+            return dx * dx + dz * dz <= radius * radius;
+        })) {
+            if (peaceful.contains(entity.getUUID()) && BeyonderData.getSequence(entity) >= casterSequence) endPeace(entity);
+            Mark mark = concealedOthers.get(entity.getUUID());
+            if (mark == null || time >= mark.until || mark.casterSeq < casterSequence) continue;
+            concealedOthers.remove(entity.getUUID());
+            if (entity instanceof ServerPlayer player) player.getData(ModAttachments.FOG_COMPONENT.get()).clearFog(player);
+            changed = true;
+        }
+        if (changed) syncVeils(level.getServer());
+    }
+
+    private static void clearOthers(LivingEntity target) {
+        concealedOthers.remove(target.getUUID());
+        if (target instanceof ServerPlayer player) {
+            player.getData(ModAttachments.FOG_COMPONENT.get()).clearFog(player);
+        }
+        if (target.level().getServer() != null) syncVeils(target.level().getServer());
+    }
+
+    private static boolean seesVeil(LivingEntity entity, Veil veil) {
+        if (veil.caster.equals(entity.getUUID())) return true;
+        if (!veil.ground && "darkness".equals(BeyonderData.getPathway(entity)) && BeyonderData.getSequence(entity) > veil.casterSeq) return false;
+        if (sees(entity)) return true;
+        if ("door".equals(BeyonderData.getPathway(entity)) && BeyonderData.getSequence(entity) == 0) return true;
+        return !veil.ground && "darkness".equals(BeyonderData.getPathway(entity));
+    }
+
+    private static boolean canPass(LivingEntity entity, Veil veil) {
+        if (entity.getUUID().equals(veil.caster)) return true;
+        if (!veil.ground) {
+            return "darkness".equals(BeyonderData.getPathway(entity)) && BeyonderData.getSequence(entity) < veil.casterSeq;
+        }
+        if (sees(entity)) return true;
+        return BeyonderData.getSequence(entity) <= veil.casterSeq - 1;
+    }
+
+    private static boolean inside(LivingEntity entity, Veil veil) {
+        if (!veil.dimension.equals(entity.level().dimension())) return false;
+        double dx = entity.getX() - veil.x;
+        double dy = entity.getY() - veil.y;
+        double dz = entity.getZ() - veil.z;
+        return dx * dx + dy * dy + dz * dz <= veil.radius * veil.radius;
+    }
+
+    private static boolean locked(Player player) {
+        return player instanceof LivingEntity living && hiddenFromHarm(living);
+    }
+
+    private static void bar(ServerPlayer player, String text) {
+        player.connection.send(new ClientboundSetActionBarTextPacket(Component.literal(text).withColor(0xFF3300b5)));
+    }
+
+    private static void watch(ServerPlayer player) {
+        boolean bare = false;
+        for (Veil veil : veils) {
+            if (veil.ground || !inside(player, veil) || seesVeil(player, veil)) continue;
+            bare = true;
+            break;
+        }
+        boolean was = intruders.contains(player.getUUID());
+        if (bare == was) return;
+        if (bare) intruders.add(player.getUUID());
+        else intruders.remove(player.getUUID());
+        syncVeils(player.server);
+    }
+
+    private static void dropFloor(LivingEntity entity) {
+        if (!(entity.level() instanceof ServerLevel level)) return;
+        for (Veil veil : veils) {
+            if (!veil.ground || canPass(entity, veil)) continue;
+            double dx = entity.getX() - veil.x;
+            double dz = entity.getZ() - veil.z;
+            if (!veil.dimension.equals(level.dimension()) || dx * dx + dz * dz > veil.radius * veil.radius) continue;
+            if (Math.abs(entity.getY() - veil.y) > 1.5) continue;
+            int x = entity.getBlockX();
+            int z = entity.getBlockZ();
+            int y = entity.getBlockY() - GROUND_DROP;
+            int min = Math.max(level.getMinBuildHeight() + 1, entity.getBlockY() - 12);
+            boolean landed = false;
+            for (; y >= min; y--) {
+                BlockPos feet = new BlockPos(x, y, z);
+                if (level.getBlockState(feet).isAir() && level.getBlockState(feet.above()).isAir() && !level.getBlockState(feet.below()).isAir()) {
+                    landed = true;
+                    break;
+                }
+            }
+            if (!landed) y = entity.getBlockY() - GROUND_DROP;
+            entity.teleportTo(entity.getX(), y, entity.getZ());
+            entity.setDeltaMovement(0, -0.4, 0);
+            entity.hurtMarked = true;
+            return;
+        }
+    }
+
+    private static void calm(ServerPlayer player) {
+        if (!peaceful.contains(player.getUUID()) || player.tickCount % 10 != 0) return;
+        if (!(player.level() instanceof ServerLevel level)) return;
+        List<LivingEntity> nearby = AbilityUtil.getNearbyEntities(player, level, player.position(), 24);
+        int lookers = 0;
+        for (LivingEntity other : nearby) {
+            if (other != player && Boolean.TRUE.equals(DangerPremonitionAbility.isThreatLookingAtUser(player, other, 24))) lookers++;
+        }
+        if (lookers <= 0) return;
+        float chance = Math.min(0.85f, lookers * 0.2f);
+        for (LivingEntity other : nearby) {
+            if (other instanceof Mob mob && mob.getTarget() == player && mob.getRandom().nextFloat() < chance) {
+                mob.setTarget(null);
+            }
+        }
+    }
+
+    private static void syncVeils(MinecraftServer server) {
+        List<Integer> bare = bareIds(server);
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            ArrayList<Double> packed = new ArrayList<>();
+            boolean darkness = "darkness".equals(BeyonderData.getPathway(player));
+            int seq = BeyonderData.getSequence(player);
+            boolean door = "door".equals(BeyonderData.getPathway(player)) && seq == 0;
+            boolean blind = !sees(player);
+            for (Veil veil : veils) {
+                if (!veil.dimension.equals(player.level().dimension())) continue;
+                boolean own = veil.caster.equals(player.getUUID());
+                boolean lower = !veil.ground && darkness && seq > veil.casterSeq;
+                boolean same = !veil.ground && darkness && seq == veil.casterSeq;
+                boolean doorShell = door && !veil.ground && veil.casterSeq == 0;
+                boolean hide = own ? false : door ? doorShell : veil.ground || !darkness ? blind : lower || same;
+                boolean sees = seesVeil(player, veil);
+                double look = veil.ground || !sees ? 0.0 : 0.5;
+                boolean affected = veil.ground || !inside(player, veil) || seesVeil(player, veil);
+                packed.add(veil.x);
+                packed.add(veil.y);
+                packed.add(veil.z);
+                packed.add(veil.radius);
+                packed.add(hide ? 1.0 : 0.0);
+                packed.add(veil.ground ? 1.0 : 0.0);
+                packed.add(look);
+                packed.add(affected ? 1.0 : 0.0);
+            }
+            PacketHandler.sendToPlayer(player, new SyncConcealmentVeilsPacket(packed, bare, concealedIds(server, player)));
+        }
+    }
+
+    private static List<Integer> concealedIds(MinecraftServer server, ServerPlayer viewer) {
+        ArrayList<Integer> ids = new ArrayList<>();
+        if (concealedOthers.isEmpty()) return ids;
+        boolean darkness = "darkness".equals(BeyonderData.getPathway(viewer));
+        int seq = BeyonderData.getSequence(viewer);
+        boolean door = "door".equals(BeyonderData.getPathway(viewer)) && seq == 0;
+        boolean blind = !sees(viewer);
+        long time = server.overworld().getGameTime();
+        for (var entry : concealedOthers.entrySet()) {
+            if (entry.getKey().equals(viewer.getUUID())) continue;
+            Mark mark = entry.getValue();
+            if (mark.until <= time || mark.caster.equals(viewer.getUUID())) continue;
+            boolean lower = darkness && seq > mark.casterSeq;
+            boolean same = darkness && seq == mark.casterSeq;
+            boolean doorShell = door && mark.casterSeq == 0;
+            boolean hide = door ? doorShell : !darkness ? blind : lower || same;
+            if (!hide) continue;
+            for (ServerLevel level : server.getAllLevels()) {
+                Entity entity = level.getEntity(entry.getKey());
+                if (entity == null) continue;
+                ids.add(entity.getId());
+                break;
+            }
+        }
+        return ids;
+    }
+
+    private static List<Integer> bareIds(MinecraftServer server) {
+        ArrayList<Integer> ids = new ArrayList<>();
+        for (Veil veil : veils) {
+            if (veil.ground) continue;
+            ServerLevel level = server.getLevel(veil.dimension);
+            if (level == null) continue;
+            AABB box = new AABB(veil.x - veil.radius, veil.y - veil.radius, veil.z - veil.radius, veil.x + veil.radius, veil.y + veil.radius, veil.z + veil.radius);
+            for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, box, living -> inside(living, veil) && !seesVeil(living, veil))) {
+                ids.add(entity.getId());
+            }
+        }
+        return ids;
+    }
+
+    private static void shoveMobs(MinecraftServer server) {
+        for (Veil veil : List.copyOf(veils)) {
+            ServerLevel level = server.getLevel(veil.dimension);
+            if (level == null) continue;
+            AABB box = new AABB(veil.x - veil.radius, veil.y - veil.radius, veil.z - veil.radius, veil.x + veil.radius, veil.y + veil.radius, veil.z + veil.radius);
+            if (!veil.ground) continue;
+            for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, box, living -> !(living instanceof Player))) {
+                dropFloor(entity);
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerTick(PlayerTickEvent.Post event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        watch(player);
+        dropFloor(player);
+        calm(player);
+        if (peaceful.contains(player.getUUID())) {
+            player.setInvisible(true);
+            if (!PsychologicalInvisibilityAbility.finalInvisiblePlayers.containsKey(player.getUUID())) {
+                PsychologicalInvisibilityAbility.addInvisFromOtherSkills(player, BeyonderData.getSequence(player));
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onLevelTick(LevelTickEvent.Post event) {
+        if (!(event.getLevel() instanceof ServerLevel level) || level.getServer() == null) return;
+        if (level != level.getServer().overworld()) return;
+        long time = level.getGameTime();
+        veils.removeIf(veil -> {
+            if (!veil.ground || veil.until > time) return false;
+            ServerPlayer caster = level.getServer().getPlayerList().getPlayer(veil.caster);
+            if (caster != null) bar(caster, "The ground settles.");
+            return true;
+        });
+        int concealedBefore = concealedOthers.size();
+        concealedOthers.entrySet().removeIf(entry -> {
+            if (entry.getValue().until > time) return false;
+            ServerPlayer concealed = level.getServer().getPlayerList().getPlayer(entry.getKey());
+            if (concealed != null) concealed.getData(ModAttachments.FOG_COMPONENT.get()).clearFog(concealed);
+            return true;
+        });
+        intruders.removeIf(id -> level.getServer().getPlayerList().getPlayer(id) == null);
+        if (time % 5 == 0) shoveMobs(level.getServer());
+        if (concealedBefore != concealedOthers.size() || time % 20 == 0) syncVeils(level.getServer());
+    }
+
+    @SubscribeEvent
+    public static void onBreak(BlockEvent.BreakEvent event) {
+        if (event.getPlayer() != null && locked(event.getPlayer())) event.setCanceled(true);
+    }
+
+    @SubscribeEvent
+    public static void onPlace(BlockEvent.EntityPlaceEvent event) {
+        if (event.getEntity() instanceof Player player && locked(player)) event.setCanceled(true);
+    }
+
+    @SubscribeEvent
+    public static void onLeft(PlayerInteractEvent.LeftClickBlock event) {
+        if (locked(event.getEntity())) event.setCanceled(true);
+    }
+
+    @SubscribeEvent
+    public static void onRight(PlayerInteractEvent.RightClickBlock event) {
+        if (locked(event.getEntity())) event.setCanceled(true);
+    }
+
+    @SubscribeEvent
+    public static void onUse(PlayerInteractEvent.RightClickItem event) {
+        if (locked(event.getEntity())) event.setCanceled(true);
+    }
+
+    @SubscribeEvent
+    public static void onAttack(AttackEntityEvent event) {
+        if (!locked(event.getEntity())) return;
+        if (event.getTarget() instanceof LivingEntity victim && inArea(victim)) return;
+        event.setCanceled(true);
+    }
+
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void onHurt(LivingIncomingDamageEvent event) {
+        LivingEntity attacker = event.getSource().getEntity() instanceof LivingEntity living ? living : null;
+        if (hiddenFromHarm(event.getEntity()) && (attacker == null || attacker == event.getEntity() || !inArea(attacker))) {
+            event.setCanceled(true);
+            event.setAmount(0);
+            return;
+        }
+        if (attacker == null || attacker == event.getEntity()) return;
+        if (crossesArea(attacker, event.getEntity())) {
+            event.setCanceled(true);
+            event.setAmount(0);
+        }
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onPeaceStrike(LivingIncomingDamageEvent event) {
+        if (event.isCanceled() || event.getAmount() <= 0) return;
+        if (event.getSource().getEntity() instanceof LivingEntity attacker) endPeace(attacker);
+    }
+
+    private static boolean secretCovers(Secret secret, ServerPlayer player) {
+        if (secret.casterSeq <= 0) return true;
+        if (!secret.dimension.equals(player.level().dimension())) return false;
+        int reach = secret.casterSeq == 1 ? SECRET_REACH_SEQ1 : SECRET_REACH;
+        return Math.abs(player.getX() - secret.x) <= reach && Math.abs(player.getZ() - secret.z) <= reach;
+    }
+
+    private static boolean inArea(LivingEntity entity) {
+        for (Veil veil : veils) {
+            if (!veil.ground && inside(entity, veil)) return true;
+        }
+        return false;
+    }
+
+    private static boolean crossesArea(LivingEntity attacker, LivingEntity victim) {
+        if (hiddenFromHarm(victim) && inArea(attacker)) return false;
+        if (hiddenFromHarm(attacker) && inArea(victim)) return false;
+        for (Veil veil : veils) {
+            if (veil.ground) continue;
+            if (inside(victim, veil) && seesVeil(victim, veil) && (attacker.getUUID().equals(veil.caster) || (inside(attacker, veil) && seesVeil(attacker, veil)))) {
+                return false;
+            }
+        }
+        for (Veil veil : veils) {
+            if (veil.ground) continue;
+            if (!seesVeil(attacker, veil) && inside(victim, veil) && seesVeil(victim, veil)) return true;
+            if (inside(attacker, veil) && seesVeil(attacker, veil)) return true;
+        }
+        return false;
+    }
+
+    @SubscribeEvent
+    public static void onChat(ServerChatEvent event) {
+        String raw = event.getMessage().getString();
+        String next = raw;
+        ServerPlayer speaker = event.getPlayer();
+        for (Secret secret : secrets) {
+            if (!secretCovers(secret, speaker)) continue;
+            next = next.replaceAll("(?i)" + Pattern.quote(secret.word), "█████");
+        }
+        if (!next.equals(raw)) event.setMessage(Component.literal(next));
+    }
+
+    @SubscribeEvent
+    public static void onPeaceParticles(EffectParticleModificationEvent event) {
+        if (peaceful(event.getEntity())) event.setVisible(false);
+    }
+
+    @SubscribeEvent
+    public static void onPeaceTarget(LivingChangeTargetEvent event) {
+        LivingEntity next = event.getNewAboutToBeSetTarget();
+        if (next != null && peaceful(next)) event.setCanceled(true);
     }
 
 }

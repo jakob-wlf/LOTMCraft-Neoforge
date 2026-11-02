@@ -71,13 +71,14 @@ public class SealingAbility extends Ability {
         if (level.isClientSide)
             return;
 
+        Vec3 targetLoc = AbilityUtil.getTargetLocation(entity, baseDistance, 2);
+        seal(entity, (ServerLevel) level, targetLoc, AbilityUtil.getSeqWithArt(entity, this));
+    }
+
+    public void seal(LivingEntity entity, ServerLevel level, Vec3 targetLoc, int entitySeq) {
         int radius = 10;
 
-        Vec3 targetLoc = AbilityUtil.getTargetLocation(entity, baseDistance, 2);
-
-        int entitySeq = AbilityUtil.getSeqWithArt(entity, this);
-
-        NeoForge.EVENT_BUS.post(new AbilityUsedEvent((ServerLevel) level, targetLoc, entity, this, interactionFlags, interactionRadius, interactionCacheTicks));
+        NeoForge.EVENT_BUS.post(new AbilityUsedEvent(level, targetLoc, entity, this, interactionFlags, interactionRadius, interactionCacheTicks));
 
         List<LivingEntity> sealedEntities = AbilityUtil.getNearbyEntities(entity, (ServerLevel) level, targetLoc, radius, false);
         sealedEntities.forEach(e -> {

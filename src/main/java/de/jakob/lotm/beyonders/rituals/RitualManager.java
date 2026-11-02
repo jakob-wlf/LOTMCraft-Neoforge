@@ -95,7 +95,10 @@ public class RitualManager extends SimpleJsonResourceReloadListener {
         String candleName = BuiltInRegistries.ITEM.get(ResourceLocation.parse(ritual.candle())).getDescription().getString();
         List<String> sacrificeNames = ritual.sacrifices().stream()
                 .map(sacrifice -> {
-                    return BuiltInRegistries.ITEM.get(ResourceLocation.parse(sacrifice.item())).getDescription().getString() + " x" + sacrifice.count();
+                    String name = "lotmcraft:beyonder_characteristic".equals(sacrifice.item())
+                            ? Component.translatable("lotm.beyonder_characteristic").getString()
+                            : BuiltInRegistries.ITEM.get(ResourceLocation.parse(sacrifice.item())).getDescription().getString();
+                    return name + " x" + sacrifice.count();
                 })
                 .toList();
         List<String> honorificLines = ritual.honorific().lines();
@@ -185,7 +188,7 @@ public class RitualManager extends SimpleJsonResourceReloadListener {
         );
     }
 
-    public static void performRitual(@Nullable RitualRecipe ritual, ServerPlayer player, BlockPos tablePos) {
+    public static void performRitual(@Nullable RitualRecipe ritual, ServerPlayer player, BlockPos tablePos, List<ItemStack> sacrifices) {
         if (ritual == null) {
             ritual = rituals.get(ResourceLocation.fromNamespaceAndPath(LOTMCraft.MOD_ID, FAILURE_RITUAL_ID));
             if(ritual == null) {
@@ -236,7 +239,7 @@ public class RitualManager extends SimpleJsonResourceReloadListener {
                 )
         );
 
-        handler.perform(result.params(), player, tablePos);
+        handler.perform(result.params(), player, tablePos, sacrifices);
     }
 
     public static Map<ResourceLocation, RitualRecipe> getRituals() {

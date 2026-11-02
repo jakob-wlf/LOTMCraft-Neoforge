@@ -26,6 +26,13 @@ public class CompressionAbility extends SelectableAbility {
     public static int MAX;
     public CompressionAbility(String id) {
         super(id, 1.0f, "burning");
+        isHoldable(40, 0);
+    }
+
+    @Override
+    public int getHoldTime(LivingEntity entity, int subIndex) {
+        int ticks = super.getHoldTime(entity, subIndex);
+        return ticks > 0 ? ticks + 20 * CHARGES : 0;
     }
 
     @Override

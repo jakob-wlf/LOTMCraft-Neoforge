@@ -123,8 +123,8 @@ public class EnvisionSplitComponent {
 
         var buff = new LinkedList<String>();
         for(var obj : names){
-            var data = BeyonderData.playerMap.get(BeyonderData.playerMap.getKeyByName(obj)).get();
-            if(data.sequence() != 1){
+            var data = BeyonderData.playerMap.get(BeyonderData.playerMap.getKeyByName(obj));
+            if(data.isEmpty() || data.get().sequence() != 1){
                 buff.add(obj);
             }
         }

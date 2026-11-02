@@ -38,6 +38,7 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -145,10 +146,11 @@ public class SpiritBaneEntity extends Animal {
      * Gathers block states from around the Bane spirit to use as projectile blocks.
      */
     private List<BlockState> getLocalBlockStates() {
-        List<BlockState> states = new ArrayList<>();
-        Level level = this.level();
-        BlockPos center = this.blockPosition();
+        return gatherBlocks(this.level(), this.blockPosition());
+    }
 
+    private static List<BlockState> gatherBlocks(Level level, BlockPos center) {
+        List<BlockState> states = new ArrayList<>();
         for (int x = -BLOCK_SEARCH_RADIUS; x <= BLOCK_SEARCH_RADIUS; x++) {
             for (int y = -2; y <= 2; y++) {
                 for (int z = -BLOCK_SEARCH_RADIUS; z <= BLOCK_SEARCH_RADIUS; z++) {
@@ -160,18 +162,101 @@ public class SpiritBaneEntity extends Animal {
                 }
             }
         }
-
-        // Fallback if no blocks found
         if (states.isEmpty()) {
             states.add(Blocks.STONE.defaultBlockState());
             states.add(Blocks.COBBLESTONE.defaultBlockState());
             states.add(Blocks.DIRT.defaultBlockState());
         }
-
         return states;
     }
 
-    static class BaneAttackGoal extends Goal {
+    public static class BaneAttackGoal extends Goal {
+
+        public static void lift(ServerLevel level, LivingEntity target) {
+            target.setDeltaMovement(0, 0.7, 0);
+            target.hurtMarked = true;
+            target.hasImpulse = true;
+            target.fallDistance = 0;
+            ParticleUtil.spawnParticles(level, BANE_DUST_DARK, target.position(), 3, 0.3);
+            ParticleUtil.spawnParticles(level, ParticleTypes.SMOKE, target.position(), 2, 0.5);
+        }
+
+        public static void hold(ServerLevel level, LivingEntity target) {
+            target.setDeltaMovement(0, 0.05, 0);
+            target.hurtMarked = true;
+            target.hasImpulse = true;
+            target.fallDistance = 0;
+            ParticleUtil.spawnSphereParticles(level, BANE_DUST, target.position().add(0, 1, 0), 1.5, 10);
+        }
+
+        public static void drop(ServerLevel level, LivingEntity target) {
+            target.setDeltaMovement(0, -5.0, 0);
+            target.hurtMarked = true;
+            target.hasImpulse = true;
+            ParticleUtil.spawnParticles(level, BANE_DUST, target.position(), 5, 0.3);
+        }
+
+        public static void impact(ServerLevel level, LivingEntity caster, LivingEntity target, float damage) {
+            Vec3 impact = target.position();
+            ParticleUtil.spawnSphereParticles(level, BANE_DUST, impact, 4.0, 60);
+            ParticleUtil.spawnSphereParticles(level, BANE_DUST_DARK, impact, 3.0, 40);
+            ParticleUtil.spawnParticles(level, ParticleTypes.EXPLOSION, impact, 8, 2.0);
+            ParticleUtil.spawnParticles(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, impact, 10, 1.0);
+            target.hurt(ModDamageTypes.source(level, ModDamageTypes.IMPACT, caster), damage);
+            target.invulnerableTime = 0;
+            AbilityUtil.damageNearbyEntities(level, caster, 5.0, damage * 0.3f, impact, true, true);
+        }
+
+        public static void hurl(ServerLevel level, LivingEntity caster, LivingEntity target, List<BlockState> blocks, float damage, Vec3 origin) {
+            ParticleUtil.spawnSphereParticles(level, BANE_DUST, origin, 3.0, 30);
+            for (int i = 0; i < BLOCK_HURL_COUNT; i++) {
+                BlockState blockState = blocks.get(caster.getRandom().nextInt(blocks.size()));
+                double offsetX = (caster.getRandom().nextDouble() - 0.5) * 4.0;
+                double offsetY = caster.getRandom().nextDouble() * 3.0 + 1.0;
+                double offsetZ = (caster.getRandom().nextDouble() - 0.5) * 4.0;
+                Vec3 spawnPos = origin.add(offsetX, offsetY, offsetZ);
+                Vec3 toTarget = target.getEyePosition().subtract(spawnPos).normalize();
+                double spread = 0.15;
+                Vec3 velocity = toTarget.add(
+                        (caster.getRandom().nextDouble() - 0.5) * spread,
+                        (caster.getRandom().nextDouble() - 0.5) * spread + 0.1,
+                        (caster.getRandom().nextDouble() - 0.5) * spread
+                ).scale(1.5);
+                Vec3 finalSpawnPos = spawnPos;
+                Vec3 finalVelocity = velocity;
+                ServerScheduler.scheduleDelayed(i * 3, () -> {
+                    SpiritBlockProjectileEntity blockProjectile = new SpiritBlockProjectileEntity(
+                            level, caster, blockState, damage, finalSpawnPos, finalVelocity
+                    );
+                    level.addFreshEntity(blockProjectile);
+                    ParticleUtil.spawnParticles(level, BANE_DUST_DARK, finalSpawnPos, 3, 0.3);
+                }, level);
+            }
+        }
+
+        public static void attack(ServerLevel level, LivingEntity caster, LivingEntity target) {
+            if (!canLiftTarget(target)) {
+                hurl(level, caster, target, gatherBlocks(level, caster.blockPosition()), 100f * 0.4f, caster.position().add(0, 2, 0));
+                return;
+            }
+            ParticleUtil.spawnSphereParticles(level, BANE_DUST, target.position().add(0, 1, 0), 2.0, 30);
+            ServerScheduler.scheduleRepeating(1, 1, 20, () -> lift(level, target), level, target::isAlive);
+            ServerScheduler.scheduleRepeating(21, 1, 15, () -> hold(level, target), level, target::isAlive);
+            AtomicBoolean slammed = new AtomicBoolean();
+            ServerScheduler.scheduleRepeating(36, 1, 30, () -> {
+                if (!target.isAlive() || slammed.get()) return;
+                drop(level, target);
+                if (!target.onGround()) return;
+                slammed.set(true);
+                impact(level, caster, target, 100f * LIFT_SLAM_DAMAGE_MULTIPLIER);
+            }, level, target::isAlive);
+            ServerScheduler.scheduleDelayed(66, () -> {
+                if (!target.isAlive() || slammed.get()) return;
+                slammed.set(true);
+                impact(level, caster, target, 100f * LIFT_SLAM_DAMAGE_MULTIPLIER);
+            }, level);
+        }
+
 
         private final SpiritBaneEntity bane;
         private int attackCooldown;
@@ -272,56 +357,26 @@ public class SpiritBaneEntity extends Animal {
         }
 
         private void tickLifting(ServerLevel serverLevel) {
-            liftSlamTarget.setDeltaMovement(0, 0.7, 0);
-            liftSlamTarget.hurtMarked = true;
-            liftSlamTarget.hasImpulse = true;
-            liftSlamTarget.fallDistance = 0;
-
-            ParticleUtil.spawnParticles(serverLevel, BANE_DUST_DARK, liftSlamTarget.position(), 3, 0.3);
-            ParticleUtil.spawnParticles(serverLevel, ParticleTypes.SMOKE, liftSlamTarget.position(), 2, 0.5);
-
+            lift(serverLevel, liftSlamTarget);
             if (liftSlamTimer >= 20) {
-                liftSlamPhase = 2; // Transition to holding
+                liftSlamPhase = 2;
                 liftSlamTimer = 0;
             }
         }
 
         private void tickHolding(ServerLevel serverLevel) {
-            liftSlamTarget.setDeltaMovement(0, 0.05, 0); // slight upward to counter gravity
-            liftSlamTarget.hurtMarked = true;
-            liftSlamTarget.hasImpulse = true;
-            liftSlamTarget.fallDistance = 0;
-
-            ParticleUtil.spawnSphereParticles(serverLevel, BANE_DUST, liftSlamTarget.position().add(0, 1, 0), 1.5, 10);
-
+            hold(serverLevel, liftSlamTarget);
             if (liftSlamTimer >= 15) {
-                liftSlamPhase = 3; // Transition to slamming
+                liftSlamPhase = 3;
                 liftSlamTimer = 0;
             }
         }
 
         private void tickSlamming(ServerLevel serverLevel) {
-            liftSlamTarget.setDeltaMovement(0, -5.0, 0);
-            liftSlamTarget.hurtMarked = true;
-            liftSlamTarget.hasImpulse = true;
-
-            ParticleUtil.spawnParticles(serverLevel, BANE_DUST, liftSlamTarget.position(), 5, 0.3);
-
+            drop(serverLevel, liftSlamTarget);
             if (liftSlamTarget.onGround() || liftSlamTimer > 30) {
                 float damage = (float) bane.getAttributeValue(Attributes.ATTACK_DAMAGE) * LIFT_SLAM_DAMAGE_MULTIPLIER;
-                Vec3 impactPos = liftSlamTarget.position();
-
-                ParticleUtil.spawnSphereParticles(serverLevel, BANE_DUST, impactPos, 4.0, 60);
-                ParticleUtil.spawnSphereParticles(serverLevel, BANE_DUST_DARK, impactPos, 3.0, 40);
-                ParticleUtil.spawnParticles(serverLevel, ParticleTypes.EXPLOSION, impactPos, 8, 2.0);
-                ParticleUtil.spawnParticles(serverLevel, ParticleTypes.CAMPFIRE_COSY_SMOKE, impactPos, 10, 1.0);
-
-                DamageSource source = ModDamageTypes.source(bane.level(), ModDamageTypes.IMPACT, bane);
-                liftSlamTarget.hurt(source, damage);
-                liftSlamTarget.invulnerableTime = 0;
-
-                AbilityUtil.damageNearbyEntities(serverLevel, bane, 5.0, damage * 0.3f, impactPos, true, true);
-
+                impact(serverLevel, bane, liftSlamTarget, damage);
                 performingLiftSlam = false;
                 liftSlamPhase = 0;
                 attackCooldown = 80;
@@ -330,41 +385,8 @@ public class SpiritBaneEntity extends Animal {
 
         private void performBlockHurl(LivingEntity target) {
             if (!(bane.level() instanceof ServerLevel serverLevel)) return;
-
-            List<BlockState> localBlocks = bane.getLocalBlockStates();
-            float damage = (float) bane.getAttributeValue(Attributes.ATTACK_DAMAGE) * 0.4f; // per block
-            Vec3 banePos = bane.position().add(0, 2, 0);
-
-            ParticleUtil.spawnSphereParticles(serverLevel, BANE_DUST, banePos, 3.0, 30);
-
-            for (int i = 0; i < BLOCK_HURL_COUNT; i++) {
-                BlockState blockState = localBlocks.get(bane.getRandom().nextInt(localBlocks.size()));
-
-                double offsetX = (bane.getRandom().nextDouble() - 0.5) * 4.0;
-                double offsetY = bane.getRandom().nextDouble() * 3.0 + 1.0;
-                double offsetZ = (bane.getRandom().nextDouble() - 0.5) * 4.0;
-                Vec3 spawnPos = banePos.add(offsetX, offsetY, offsetZ);
-
-                Vec3 toTarget = target.getEyePosition().subtract(spawnPos).normalize();
-                double spread = 0.15;
-                Vec3 velocity = toTarget.add(
-                        (bane.getRandom().nextDouble() - 0.5) * spread,
-                        (bane.getRandom().nextDouble() - 0.5) * spread + 0.1,
-                        (bane.getRandom().nextDouble() - 0.5) * spread
-                ).scale(1.5);
-
-                final Vec3 finalSpawnPos = spawnPos;
-                final Vec3 finalVelocity = velocity;
-                ServerScheduler.scheduleDelayed(i * 3, () -> {
-                    SpiritBlockProjectileEntity blockProjectile = new SpiritBlockProjectileEntity(
-                            bane.level(), bane, blockState, damage, finalSpawnPos, finalVelocity
-                    );
-                    bane.level().addFreshEntity(blockProjectile);
-
-                    ParticleUtil.spawnParticles(serverLevel, BANE_DUST_DARK, finalSpawnPos, 3, 0.3);
-                }, serverLevel);
-            }
-
+            float damage = (float) bane.getAttributeValue(Attributes.ATTACK_DAMAGE) * 0.4f;
+            hurl(serverLevel, bane, target, bane.getLocalBlockStates(), damage, bane.position().add(0, 2, 0));
             attackCooldown = 60;
         }
     }

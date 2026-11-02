@@ -45,13 +45,14 @@ import net.neoforged.neoforge.event.entity.living.*;
 import net.neoforged.neoforge.event.entity.player.PlayerContainerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
-import java.util.Objects;
-import java.util.Random;
+import java.util.*;
 
 import static de.jakob.lotm.util.BeyonderData.*;
 
 @EventBusSubscriber(modid = LOTMCraft.MOD_ID)
 public class BeyonderEventHandler {
+
+    private static Map<UUID, Long> regressInvul = new HashMap<>();
 
     @SubscribeEvent
     public static void onPlayerJoinWorld(PlayerEvent.PlayerLoggedInEvent event) {
@@ -92,7 +93,7 @@ public class BeyonderEventHandler {
             serverPlayer.addEffect(new MobEffectInstance(ModEffects.CONCEALMENT, 20 * 5, 99));
             BeyonderData.recalculateCharStackModifiers(serverPlayer);
             serverPlayer.getData(ModAttachments.LUCK_COMPONENT.get()).setLuck(0);
-            PacketHandler.sendToPlayer(serverPlayer, new SyncPsychologicalInvisibilityPacket(PsychologicalInvisibilityAbility.invisiblePlayers));
+            PacketHandler.sendToPlayer(serverPlayer, new SyncPsychologicalInvisibilityPacket(PsychologicalInvisibilityAbility.finalInvisiblePlayers));
 
             PacketHandler.syncBeyonderDataToPlayer(serverPlayer);
         }
@@ -147,26 +148,6 @@ public class BeyonderEventHandler {
                 event.setCanceled(true);
             }
         }
-    }
-
-    @SubscribeEvent
-    public static void onLivingDamageLiving(LivingIncomingDamageEvent event) {
-        if (!(event.getSource().getEntity() instanceof LivingEntity source)) return;
-        LivingEntity target = event.getEntity();
-
-        if (!BeyonderData.isBeyonder(target)) return;
-
-        int targetSeq = BeyonderData.getSequence(target);
-        int sourceSeq = BeyonderData.getSequence(source);
-
-        if (targetSeq >= sourceSeq) return;
-
-        float baseMultiplier = 1f / (1f + (sourceSeq - targetSeq) * 0.175f);
-        if (AbilityUtil.isTargetSignificantlyStronger(sourceSeq, targetSeq)) {
-            baseMultiplier *= 0.35f;
-        }
-
-        event.setAmount(event.getAmount() * baseMultiplier);
     }
 
     // Disable Flight while in combat
@@ -237,6 +218,7 @@ public class BeyonderEventHandler {
     @SubscribeEvent
     public static void onPlayerDrops(LivingDropsEvent event) {
         // sorry nihil i have to mess with your method :)
+        // ok ;-;
         // cancel the drop of items completely for summoned entities
         if (event.getEntity().getPersistentData().contains("VoidSummoned") || event.getEntity().getPersistentData().contains("PuppetSummoned")) {
             event.setCanceled(true);
@@ -246,7 +228,11 @@ public class BeyonderEventHandler {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
 
         if (!BeyonderData.isBeyonder(player)) return;
-        if (!player.serverLevel().getGameRules().getBoolean(ModGameRules.REGRESS_SEQUENCE_ON_DEATH)) return;
+
+        var envisionedSplitComponent = player.getData(ModAttachments.ENVISION_SPLIT.get());
+        // onDeath regresses envisioned players even when the gamerule is off, so that regression has to be applied here too
+        if (!player.serverLevel().getGameRules().getBoolean(ModGameRules.REGRESS_SEQUENCE_ON_DEATH)
+                && !envisionedSplitComponent.isEnvisioned()) return;
 
         // onDeath (LivingDeathEvent) already handled regression and cleared the revert component.
         // Here we only need to drop the correct characteristic item.
@@ -258,22 +244,30 @@ public class BeyonderEventHandler {
 
         if (playerMap.get(player).isEmpty()) return;
 
-        var envisionedSplitComponent = player.getData(ModAttachments.ENVISION_SPLIT.get());
-
         var data = playerMap.get(player).get();
 
-        BeyonderCharacteristicItem charItem = BeyonderCharacteristicItemHandler
-                .selectCharacteristicOfPathwayAndSequence(BeyonderData.getPathway(player), dropSequence);
+        BeyonderCharacteristicItem charItem = null;
 
-        BeyonderData.setBeyonder(player, data.pathway(), data.sequence(), true, false, false, false);
+        if(!regressInvul.containsKey(player.getUUID())) {
+            charItem = BeyonderCharacteristicItemHandler
+                    .selectCharacteristicOfPathwayAndSequence(BeyonderData.getPathway(player), dropSequence);
+
+            BeyonderData.setBeyonder(player, data.pathway(), data.sequence(), true, false, false, false);
+            // The sequence regressed to was already digested once; setBeyonder resets digestion, so restore it
+            if (BeyonderData.isBeyonder(player)) {
+                BeyonderData.setDigestionProgress(player, 1.0f);
+            }
+
+            // The regression undoes the envisioned split, which drops no characteristic
+            if(envisionedSplitComponent.isEnvisioned()){
+                envisionedSplitComponent.setEnvisioned(false);
+                return;
+            }
+        }
 
         if (charItem == null) return;
 
         if(PureIdealismUtil.died.containsKey(player.getUUID())){
-            return;
-        }
-        else if(envisionedSplitComponent.isEnvisioned()){
-            envisionedSplitComponent.setEnvisioned(false);
             return;
         }
         else {
@@ -286,6 +280,8 @@ public class BeyonderEventHandler {
             );
 
             event.getDrops().add(itemEntity);
+
+            regressInvul.put(player.getUUID(), System.currentTimeMillis());
         }
     }
 
@@ -305,10 +301,24 @@ public class BeyonderEventHandler {
 
             if (!BeyonderData.isBeyonder(player)) return;
             if (playerMap.get(player).isEmpty()) return;
+
             if (!player.level().getGameRules().getBoolean(ModGameRules.REGRESS_SEQUENCE_ON_DEATH)
             && !player.getData(ModAttachments.ENVISION_SPLIT.get()).isEnvisioned()) {
                 BeyonderData.recalculateCharStackModifiers(player);
                 return;
+            }
+
+            if(regressInvul.containsKey(player.getUUID())){
+                long expirationTime = regressInvul.get(player.getUUID())
+                        + player.level().getGameRules().getInt(ModGameRules
+                        .AFTER_DEATH_REGRESSION_INVULNERABILITY) * 1000L;
+
+                if (System.currentTimeMillis() >= expirationTime) {
+                    regressInvul.remove(player.getUUID());
+                }
+                else{
+                    return;
+                }
             }
 
             StoredData data = playerMap.get(player).get();
@@ -472,7 +482,7 @@ public class BeyonderEventHandler {
             PacketHandler.syncBeyonderDataToPlayer(sp);
         }
 
-        // If digestion is fully drained, 10% chance to regress victim and reward attacker
+        // If digestion is fully drained, 1% chance per hit to regress victim and reward attacker
         if (newDigestion <= 0f && new Random().nextFloat() < 0.01f) {
             // Capture pathway before regression changes it — the dropped characteristic belongs to the old pathway/seq
             String pathwayBeforeRegress = BeyonderData.getPathway(victim);
@@ -487,7 +497,8 @@ public class BeyonderEventHandler {
                 if (victim instanceof ServerPlayer sp && BeyonderData.playerMap.get(sp).isPresent()) {
                     StoredData regressed = BeyonderData.playerMap.get(sp).get().regressSeq();
                     BeyonderData.playerMap.put(sp, regressed);
-                    BeyonderData.setBeyonder(victim, regressed.pathway(), regressed.sequence());
+                    // A regression must never be refused by the sequence limits, or the map and the player drift apart
+                    BeyonderData.setBeyonder(victim, regressed.pathway(), regressed.sequence(), true, false, true, false);
                 } else {
                     BeyonderData.setBeyonder(victim, BeyonderData.getPathway(victim), victimSeq + 1);
                 }
@@ -503,7 +514,7 @@ public class BeyonderEventHandler {
             }
 
             // Either way, reset digestion to full so the victim isn't immediately vulnerable again
-            victimPlayer.getData(ModAttachments.BEYONDER_COMPONENT).setSpirituality(1);
+            victimPlayer.getData(ModAttachments.BEYONDER_COMPONENT).setDigestionProgress(1);
             if (victim instanceof ServerPlayer sp) PacketHandler.syncBeyonderDataToPlayer(sp);
         }
     }
@@ -601,14 +612,13 @@ public class BeyonderEventHandler {
         int seq = BeyonderData.getSequence(entity);
         String path =  BeyonderData.getPathway(entity);
 
-
         if (target == Level.NETHER && seq > 7){
             event.setCanceled(true);
         }
         else if (target == Level.END){
-            if(path.equals("door") && seq > 3)
-                event.setCanceled(true);
-            else if(seq > 2)
+            // Door beyonders may enter one sequence earlier than everyone else
+            int requiredSeq = path.equals("door") ? 4 : 3;
+            if(seq > requiredSeq)
                 event.setCanceled(true);
         }
     }

@@ -2,6 +2,7 @@ package de.jakob.lotm.beyonders.abilities.door;
 
 import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.dimension.ModDimensions;
+import de.jakob.lotm.network.packets.handlers.PendingSelectionRequests;
 import de.jakob.lotm.network.packets.toClient.OpenWanderingSelectionScreenPacket;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
@@ -18,6 +19,8 @@ import java.util.Map;
 import java.util.stream.StreamSupport;
 
 public class WanderingAbility extends Ability {
+    public static final String SELECTION_KIND = "wandering";
+
     public WanderingAbility(String id) {
         super(id, 1);
 
@@ -63,6 +66,7 @@ public class WanderingAbility extends Ability {
             return;
         }
 
+        PendingSelectionRequests.arm(player, SELECTION_KIND, 20 * 120, dimensionIds);
         PacketDistributor.sendToPlayer(player, new OpenWanderingSelectionScreenPacket(dimensionIds));
     }
 }

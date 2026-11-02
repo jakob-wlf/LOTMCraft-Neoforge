@@ -87,6 +87,7 @@ public class ModAttachments {
             ATTACHMENT_TYPES.register("bloodline_component", () ->
                     AttachmentType.serializable(BloodlineComponent::new)
                             .sync(BloodlineComponent.STREAM_CODEC)
+                            .copyOnDeath()
                             .build()
             );
 
@@ -215,6 +216,7 @@ public class ModAttachments {
                             return attachment.saveToNBT();
                         }
                     })
+                    .copyOnDeath()
                     .build()
     );
 
@@ -324,6 +326,14 @@ public class ModAttachments {
                             .copyOnDeath()
                             .build()
             );
+/*
+    public static final Supplier<AttachmentType<RitualsComponent>> RITUALS =
+            ATTACHMENT_TYPES.register("rituals", () ->
+                    AttachmentType.builder(RitualsComponent::new)
+                            .serialize(RitualsComponent.SERIALIZER)
+                            .copyOnDeath()
+                            .build()
+            );*/
 
     public static final Supplier<AttachmentType<MentalPlagueComponent>> MENTAL_PLAGUE =
             ATTACHMENT_TYPES.register("mental_plague", () ->
@@ -352,10 +362,20 @@ public class ModAttachments {
             "demonic_attribute_component",
             () -> AttachmentType.serializable(DemonicAttributeComponent::new)
                             .sync(DemonicAttributeComponent.STREAM_CODEC)
+                            .copyOnDeath()
                             .build()
     );
 
 
+
+    public static final Supplier<AttachmentType<SpiritHousingComponent>> SPIRIT_HOUSING =
+            ATTACHMENT_TYPES.register("spirit_housing", () ->
+                    AttachmentType.serializable(SpiritHousingComponent::new).copyOnDeath().build()
+            );
+    public static final Supplier<AttachmentType<Long>> ABSOLUTE_DEATH_UNTIL = ATTACHMENT_TYPES.register(
+            "absolute_death_until",
+            () -> AttachmentType.builder(() -> 0L).build()
+    );
 
     public static void register(IEventBus eventBus) {
         ATTACHMENT_TYPES.register(eventBus);

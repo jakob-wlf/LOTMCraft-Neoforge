@@ -29,7 +29,7 @@ public class ModCreativeModTabs {
                         output.accept(ModItems.FOOL_Card.get());
                         output.accept(ModItems.CRYSTAL_BALL.get());
                         output.accept(ModItems.CANE.get());
-                        output.accept(ModItems.MYSTICAL_RING.get());
+                        //output.accept(ModItems.MYSTICAL_RING.get());
                         output.accept(ModItems.GUIDING_BOOK.get());
                         output.accept(ModItems.INGREDIENT_ENCYCLOPEDIA.get());
                         output.accept(ModBlocks.BREWING_CAULDRON.get());
@@ -40,6 +40,9 @@ public class ModCreativeModTabs {
                         output.accept(ModItems.PAPER_PICKAXE);
                         output.accept(ModItems.PAPER_AXE);
                         output.accept(ModItems.PAPER_SHOVEL);
+                        output.accept(ModItems.DAWN_SWORD);
+                        output.accept(ModItems.DAWN_AXE);
+                        output.accept(ModItems.DAWN_SPEAR);
                         output.accept(ModItems.ONE_POUND);
                         output.accept(ModItems.ONE_SOLI);
                         output.accept(ModItems.UNIQUENESS_MAP);
