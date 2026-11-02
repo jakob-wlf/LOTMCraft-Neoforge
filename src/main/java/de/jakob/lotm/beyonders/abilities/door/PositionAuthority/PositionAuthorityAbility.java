@@ -4,10 +4,12 @@ import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.beyonders.abilities.door.DimensionSightAbility;
 import de.jakob.lotm.beyonders.abilities.door.PlayerTeleportationAbility;
+import de.jakob.lotm.network.PacketHandler;
+import de.jakob.lotm.network.packets.toClient.HoldCastProgressPacket;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.helper.AbilityUtil;
+import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
@@ -23,6 +25,9 @@ public abstract class PositionAuthorityAbility extends Ability {
     private static final String PREFIX = "position:";
 
     private static final HashMap<UUID, ServerPlayer> pending = new HashMap<>();
+    private static final HashSet<UUID> charging = new HashSet<>();
+
+    protected int castTicks = 40;
 
     protected PositionAuthorityAbility(String id, float cooldown) {
         super(id, cooldown);
@@ -90,10 +95,39 @@ public abstract class PositionAuthorityAbility extends Ability {
         }
 
         PositionAuthorityAbility ability = chosen;
-        caster.server.execute(() -> {
+        caster.server.execute(() -> ability.charge(caster, target));
+    }
+
+    private void charge(ServerPlayer caster, ServerPlayer target) {
+        if (!charging.add(caster.getUUID())) return;
+        pending.put(caster.getUUID(), target);
+        boolean ready = canUse(caster);
+        pending.remove(caster.getUUID());
+        if (!ready) {
+            charging.remove(caster.getUUID());
+            return;
+        }
+
+        AbilityUtil.sendActionBar(target, Component.translatable("ability.lotmcraft.position_authority.ripple").withColor(BeyonderData.pathwayInfos.get("door").color()));
+        int[] ticks = {0};
+        ServerScheduler.scheduleForDuration(0, 1, castTicks, () -> {
+            ticks[0]++;
+            PacketHandler.sendToPlayer(caster, new HoldCastProgressPacket(Math.min(ticks[0], castTicks), castTicks));
+        }, () -> {
+            charging.remove(caster.getUUID());
+            PacketHandler.sendToPlayer(caster, new HoldCastProgressPacket(0, 0));
+            if (!caster.isAlive() || caster.hasDisconnected() || !target.isAlive() || target.hasDisconnected()) return;
+            if (DimensionSightAbility.unwatchable(caster, target)) {
+                AbilityUtil.sendActionBar(caster, Component.translatable("ability.lotmcraft.position_authority.not_found", target.getName()).withColor(BeyonderData.pathwayInfos.get("door").color()));
+                return;
+            }
+            if (PlayerTeleportationAbility.unreachable(target) || PlayerTeleportationAbility.unreachable(caster)) {
+                AbilityUtil.sendActionBar(caster, Component.translatable("ability.lotmcraft.position_authority.unreachable", target.getName()).withColor(BeyonderData.pathwayInfos.get("door").color()));
+                return;
+            }
             pending.put(caster.getUUID(), target);
-            ability.useAbility((ServerLevel) caster.level(), caster);
+            useAbility(caster.serverLevel(), caster);
             pending.remove(caster.getUUID());
-        });
+        }, caster.serverLevel());
     }
 }

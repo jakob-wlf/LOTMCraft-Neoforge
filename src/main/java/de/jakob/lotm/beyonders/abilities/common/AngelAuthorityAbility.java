@@ -46,6 +46,8 @@ public class AngelAuthorityAbility extends SelectableAbility {
         this.doesNotIncreaseDigestion = true;
 
         flightSkill = null;
+
+        isHoldable(100,0);
     }
 
     protected float getSpiritualityCost() {

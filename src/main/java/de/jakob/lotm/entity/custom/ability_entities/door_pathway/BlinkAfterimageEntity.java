@@ -35,6 +35,8 @@ public class BlinkAfterimageEntity extends Mob {
 
     private final LivingEntity owner;
     private final Ability abilityToUse;
+    private int lifetime = LIFETIME;
+    @Nullable private Vec3 anchor;
 
     public BlinkAfterimageEntity(EntityType<? extends Mob> entityType, Level level) {
         super(entityType, level);
@@ -50,6 +52,17 @@ public class BlinkAfterimageEntity extends Mob {
         if (owner != null) {
             this.entityData.set(OWNER_UUID, Optional.of(owner.getUUID()));
         }
+    }
+
+    public BlinkAfterimageEntity(Level level, Vec3 pos, LivingEntity owner, int lifetime) {
+        this(level, pos, owner, null);
+        this.lifetime = lifetime;
+        this.anchor = pos;
+    }
+
+    @Override
+    public boolean isPushable() {
+        return anchor == null && super.isPushable();
     }
 
     @Override
@@ -74,11 +87,16 @@ public class BlinkAfterimageEntity extends Mob {
     public void tick() {
         super.tick();
 
-        if(this.tickCount == (LIFETIME / 2) && abilityToUse != null && !level().isClientSide) {
+        if(this.tickCount == (lifetime / 2) && abilityToUse != null && !level().isClientSide) {
             abilityToUse.useAbility((ServerLevel) level(), this, false, false, false, false);
         }
 
-        if(this.tickCount >= LIFETIME) {
+        if(anchor != null) {
+            setDeltaMovement(Vec3.ZERO);
+            setPos(anchor);
+        }
+
+        if(this.tickCount >= lifetime) {
             this.discard();
             return;
         }

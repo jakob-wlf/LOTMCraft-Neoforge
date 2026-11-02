@@ -50,12 +50,12 @@ public class KeyInputHandler {
     }
 
     public static float holdProgress(float partialTick) {
-        if (holdKey == null || needed() <= 0) return -1;
+        if ((holdKey == null && !ClientHandler.remoteHold()) || needed() <= 0) return -1;
         return Math.min(1f, ClientHandler.holdCharge() / needed());
     }
 
     public static int holdTicksLeft() {
-        if (holdKey == null) return 0;
+        if (holdKey == null && !ClientHandler.remoteHold()) return 0;
         return (int) Math.ceil(Math.max(0f, needed() - ClientHandler.holdCharge()));
     }
 

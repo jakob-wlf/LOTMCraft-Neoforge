@@ -232,7 +232,7 @@ public class RequiemAbility extends SelectableAbility {
         if (!(level instanceof ServerLevel serverLevel)) return;
         int duration = 20 * 90;
         List<LivingEntity> targets = AbilityUtil.getNearbyEntities(entity, serverLevel, entity.position(), 16).stream()
-                .filter(target -> SpiritHandler.isCapturableSpirit(target) || AbilityUtil.isUndead(target))
+                .filter(target -> (SpiritHandler.isCapturableSpirit(target) || AbilityUtil.isUndead(target)) && target.getHealth() <= target.getMaxHealth() * 0.3f)
                 .toList();
         if (targets.isEmpty()) {
             refund(entity);
