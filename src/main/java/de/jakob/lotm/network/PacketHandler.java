@@ -41,6 +41,12 @@ public class PacketHandler {
         );
 
         registrar.playToClient(
+                BloodSovereignClient.SyncBlood.TYPE,
+                BloodSovereignClient.SyncBlood.STREAM_CODEC,
+                BloodSovereignClient.SyncBlood::handle
+        );
+
+        registrar.playToClient(
                 CameraShakePacket.TYPE,
                 CameraShakePacket.STREAM_CODEC,
                 CameraShakePacket::handle

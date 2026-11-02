@@ -70,6 +70,7 @@ public class DemonicAttributeAbility extends SelectableAbility {
         long seed = serverLevel.getSeed() ^ entity.getUUID().getMostSignificantBits() ^ entity.getUUID().getLeastSignificantBits();
         int pairId = new Random(seed).nextInt(6) + 1;
         component.setPairId(pairId);
+        entity.syncData(ModAttachments.DEMONIC_ATTRIBUTE_COMPONENT); // the client reads this to list the unlocked sub-abilities
         return pairId;
     }
     private String[] getUnlockedAbilityNames(LivingEntity entity) {

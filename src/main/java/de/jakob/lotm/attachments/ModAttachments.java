@@ -87,6 +87,7 @@ public class ModAttachments {
             ATTACHMENT_TYPES.register("bloodline_component", () ->
                     AttachmentType.serializable(BloodlineComponent::new)
                             .sync(BloodlineComponent.STREAM_CODEC)
+                            .copyOnDeath()
                             .build()
             );
 
@@ -361,6 +362,7 @@ public class ModAttachments {
             "demonic_attribute_component",
             () -> AttachmentType.serializable(DemonicAttributeComponent::new)
                             .sync(DemonicAttributeComponent.STREAM_CODEC)
+                            .copyOnDeath()
                             .build()
     );
 
