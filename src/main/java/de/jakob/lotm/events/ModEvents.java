@@ -4,6 +4,8 @@ import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.attachments.TeamComponent;
 import de.jakob.lotm.beyonders.abilities.fool.marionettes.ControllingUtils;
+import de.jakob.lotm.beyonders.abilities.twilight_giant.ProxyAbility;
+import de.jakob.lotm.beyonders.abilities.twilight_giant.ServantsAbility;
 import de.jakob.lotm.beyonders.sefirah.SefirahHandler;
 import de.jakob.lotm.command.*;
 import de.jakob.lotm.entity.ModEntities;
@@ -55,6 +57,8 @@ import de.jakob.lotm.entity.client.spirits.translucent_wizard.SpiritTranslucentW
 import de.jakob.lotm.entity.client.stone_golem.StoneGolemModel;
 import de.jakob.lotm.entity.custom.*;
 import de.jakob.lotm.entity.custom.ability_entities.ControlBodyDouble;
+import de.jakob.lotm.entity.custom.ability_entities.darkness_pathway.NightmareBodyEntity;
+import de.jakob.lotm.entity.custom.ability_entities.twilight_giant.SilverRapierEntity;
 import de.jakob.lotm.entity.custom.ability_entities.door_pathway.BlinkAfterimageEntity;
 import de.jakob.lotm.entity.custom.npc.ForsWallEntity;
 import de.jakob.lotm.entity.custom.spirits.*;
@@ -76,6 +80,7 @@ import de.jakob.lotm.rendering.models.sun.SunMythicalCreatureModel;
 import de.jakob.lotm.rendering.models.visionary.VisionaryMythicalCreatureModel;
 import de.jakob.lotm.rendering.models.wheel_of_fortune.WheelOfFortuneMythicalCreatureModel;
 import de.jakob.lotm.util.helper.CohortUtil;
+import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.helper.TeamUtils;
 import de.jakob.lotm.rendering.models.door.DoorMythicalCreatureModel;
 import de.jakob.lotm.rendering.models.tyrant.TyrantMythicalCreatureModel;
@@ -83,6 +88,7 @@ import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -100,6 +106,7 @@ import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import de.jakob.lotm.beyonders.abilities.tyrant.LightningStormAbility;
+import net.neoforged.neoforge.event.level.LevelEvent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -112,6 +119,13 @@ public class ModEvents {
 
     public static final Map<UUID, Integer> leoderoUsesLeft = new ConcurrentHashMap<>();
     private static final LightningStormAbility LIGHTNING_STORM = new LightningStormAbility("lightning_storm_leodero");
+
+    @SubscribeEvent
+    public static void onWorldLoad(LevelEvent.Load event) {
+        if (event.getLevel() instanceof ServerLevel serverLevel) {
+            BeyonderData.initBeyonderMap(serverLevel);
+        }
+    }
 
     @SubscribeEvent
     public static void registerLayers(EntityRenderersEvent.RegisterLayerDefinitions event) {
@@ -187,12 +201,14 @@ public class ModEvents {
     @SubscribeEvent
     public static void registerAttributes(EntityAttributeCreationEvent event) {
         event.put(ModEntities.FIRE_RAVEN.get(), FireRavenEntity.createAttributes().build());
+        event.put(ModEntities.SILVER_RAPIER.get(), SilverRapierEntity.createAttributes().build());
         event.put(ModEntities.BEYONDER_NPC.get(), BeyonderNPCEntity.createAttributes().build());
         event.put(ModEntities.FORS_WALL.get(), ForsWallEntity.createAttributes().build());
         event.put(ModEntities.AVATAR.get(), AvatarEntity.createAttributes().build());
         event.put(ModEntities.BLINK_AFTERIMAGE.get(), BlinkAfterimageEntity.createAttributes().build());
         event.put(ModEntities.DAMAGE_TRACKER.get(), DamageTrackerEntity.createAttributes().build());
         event.put(ModEntities.CONTROL_BODY_DOUBLE.get(), ControlBodyDouble.createAttributes().build());
+        event.put(ModEntities.NIGHTMARE_BODY.get(), NightmareBodyEntity.createAttributes().build());
         event.put(ModEntities.MURLOC.get(), MurlocEntity.createAttributes().build());
         event.put(ModEntities.RABBIT_OF_KNOWLEDGE.get(), RabbitOfKnowledgeEntity.createAttributes().build());
 
@@ -355,6 +371,7 @@ public class ModEvents {
         LuckCheckCommand.register(event.getDispatcher());
         EnablePlayerAbilitiesCommand.register(event.getDispatcher());
         SanityCommand.register(event.getDispatcher());
+        AgeCommand.register(event.getDispatcher());
         DigestionCommand.register(event.getDispatcher());
         SpawnBeyonderCommand.register(event.getDispatcher());
         QuestCommand.register(event.getDispatcher());
@@ -372,6 +389,8 @@ public class ModEvents {
         AllyCommand.register(event.getDispatcher());
         OpenPathwaySelectionCommand.register(event.getDispatcher());
         CopiedAbilitiesCommand.register(event.getDispatcher());
+        ProxyAbility.registerCommands(event.getDispatcher());
+        ServantsAbility.registerCommands(event.getDispatcher());
         ResetPlayerShapeCommand.register(event.getDispatcher());
         event.getDispatcher().register(
                 Commands.literal("accept_sefirot_invite")

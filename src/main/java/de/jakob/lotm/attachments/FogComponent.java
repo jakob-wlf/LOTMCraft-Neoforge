@@ -33,7 +33,30 @@ public class FogComponent {
 
     public void setActiveAndSync(boolean transformed, LivingEntity entity) {
         setActive(transformed);
-        PacketHandler.sendToAllPlayers(new SyncFogPacket(entity.getId(), isActive(), fogIndex, color.x(), color.y(), color.z()));
+        sync(entity);
+    }
+
+    public void concealFor(long durationMs, LivingEntity entity) {
+        this.fogIndex = FOG_TYPE.CONCEALMENT.getIndex();
+        this.color = new Vec3f(0.02f, 0.01f, 0.04f);
+        this.stopTime = System.currentTimeMillis() + Math.max(0L, durationMs);
+        sync(entity);
+    }
+
+    public void clearFog(LivingEntity entity) {
+        this.stopTime = 0;
+        sync(entity);
+    }
+
+    public void apply(boolean active, int index, Vec3f color, long durationMs) {
+        this.fogIndex = index;
+        this.color = color;
+        this.stopTime = active ? System.currentTimeMillis() + Math.max(0L, durationMs) : 0;
+    }
+
+    private void sync(LivingEntity entity) {
+        long duration = Math.max(0L, stopTime - System.currentTimeMillis());
+        PacketHandler.sendToAllPlayers(new SyncFogPacket(entity.getId(), isActive(), fogIndex, color.x(), color.y(), color.z(), duration));
     }
 
     public int getFogIndex() {
@@ -67,17 +90,17 @@ public class FogComponent {
 
     public void setFogIndexAndSync(int transformationIndex, LivingEntity entity) {
         this.fogIndex = transformationIndex;
-        PacketHandler.sendToAllPlayers(new SyncFogPacket(entity.getId(), isActive(), transformationIndex, color.x(), color.y(), color.z()));
+        sync(entity);
     }
 
     public void setFogIndexAndSync(FOG_TYPE type, LivingEntity entity) {
         this.fogIndex = type.getIndex();
-        PacketHandler.sendToAllPlayers(new SyncFogPacket(entity.getId(), isActive(), fogIndex, color.x(), color.y(), color.z()));
+        sync(entity);
     }
 
     public void setFogColorAndSync(Vec3f color, LivingEntity entity) {
         this.color = color;
-        PacketHandler.sendToAllPlayers(new SyncFogPacket(entity.getId(), isActive(), getFogIndex(), color.x(), color.y(), color.z()));
+        sync(entity);
     }
 
 
@@ -115,7 +138,8 @@ public class FogComponent {
         BLIZZARD(1, 15f, 24.0f),
         FOG_OF_HISTORY(2, 7f, 12.0f),
         ADVANCING(3, 9f, 18.0f),
-        SEALING(4, 9f, 18.0f);
+        SEALING(4, 9f, 18.0f),
+        CONCEALMENT(5, 1f, 4f);
 
         private final int index;
         private final float nearPlaneDistance;

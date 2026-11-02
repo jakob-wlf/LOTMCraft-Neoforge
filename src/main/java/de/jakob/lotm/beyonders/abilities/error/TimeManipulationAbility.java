@@ -1,5 +1,7 @@
 package de.jakob.lotm.beyonders.abilities.error;
 
+import de.jakob.lotm.LOTMCraft;
+import de.jakob.lotm.beyonders.abilities.core.AbilityHoldEvent;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.beyonders.abilities.error.handler.ConceptStorage;
 import de.jakob.lotm.util.helper.FxHandler;
@@ -20,13 +22,27 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 
 import java.util.*;
 
+@EventBusSubscriber(modid = LOTMCraft.MOD_ID)
 public class TimeManipulationAbility extends SelectableAbility {
 
     private static final int FIELD_DURATION = 20 * 10;
     private static final int FIELD_RADIUS = 50;
+
+    @SubscribeEvent
+    public static void onHold(AbilityHoldEvent event) {
+        LivingEntity entity = event.getEntity();
+        TimeChangeEntity newest = null;
+        for (TimeChangeEntity change : entity.level().getEntitiesOfClass(TimeChangeEntity.class, entity.getBoundingBox().inflate(FIELD_RADIUS))) {
+            if (entity.distanceTo(change) > change.getRadius()) continue;
+            if (newest == null || change.tickCount < newest.tickCount) newest = change;
+        }
+        if (newest != null) event.multiply(newest.getTimeMultiplier());
+    }
 
     public TimeManipulationAbility(String id) {
         super(id, 17);

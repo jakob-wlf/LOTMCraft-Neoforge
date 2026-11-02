@@ -1,6 +1,7 @@
 package de.jakob.lotm.beyonders.abilities.darkness;
 
 import com.google.common.util.concurrent.AtomicDouble;
+import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.beyonders.abilities.core.interaction.InteractionHandler;
 import de.jakob.lotm.damage.ModDamageTypes;
@@ -16,19 +17,29 @@ import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
+@EventBusSubscriber(modid = LOTMCraft.MOD_ID)
 public class SwordOfDarknessAbility extends Ability {
+    private static final Set<UUID> STRIKING = new HashSet<>();
     public SwordOfDarknessAbility(String id) {
         super(id, 8, "darkness");
         autoClear = false;
@@ -40,7 +51,7 @@ public class SwordOfDarknessAbility extends Ability {
         hasDynamicSpirituality = true;
         dynamicSpirituality = new LinkedList<>(List.of(9500f, 6750f, 4400f, 2850f));
 
-        baseDamage = 12;
+        baseDamage = 24;
     }
 
     @Override
@@ -50,6 +61,7 @@ public class SwordOfDarknessAbility extends Ability {
             return;
         }
 
+        STRIKING.add(entity.getUUID());
         AbilityUtil.addPotionEffectToNearbyEntities(serverLevel, null, 25, entity.position(), new MobEffectInstance(MobEffects.BLINDNESS, 20, 0, false, false, false));
 
         Vec3 startLoc = entity.getEyePosition().add(entity.getLookAngle().scale(1.5));
@@ -119,7 +131,23 @@ public class SwordOfDarknessAbility extends Ability {
 
                 distance.addAndGet(.5);
             }
-        }, () -> clearArtifactScaling(entity), serverLevel, () -> AbilityUtil.getTimeInArea(entity, new Location(entity.position(), serverLevel)));
+        }, () -> {
+            STRIKING.remove(entity.getUUID());
+            clearArtifactScaling(entity);
+        }, serverLevel, () -> AbilityUtil.getTimeInArea(entity, new Location(entity.position(), serverLevel)));
+    }
+
+    public static boolean strikes(DamageSource source) {
+        if (!(source.getEntity() instanceof LivingEntity attacker) || !STRIKING.contains(attacker.getUUID())) return false;
+        return source.is(ModDamageTypes.DARKNESS) || source.is(ModDamageTypes.HORROR);
+    }
+
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void weaken(LivingIncomingDamageEvent event) {
+        if (!strikes(event.getSource())) return;
+        String path = BeyonderData.getPathway(event.getEntity());
+        if (!path.equals("twilight_giant") && !path.equals("sun") && !path.equals("tyrant")) return;
+        event.setAmount(event.getAmount() * 0.3f);
     }
 
     @Override

@@ -4,6 +4,7 @@ import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.network.packets.toServer.CreateContractPayload;
 import de.jakob.lotm.network.packets.toClient.*;
 import de.jakob.lotm.network.packets.toServer.*;
+import de.jakob.lotm.beyonders.abilities.twilight_giant.ProxyAbility;
 import de.jakob.lotm.util.BeyonderData;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -37,6 +38,24 @@ public class PacketHandler {
                 de.jakob.lotm.network.packets.error.ErrorSyncPacket.TYPE,
                 de.jakob.lotm.network.packets.error.ErrorSyncPacket.STREAM_CODEC,
                 de.jakob.lotm.network.packets.error.ErrorSyncPacket::handle
+        );
+
+        registrar.playToClient(
+                CameraShakePacket.TYPE,
+                CameraShakePacket.STREAM_CODEC,
+                CameraShakePacket::handle
+        );
+
+        registrar.playToClient(
+                HoldCastProgressPacket.TYPE,
+                HoldCastProgressPacket.STREAM_CODEC,
+                HoldCastProgressPacket::handle
+        );
+
+        registrar.playToClient(
+                SyncDimensionSightPacket.TYPE,
+                SyncDimensionSightPacket.STREAM_CODEC,
+                SyncDimensionSightPacket::handle
         );
 
         registrar.playToClient(
@@ -293,6 +312,24 @@ public class PacketHandler {
                 SyncFogPacket.TYPE,
                 SyncFogPacket.STREAM_CODEC,
                 SyncFogPacket::handle
+        );
+
+        registrar.playToClient(
+                OpenConcealSecretScreenPacket.TYPE,
+                OpenConcealSecretScreenPacket.STREAM_CODEC,
+                OpenConcealSecretScreenPacket::handle
+        );
+
+        registrar.playToClient(
+                OpenDivinationMisleadScreenPacket.TYPE,
+                OpenDivinationMisleadScreenPacket.STREAM_CODEC,
+                OpenDivinationMisleadScreenPacket::handle
+        );
+
+        registrar.playToClient(
+                SyncConcealmentVeilsPacket.TYPE,
+                SyncConcealmentVeilsPacket.STREAM_CODEC,
+                SyncConcealmentVeilsPacket::handle
         );
 
         registrar.playToClient(
@@ -598,6 +635,18 @@ public class PacketHandler {
         );
 
         registrar.playToClient(
+                SyncDemonHuntingGazePacket.TYPE,
+                SyncDemonHuntingGazePacket.STREAM_CODEC,
+                SyncDemonHuntingGazePacket::handle
+        );
+
+        registrar.playToClient(
+                SyncDawnSpearThrowPacket.TYPE,
+                SyncDawnSpearThrowPacket.STREAM_CODEC,
+                SyncDawnSpearThrowPacket::handle
+        );
+
+        registrar.playToClient(
                 IsPlayerModelPacket.TYPE,
                 IsPlayerModelPacket.STREAM_CODEC,
                 IsPlayerModelPacket::handle
@@ -613,21 +662,6 @@ public class PacketHandler {
                 PlayPhotonEntityEffectPacket.TYPE,
                 PlayPhotonEntityEffectPacket.STREAM_CODEC,
                 PlayPhotonEntityEffectPacket::handle
-        );
-        registrar.playToClient(
-                SyncMaliceSeedsToClient.TYPE,
-                SyncMaliceSeedsToClient.STREAM_CODEC,
-                SyncMaliceSeedsToClient::handle
-        );
-        registrar.playToClient(
-                DevilWorshipNetwork.OpenSummonScreen.TYPE,
-                DevilWorshipNetwork.OpenSummonScreen.STREAM_CODEC,
-                DevilWorshipNetwork.OpenSummonScreen::handle
-        );
-        registrar.playToClient(
-                BloodSovereignClient.SyncBlood.TYPE,
-                BloodSovereignClient.SyncBlood.STREAM_CODEC,
-                BloodSovereignClient.SyncBlood::handle
         );
     }
 
@@ -661,6 +695,12 @@ public class PacketHandler {
                 UseCopiedAbilityPacket.TYPE,
                 UseCopiedAbilityPacket.STREAM_CODEC,
                 UseCopiedAbilityPacket::handle
+        );
+
+        registrar.playToServer(
+                UseSpiritPowerPacket.TYPE,
+                UseSpiritPowerPacket.STREAM_CODEC,
+                UseSpiritPowerPacket::handle
         );
 
         registrar.playToServer(
@@ -857,6 +897,30 @@ public class PacketHandler {
         );
 
         registrar.playToServer(
+                HoldAbilityPacket.TYPE,
+                HoldAbilityPacket.STREAM_CODEC,
+                HoldAbilityPacket::handle
+        );
+
+        registrar.playToServer(
+                DimensionSightLocationPacket.TYPE,
+                DimensionSightLocationPacket.STREAM_CODEC,
+                DimensionSightLocationPacket::handle
+        );
+
+        registrar.playToServer(
+                RemoveSpatialCagePacket.TYPE,
+                RemoveSpatialCagePacket.STREAM_CODEC,
+                RemoveSpatialCagePacket::handle
+        );
+
+        registrar.playToClient(
+                OpenSpatialCageScreenPacket.TYPE,
+                OpenSpatialCageScreenPacket.STREAM_CODEC,
+                OpenSpatialCageScreenPacket::handle
+        );
+
+        registrar.playToServer(
                 UseSelectedAbilityPacket.TYPE,
                 UseSelectedAbilityPacket.STREAM_CODEC,
                 UseSelectedAbilityPacket::handle
@@ -1027,6 +1091,30 @@ public class PacketHandler {
         );
 
         registrar.playToServer(
+                SubmitConcealSecretPacket.TYPE,
+                SubmitConcealSecretPacket.STREAM_CODEC,
+                SubmitConcealSecretPacket::handle
+        );
+
+        registrar.playToServer(
+                RemoveConcealSecretPacket.TYPE,
+                RemoveConcealSecretPacket.STREAM_CODEC,
+                RemoveConcealSecretPacket::handle
+        );
+
+        registrar.playToServer(
+                SubmitDivinationMisleadPacket.TYPE,
+                SubmitDivinationMisleadPacket.STREAM_CODEC,
+                SubmitDivinationMisleadPacket::handle
+        );
+
+        registrar.playToServer(
+                RemoveDivinationMisleadPacket.TYPE,
+                RemoveDivinationMisleadPacket.STREAM_CODEC,
+                RemoveDivinationMisleadPacket::handle
+        );
+
+        registrar.playToServer(
                 ShapeShiftingPlayerModelPacket.TYPE,
                 ShapeShiftingPlayerModelPacket.STREAM_CODEC,
                 ShapeShiftingPlayerModelPacket::handle
@@ -1036,35 +1124,6 @@ public class PacketHandler {
                 MassPuppeteeringSelectedEntitiesPacket.TYPE,
                 MassPuppeteeringSelectedEntitiesPacket.STREAM_CODEC,
                 MassPuppeteeringSelectedEntitiesPacket::handle
-        );
-        registrar.playToServer(
-                SetMaliceChannelPacket.TYPE,
-                SetMaliceChannelPacket.STREAM_CODEC,
-                SetMaliceChannelPacket::handle
-        );
-        registrar.playToServer(
-                RequestMaliceSeedSyncPacket.TYPE,
-                RequestMaliceSeedSyncPacket.STREAM_CODEC,
-                RequestMaliceSeedSyncPacket::handle
-        );
-        registrar.playToServer(
-                TakeOverMaliceHostPacket.TYPE,
-                TakeOverMaliceHostPacket.STREAM_CODEC,
-                TakeOverMaliceHostPacket::handle
-        );
-        registrar.playToServer(
-                SubmitContractBuilderPacket.TYPE,
-                SubmitContractBuilderPacket.STREAM_CODEC,
-                SubmitContractBuilderPacket::handle
-        );
-        registrar.playToServer(
-                DevilWorshipNetwork.ChooseMission.TYPE,
-                DevilWorshipNetwork.ChooseMission.STREAM_CODEC,
-                DevilWorshipNetwork.ChooseMission::handle);
-        registrar.playToServer(
-                StruggleInFilthPacket.TYPE,
-                StruggleInFilthPacket.STREAM_CODEC,
-                StruggleInFilthPacket::handle
         );
     }
 
@@ -1086,10 +1145,12 @@ public class PacketHandler {
         float digestionProgress = BeyonderData.getDigestionProgress(player);
         int[] charStacks = BeyonderData.getCharStacks(player);
         int cowardWormAmount = BeyonderData.getCowardWormAmount(player);
+        String pledgedSefirot = BeyonderData.pledgedSefirot(player);
+        boolean hasPatron = BeyonderData.hasPlayerPatron(player);
 
         String[] history = BeyonderData.getPathwayHistory(player);
 
-        SyncBeyonderDataPacket packet = new SyncBeyonderDataPacket(player.getUUID(), pathway, sequence, spirituality, griefingEnabled, digestionProgress, history, charStacks, cowardWormAmount);
+        SyncBeyonderDataPacket packet = new SyncBeyonderDataPacket(player.getUUID(), pathway, sequence, spirituality, griefingEnabled, digestionProgress, history, charStacks, cowardWormAmount, pledgedSefirot, hasPatron);
         sendToPlayer(player, packet);
     }
 
@@ -1146,8 +1207,10 @@ public class PacketHandler {
         float digestionProgress = BeyonderData.getDigestionProgress(targetPlayer);
         int[] charStacks = BeyonderData.getCharStacks(targetPlayer);
         int wormAmount = BeyonderData.getCowardWormAmount(targetPlayer);
+        String pledgedSefirot = BeyonderData.pledgedSefirot(targetPlayer);
+        boolean hasPatron = BeyonderData.hasPlayerPatron(targetPlayer);
 
-        SyncBeyonderDataPacket packet = new SyncBeyonderDataPacket(targetPlayer.getUUID(), pathway, sequence, spirituality, griefingEnabled, digestionProgress, new String[10], charStacks, wormAmount);
+        SyncBeyonderDataPacket packet = new SyncBeyonderDataPacket(targetPlayer.getUUID(), pathway, sequence, spirituality, griefingEnabled, digestionProgress, new String[10], charStacks, wormAmount,pledgedSefirot,hasPatron);
 
         targetPlayer.getServer().getPlayerList().getPlayers().forEach(player -> {
             sendToPlayer(player, packet);

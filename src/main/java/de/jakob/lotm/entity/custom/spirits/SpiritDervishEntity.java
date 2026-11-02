@@ -143,11 +143,21 @@ public class SpiritDervishEntity extends Animal {
         }
     }
 
-    static class DervishAttackGoal extends Goal { // Reused code from BlazeAttackGoal
+    public static class DervishAttackGoal extends Goal {
         private final SpiritDervishEntity dervish;
         private int attackStep;
         private int attackTime;
         private int lastSeen;
+
+        public static void attack(Level level, LivingEntity caster, LivingEntity target, float damage) {
+            for (int i = 0; i < 2; i++) {
+                Vec3 pos = caster.position().offsetRandom(caster.getRandom(), 1.5f);
+                Vec3 dir = target.getEyePosition().subtract(pos).normalize();
+                SpiritBallEntity ball = new SpiritBallEntity(level, caster, damage, dir, 9);
+                ball.setPos(pos);
+                level.addFreshEntity(ball);
+            }
+        }
 
         public DervishAttackGoal(SpiritDervishEntity dervish) {
             this.dervish = dervish;
@@ -207,13 +217,7 @@ public class SpiritDervishEntity extends Animal {
                         }
 
                         if (this.attackStep > 1) {
-                            for(int i = 0; i < 2; ++i) {
-                                Vec3 spiritBallPos = this.dervish.position().offsetRandom(dervish.random, 1.5f);
-                                Vec3 spiritBallDir = livingentity.getEyePosition().subtract(spiritBallPos).normalize();
-                                SpiritBallEntity spiritBall = new SpiritBallEntity(this.dervish.level(), this.dervish, (float) this.dervish.getAttributeValue(Attributes.ATTACK_DAMAGE), spiritBallDir, 9);
-                                spiritBall.setPos(spiritBallPos);
-                                this.dervish.level().addFreshEntity(spiritBall);
-                            }
+                            attack(this.dervish.level(), this.dervish, livingentity, (float) this.dervish.getAttributeValue(Attributes.ATTACK_DAMAGE));
                         }
                     }
 

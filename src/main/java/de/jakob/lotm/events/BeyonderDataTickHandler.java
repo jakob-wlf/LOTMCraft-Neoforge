@@ -6,7 +6,10 @@ import de.jakob.lotm.beyonders.abilities.core.PassiveAbility;
 import de.jakob.lotm.beyonders.abilities.core.PhysicalEnhancementsAbility;
 import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.beyonders.abilities.core.ToggleAbility;
+import de.jakob.lotm.beyonders.abilities.darkness.SpiritualityTideAbility;
+import de.jakob.lotm.dimension.ModDimensions;
 import de.jakob.lotm.beyonders.abilities.door.passives.VoidImmunityAbility;
+import de.jakob.lotm.beyonders.abilities.twilight_giant.ProxyAbility;
 import de.jakob.lotm.beyonders.abilities.wheel_of_fortune.passives.PassiveLuckAbility;
 import de.jakob.lotm.attachments.*;
 import de.jakob.lotm.effect.FoolingEffect;
@@ -159,9 +162,15 @@ public class BeyonderDataTickHandler {
         }
         if(entity.tickCount % 20 == 0) {
             BeyonderComponent beyonderComponent = entity.getData(ModAttachments.BEYONDER_COMPONENT);
-            SyncBeyonderDataPacket packet = new SyncBeyonderDataPacket(entity.getUUID(), BeyonderData.getPathway(livingEntity), BeyonderData.getSequence(livingEntity), beyonderComponent.getSpirituality(), false, 0.0f, beyonderComponent.getPathwayHistory(), beyonderComponent.getCharacteristicStack(), getMaxWormAmount(BeyonderData.getSequence(livingEntity)));
+            SyncBeyonderDataPacket packet = new SyncBeyonderDataPacket(entity.getUUID(), BeyonderData.getPathway(livingEntity), BeyonderData.getSequence(livingEntity), beyonderComponent.getSpirituality(), false, 0.0f, beyonderComponent.getPathwayHistory(), beyonderComponent.getCharacteristicStack(), getMaxWormAmount(BeyonderData.getSequence(livingEntity)), BeyonderData.pledgedSefirot(livingEntity), BeyonderData.hasPlayerPatron(livingEntity));
             PacketHandler.sendToTrackingAndSelf(entity, packet);
         }
+    }
+
+    private static float spiritualityMultiplier(LivingEntity entity) {
+        if (entity != null && entity.level().dimension().equals(ModDimensions.SPIRIT_WORLD_DIMENSION_KEY)) return 10f;
+        if (entity != null && "darkness".equals(BeyonderData.getPathway(entity)) && BeyonderData.getSequence(entity) == 0) return 1.5f;
+        return Math.max(0f, 1f + 0.5f * SpiritualityTideAbility.tide());
     }
 
     private static int getWormRecoverTime(LivingEntity entity) {
@@ -186,7 +195,7 @@ public class BeyonderDataTickHandler {
         if (BeyonderData.isBeyonder(player)) {
             // Regenerate Spirituality
             float amount = BeyonderData.getMaxSpirituality(BeyonderData.getPathway(player, true),
-                    BeyonderData.getSequence(player, false, true), player) * 0.0006f;
+                    BeyonderData.getSequence(player, false, true), player) * 0.0006f * spiritualityMultiplier(player);
 
             var disabler = player.getData(ModAttachments.REGEN_DISABLER.get());
             if(disabler.isDisabled())

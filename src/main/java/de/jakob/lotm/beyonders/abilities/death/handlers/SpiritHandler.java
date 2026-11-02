@@ -49,7 +49,9 @@ public class SpiritHandler {
                         spirit instanceof AbscessedHandEntity ||
                         spirit instanceof SpiritGrimReaperEntity ||
                         spirit instanceof HeadlessBrideEntity ||
-                        spirit instanceof SpiritBizarroBaneEntity;
+                        spirit instanceof SpiritBizarroBaneEntity||
+                        spirit instanceof SpiritBaneEntity||
+                        spirit instanceof KnowledgeDemonEntity;
     }
 
     public static boolean isCapturableSpirit(Entity spirit) {

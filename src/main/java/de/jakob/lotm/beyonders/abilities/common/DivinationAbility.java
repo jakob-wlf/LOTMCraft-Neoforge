@@ -2,8 +2,12 @@ package de.jakob.lotm.beyonders.abilities.common;
 
 import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
+import de.jakob.lotm.beyonders.abilities.darkness.ConcealmentAbility;
+import de.jakob.lotm.beyonders.abilities.darkness.ConcealmentAuthorityAbility;
 import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.attachments.TransformationComponent;
+import de.jakob.lotm.beyonders.abilities.visionary.handlers.VisionaryHandler;
+import de.jakob.lotm.effect.ModEffects;
 import de.jakob.lotm.network.PacketHandler;
 import de.jakob.lotm.network.packets.handlers.ClientHandler;
 import de.jakob.lotm.network.packets.toClient.*;
@@ -53,13 +57,15 @@ public class DivinationAbility extends SelectableAbility {
                         "demoness", 7,
                         "wheel_of_fortune", 8,
                         "abyss", 4,
-                        "darkness", 4
+                        "darkness", 4,
+                        "twilight_giant", 4
         ));
 
         for(String pathway : BeyonderData.pathways) {
             if (!reqs.containsKey(pathway) && !pathway.equalsIgnoreCase("death"))
                 reqs.put(pathway, 4);
         }
+
         return reqs;
     }
 
@@ -130,6 +136,10 @@ public class DivinationAbility extends SelectableAbility {
         if(dreamDivinationUsers.containsKey(player.getUUID()) && dreamDivinationUsers.get(player.getUUID()) + 20 * 10 > player.tickCount) {
             return;
         }
+        if (player instanceof ServerPlayer serverPlayer && (ConcealmentAuthorityAbility.nearAuthority(serverLevel, blockPos, serverPlayer) || ConcealmentAuthorityAbility.dreamMislead(serverLevel, blockPos))) {
+            ConcealmentAuthorityAbility.forceSpiritVision(serverPlayer);
+            return;
+        }
         dreamDivinationUsers.put(player.getUUID(), player.tickCount);
 
         TransformationComponent transformationComponent = player.getData(ModAttachments.TRANSFORMATION_COMPONENT);
@@ -164,6 +174,8 @@ public class DivinationAbility extends SelectableAbility {
                 .getPlayers()
                 .stream()
                 .filter(p -> p != player)
+                .filter(p -> !ConcealmentAbility.peaceful(p))
+                .filter(p -> !ConcealmentAuthorityAbility.undivinable(p))
                 .filter(p -> !DIVINATION_IMMUNE.contains(p.getUUID()))
                 .map(p -> new PlayerInfo(p.getUUID(), p.getGameProfile().getName()))
                 .toList();

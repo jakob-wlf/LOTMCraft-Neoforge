@@ -3,6 +3,7 @@ package de.jakob.lotm.rendering;
 import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
+import de.jakob.lotm.events.KeyInputHandler;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.ClientBeyonderCache;
 import de.jakob.lotm.util.data.AbilityWheelClientData;
@@ -57,6 +58,8 @@ public class AbilityBarRenderer {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null || mc.options.hideGui) return;
 
+        renderHold(g, mc, dt);
+
         UUID id = mc.player.getUUID();
         if (!ClientBeyonderCache.isBeyonder(id)) return;
 
@@ -75,6 +78,24 @@ public class AbilityBarRenderer {
     }
 
     
+
+    private static void renderHold(GuiGraphics g, Minecraft mc, DeltaTracker dt) {
+        float progress = KeyInputHandler.holdProgress(dt.getGameTimeDeltaPartialTick(false));
+        if (progress < 0) return;
+
+        int width = 50;
+        int height = 4;
+        int x = (mc.getWindow().getGuiScaledWidth() - width) / 2;
+        int y = mc.getWindow().getGuiScaledHeight() / 2 + 10;
+        boolean full = progress >= 1f;
+        int fill = full ? 0xFF7CFF6B : 0xFFFFFFFF;
+
+        g.fill(x - 1, y - 1, x + width + 1, y + height + 1, 0xC0000000);
+        g.fill(x, y, x + Math.round(width * progress), y + height, fill);
+
+        String label = full ? "✔" : String.format("%.1fs", KeyInputHandler.holdTicksLeft() / 20f);
+        g.drawCenteredString(mc.font, label, x + width / 2, y + height + 3, fill);
+    }
 
     private static void renderPlaque(GuiGraphics g, Minecraft mc, int color, int hotbarRight, int screenH, float time) {
         int selectedIndex = AbilityWheelClientData.getSelectedAbility();

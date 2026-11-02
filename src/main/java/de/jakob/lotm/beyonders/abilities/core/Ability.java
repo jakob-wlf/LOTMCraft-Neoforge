@@ -2,6 +2,7 @@ package de.jakob.lotm.beyonders.abilities.core;
 
 import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Phantom.BloodlinePhantomAbility;
+import de.jakob.lotm.beyonders.abilities.darkness.RequiemAbility;
 import de.jakob.lotm.beyonders.abilities.error.ParasitationAbility;
 import de.jakob.lotm.attachments.*;
 import de.jakob.lotm.beyonders.abilities.fool.marionettes.ControllingUtils;
@@ -9,6 +10,7 @@ import de.jakob.lotm.beyonders.acting.ActingTaskRegistry;
 import de.jakob.lotm.attachments.AbilityCooldownComponent;
 import de.jakob.lotm.attachments.DisabledAbilitiesComponent;
 import de.jakob.lotm.attachments.ModAttachments;
+import de.jakob.lotm.beyonders.abilities.twilight_giant.ProxyAbility;
 import de.jakob.lotm.beyonders.sefirah.SefirahHandler;
 import de.jakob.lotm.network.PacketHandler;
 import de.jakob.lotm.network.packets.toClient.UseAbilityPacket;
@@ -62,6 +64,11 @@ public abstract class Ability {
     protected boolean shouldBeHidden = false;
     public int onHoldTickInverval = 5;
 
+    // Hold to cast
+    public boolean isHoldable = false;
+    public int holdTime = 0;
+    protected final HashMap<Integer, Integer> holdableSubAbilities = new HashMap<>();
+
     // Utility
     protected final Random random = new Random();
 
@@ -81,7 +88,7 @@ public abstract class Ability {
 
     protected boolean hasManualDistance = false;
     public int baseDistance = 0;
-
+    public boolean meetsBloodlineRequirement(LivingEntity entity) {return true;}
     public Ability(String id, float cooldown, String... interactionFlags) {
         this.id = id;
         this.cooldown = Math.round(cooldown * 20);
@@ -125,7 +132,7 @@ public abstract class Ability {
 
         // Consume spirituality
         if(shouldConsumeSpirituality(newUser) && consumeSpirituality) {
-            float cost = getInflatedSpiritualityCost(newUser, serverLevel, seq);
+            float cost = getInflatedSpiritualityCost(newUser, serverLevel, seq) * RequiemAbility.consumption(newUser);
             float current = BeyonderData.getSpirituality(newUser);
 
             // A spirituality shortfall (up to 30%) is paid in sanity: deeper deficits and pricier abilities cost more,
@@ -219,11 +226,39 @@ public abstract class Ability {
 
     }
 
+    /*
+    So basically but ig all of us can read code
+    isHoldable(80, 0); - 80 ability 0
+    isHoldable(120, 1); - 120 ability 1
+    isHoldable(40, 2, 3); - 40 ability 2 and 3
+     */
+    protected void isHoldable(int ticks, int... subAbilities) {
+        int time = Math.max(0, ticks);
+        if (subAbilities.length == 0) {
+            isHoldable = time > 0;
+            holdTime = time;
+            return;
+        }
+        for (int subAbility : subAbilities) {
+            if (time > 0) holdableSubAbilities.put(subAbility, time);
+            else holdableSubAbilities.remove(subAbility);
+        }
+    }
+
+    public int getHoldTime(LivingEntity entity, int subIndex) {
+        Integer ticks = holdableSubAbilities.get(subIndex);
+        if (ticks != null) return ticks;
+        return isHoldable ? holdTime : 0;
+    }
+
+    // Event to play effects while on hold, idk put animations in there
+    public void onHolding(ServerLevel level, LivingEntity entity, int subIndex, int ticks, int holdTime) {
+
+    }
+
     public boolean shouldUseAbility(LivingEntity entity) {
         return true;
     }
-
-    public boolean meetsBloodlineRequirement(LivingEntity entity) {return true;}
 
     public boolean hasAbility(LivingEntity entity, boolean ignoreCreativeMode) {
         if(entity.getData(ModAttachments.MARIONETTE_COMPONENT).isMarionette() && entity.getData(ModAttachments.MARIONETTE_COMPONENT).hasWorm()) {
@@ -283,6 +318,14 @@ public abstract class Ability {
             for (String sefirotPathway : sefirotPathways) {
                 if (getRequirements().containsKey(sefirotPathway) && getRequirements().get(sefirotPathway) >= sequence) {
                     return true;
+                }
+            }
+            String pledged = ProxyAbility.pledgedSefirot(player);
+            if ("river_of_eternal_darkness".equals(pledged)) {
+                for (String pledgedPathway : SefirahHandler.getPathwaysForSefirot(pledged)) {
+                    if (getRequirements().containsKey(pledgedPathway) && getRequirements().get(pledgedPathway) >= sequence) {
+                        return true;
+                    }
                 }
             }
         }
@@ -393,7 +436,6 @@ public abstract class Ability {
         }
         return description.withStyle(ChatFormatting.DARK_GRAY);
     }
-
 
     public String getId() {
         return id;

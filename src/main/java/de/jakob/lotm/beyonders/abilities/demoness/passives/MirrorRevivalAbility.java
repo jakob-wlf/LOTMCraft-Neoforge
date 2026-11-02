@@ -1,5 +1,6 @@
 package de.jakob.lotm.beyonders.abilities.demoness.passives;
 
+import de.jakob.lotm.beyonders.abilities.death.passives.AbsoluteDeathAbility;
 import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.attachments.SanityComponent;
@@ -61,6 +62,7 @@ public class MirrorRevivalAbility extends PassiveAbility {
         }
 
         if (LawAbility.SOLACE_KILLED.contains(entity.getUUID())) return;
+        if (AbsoluteDeathAbility.isEffectedByAbsoluteDeath(entity)) return;
 
         BlockPos glassPos = getNearestGlassBlock((ServerLevel) entity.level(), entity.position(), 100);
         if(glassPos == null) {

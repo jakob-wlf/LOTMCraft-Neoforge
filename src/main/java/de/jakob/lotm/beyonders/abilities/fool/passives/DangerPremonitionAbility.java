@@ -3,12 +3,14 @@ package de.jakob.lotm.beyonders.abilities.fool.passives;
 import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.attachments.*;
 import de.jakob.lotm.beyonders.abilities.core.*;
+import de.jakob.lotm.beyonders.abilities.darkness.ConcealmentAbility;
 import de.jakob.lotm.beyonders.abilities.fool.marionettes.ControllingUtils;
 import de.jakob.lotm.damage.ModDamageTypes;
 import de.jakob.lotm.events.custom.AbilityWheelOpenEvent;
 import de.jakob.lotm.item.ModItems;
 import de.jakob.lotm.network.PacketHandler;
 import de.jakob.lotm.network.packets.toClient.SyncDangerArrowsOverlayPacket;
+import de.jakob.lotm.damage.ModDamageTypes;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.helper.AbilityUtil;
 import de.jakob.lotm.util.helper.DivinationUtil;
@@ -56,6 +58,7 @@ public class DangerPremonitionAbility extends PassiveAbility {
         if (!(level instanceof ServerLevel serverLevel)) return;
         List<LivingEntity> possibleThreats = AbilityUtil.getNearbyEntities(serverPlayer, serverLevel, serverPlayer.position(), radius);
         for (LivingEntity threat : possibleThreats) {
+            if (ConcealmentAbility.peaceful(threat)) continue;
 
             AllyComponent allyComponent = entity.getData(ModAttachments.ALLY_COMPONENT);
             if (allyComponent.isAlly(threat.getUUID())) continue;
@@ -110,6 +113,7 @@ public class DangerPremonitionAbility extends PassiveAbility {
             return;
 
         Entity damager = event.getSource().getEntity();
+        if (damager instanceof LivingEntity attacker && ConcealmentAbility.peaceful(attacker)) return;
         if(damager == null ||
                 ((damager instanceof LivingEntity damagerLiving) &&
                         BeyonderData.getSequence(damagerLiving) - BeyonderData.getSequence(event.getEntity()) < -2
@@ -214,6 +218,7 @@ public class DangerPremonitionAbility extends PassiveAbility {
 
     @SubscribeEvent
     public static void onAbilityWheelOpen(AbilityWheelOpenEvent event) {
+        if (ConcealmentAbility.peaceful(event.getEntity())) return;
         List<LivingEntity> entities = AbilityUtil.getNearbyEntities(event.getEntity(), event.getLevel(), event.getEntity().position(), 33, true);
         for (LivingEntity entity : entities) {
 

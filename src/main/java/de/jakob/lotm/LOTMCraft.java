@@ -6,12 +6,14 @@ import com.zigythebird.playeranimcore.enums.PlayState;
 import de.jakob.lotm.beyonders.abilities.abyss.passives.DevilBloodlines.DevilBloodlineAbilites.Phantom.PhantomFormAttachment;
 import de.jakob.lotm.beyonders.abilities.core.PassiveAbilityHandler;
 import de.jakob.lotm.beyonders.abilities.core.AbilityHandler;
+import de.jakob.lotm.beyonders.abilities.twilight_giant.handlers.KnowledgeRecipe;
 import de.jakob.lotm.beyonders.acting.ActingTaskRegistry;
 import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.beyonders.boss.BossRegistry;
 import de.jakob.lotm.beyonders.potions.PotionRecipes;
 import de.jakob.lotm.block.ModBlockEntities;
 import de.jakob.lotm.block.ModBlocks;
+//import de.jakob.lotm.block.entity.renderer.RitualisticTableBlockEntityRenderer;
 import de.jakob.lotm.block.entity.renderer.RitualisticTableBlockEntityRenderer;
 import de.jakob.lotm.data.ModDataComponents;
 import de.jakob.lotm.dimension.ModDimensions;
@@ -22,6 +24,8 @@ import de.jakob.lotm.entity.ModEntities;
 import de.jakob.lotm.entity.client.ability_entities.big_moon.BigMoonRenderer;
 import de.jakob.lotm.entity.client.ability_entities.big_sun.BigSunRenderer;
 import de.jakob.lotm.entity.client.ability_entities.body_double.ControlBodyDoubleRenderer;
+import de.jakob.lotm.entity.client.ability_entities.darkness_pathway.NightmareBodyRenderer;
+import de.jakob.lotm.entity.client.ability_entities.darkness_pathway.DarknessPourRenderer;
 import de.jakob.lotm.entity.client.ability_entities.darkness_pathway.concealed_domain.ConcealedDomainRenderer;
 import de.jakob.lotm.entity.client.ability_entities.death_pathway.divine_kingdom_death.DeathDivineKingdomEntityRenderer;
 import de.jakob.lotm.entity.client.ability_entities.death_pathway.underworld_gate.UnderworldGateRenderer;
@@ -61,6 +65,7 @@ import de.jakob.lotm.entity.client.ability_entities.volcano.VolcanoRenderer;
 import de.jakob.lotm.entity.client.ability_entities.wheel_of_fortune_pathway.cycle_of_fate.CycleOfFateRenderer;
 import de.jakob.lotm.entity.client.ability_entities.mother_pathway.desolate_area.DesolateAreaRenderer;
 import de.jakob.lotm.entity.client.ability_entities.door_pathway.distortion_field.DistortionFieldRenderer;
+import de.jakob.lotm.entity.client.ability_entities.door_pathway.dimension_sight.DimensionSightRenderer;
 import de.jakob.lotm.entity.client.ability_entities.door_pathway.return_portal.ReturnPortalRenderer;
 import de.jakob.lotm.entity.client.ability_entities.door_pathway.electric_shock.ElectricShockRenderer;
 import de.jakob.lotm.entity.client.ability_entities.tyrant_pathway.electromagnetic_tornado.ElectromagneticTornadoRenderer;
@@ -70,6 +75,13 @@ import de.jakob.lotm.entity.client.ability_entities.grafting.GraftingLocationRen
 import de.jakob.lotm.entity.client.ability_entities.justiciar_pathway.ancient_court.AncientCourtEntityRenderer;
 import de.jakob.lotm.entity.client.ability_entities.justiciar_pathway.judgment_sword.JudgmentSwordRenderer;
 import de.jakob.lotm.entity.client.ability_entities.sun_pathway.justice_sword.JusticeSwordRenderer;
+import de.jakob.lotm.entity.client.ability_entities.twilight_giant.silver_rapier.SilverRapierRenderer;
+import de.jakob.lotm.entity.client.ability_entities.twilight_giant.twilight_visual.FightingArenaRenderer;
+import de.jakob.lotm.entity.client.ability_entities.twilight_giant.twilight_visual.ProtectionBarrierRenderer;
+import de.jakob.lotm.entity.client.ability_entities.twilight_giant.twilight_visual.HurricaneOfLightRenderer;
+import de.jakob.lotm.entity.client.ability_entities.twilight_giant.twilight_visual.ProtectiveCageRenderer;
+import de.jakob.lotm.entity.client.ability_entities.twilight_giant.twilight_visual.TwilightDomeRenderer;
+import de.jakob.lotm.entity.client.ability_entities.twilight_giant.twilight_visual.TwilightSlashRenderer;
 import de.jakob.lotm.entity.client.ability_entities.tyrant_pathway.lightning.LightningRenderer;
 import de.jakob.lotm.entity.client.ability_entities.tendril.TendrilRenderer;
 import de.jakob.lotm.entity.client.ability_entities.tyrant_pathway.lightning_branch.LightningBranchRenderer;
@@ -103,11 +115,12 @@ import de.jakob.lotm.gui.custom.artifact_wheel.ArtifactWheelScreen;
 import de.jakob.lotm.gui.custom.brewing_cauldron.BrewingCauldronScreen;
 import de.jakob.lotm.gui.custom.cohort.CohortScreen;
 import de.jakob.lotm.gui.custom.copied_ability_wheel.CopiedAbilityWheelScreen;
+import de.jakob.lotm.gui.custom.spirit_command.SpiritCommandScreen;
+import de.jakob.lotm.gui.custom.spirit_housing.SpiritManageScreen;
 import de.jakob.lotm.gui.custom.encyclopedia.IngredientEncyclopediaScreen;
 import de.jakob.lotm.gui.custom.flaming_jump.FlamingJumpScreen;
 import de.jakob.lotm.gui.custom.introspect.IntrospectScreen;
 import de.jakob.lotm.gui.custom.honorific_names.HonorificNamesScreen;
-import de.jakob.lotm.gui.custom.malice_seed.MaliceSeedScreen;
 import de.jakob.lotm.gui.custom.justice_selection.JusticePrincipleScreen;
 import de.jakob.lotm.gui.custom.marionettes.MarionetteControlScreen;
 import de.jakob.lotm.gui.custom.mass_puppeteering.MassPuppeteeringScreen;
@@ -136,6 +149,7 @@ import de.jakob.lotm.beyonders.rituals.RitualManager;
 import de.jakob.lotm.sound.ModSounds;
 import de.jakob.lotm.structure.ModStructures;
 import de.jakob.lotm.util.BeyonderData;
+import de.jakob.lotm.util.BeyonderMobData;
 import de.jakob.lotm.util.Config;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import de.jakob.lotm.villager.ModVillagers;
@@ -193,7 +207,6 @@ public class LOTMCraft
     public static KeyMapping openMarionetteMenuKey;
     public static KeyMapping nextMarionetteKey;
     public static KeyMapping toggleAbilityHotbarKey;
-    // One key per ability bar slot; index i casts slot i
     public static KeyMapping[] useAbilityBarKeys;
 
     public static AbilityHandler abilityHandler;
@@ -230,15 +243,16 @@ public class LOTMCraft
         ModBiomeModifiers.register(modEventBus);
         ModVillagers.register(modEventBus);
         ModBlocks.register(modEventBus);
+        ModFilth.register(modEventBus);
         ModBlockEntities.register(modEventBus);
         ModStructures.register(modEventBus);
         ModDataComponents.register(modEventBus);
+        KnowledgeRecipe.SERIALIZERS.register(modEventBus);
         PotionRecipeItemHandler.registerRecipes(modEventBus);
         BeyonderCharacteristicItemHandler.registerCharacteristics(modEventBus);
         ModAttachments.register(modEventBus);
         PhantomFormAttachment.ATTACHMENTS.register(modEventBus);
         ModDimensions.register(modEventBus);
-        ModFilth.register(modEventBus);
         ModGameRules.register();
         ModArmorMaterials.register(modEventBus);
 
@@ -260,6 +274,7 @@ public class LOTMCraft
 
         // Register our mod's ForgeConfigSpec so that Forge can create and load the config file for us
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+        modContainer.registerConfig(ModConfig.Type.COMMON, BeyonderMobData.SPEC, "lotmcraft-beyonder-mobs.toml");
     }
 
     private void clientSetup(final FMLClientSetupEvent event) {
@@ -290,6 +305,13 @@ public class LOTMCraft
         public static void onClientSetup(FMLClientSetupEvent event) {
             EntityRenderers.register(ModEntities.FLAMING_SPEAR.get(), FlamingSpearProjectileRenderer::new);
             EntityRenderers.register(ModEntities.FIRE_PLATE.get(), FirePlateRenderer::new);
+            EntityRenderers.register(ModEntities.SILVER_RAPIER.get(), SilverRapierRenderer::new);
+            EntityRenderers.register(ModEntities.TWILIGHT_DOME.get(), TwilightDomeRenderer::new);
+            EntityRenderers.register(ModEntities.PROTECTION_BARRIER.get(), ProtectionBarrierRenderer::new);
+            EntityRenderers.register(ModEntities.FIGHTING_ARENA.get(), FightingArenaRenderer::new);
+            EntityRenderers.register(ModEntities.PROTECTIVE_CAGE.get(), ProtectiveCageRenderer::new);
+            EntityRenderers.register(ModEntities.HURRICANE_OF_LIGHT.get(), HurricaneOfLightRenderer::new);
+            EntityRenderers.register(ModEntities.TWILIGHT_SLASH.get(), TwilightSlashRenderer::new);
             EntityRenderers.register(ModEntities.UNSHADOWED_SPEAR.get(), UnshadowedSpearProjectileRenderer::new);
             EntityRenderers.register(ModEntities.WIND_BLADE.get(), WindBladeRenderer::new);
             EntityRenderers.register(ModEntities.FIREBALL.get(), FireballRenderer::new);
@@ -325,6 +347,7 @@ public class LOTMCraft
             EntityRenderers.register(ModEntities.SUN_KINGDOM.get(), SunKingdomEntityRenderer::new);
             EntityRenderers.register(ModEntities.DEATH_DIVINE_KINGDOM.get(), DeathDivineKingdomEntityRenderer::new);
             EntityRenderers.register(ModEntities.DISTORTION_FIELD.get(), DistortionFieldRenderer::new);
+            EntityRenderers.register(ModEntities.DIMENSION_SIGHT.get(), DimensionSightRenderer::new);
             EntityRenderers.register(ModEntities.SPEAR_OF_DESTRUCTION.get(), SpearOfDestructionProjectileRenderer::new);
             EntityRenderers.register(ModEntities.RETURN_PORTAL.get(), ReturnPortalRenderer::new);
             EntityRenderers.register(ModEntities.AVATAR.get(), ErrorAvatarRenderer::new);
@@ -344,10 +367,12 @@ public class LOTMCraft
             EntityRenderers.register(ModEntities.SPIRIT_BALL.get(), SpiritBallRenderer::new);
             EntityRenderers.register(ModEntities.SPIRIT_BLOCK_PROJECTILE.get(), SpiritBlockProjectileRenderer::new);
             EntityRenderers.register(ModEntities.CONCEALED_DOMAIN.get(), ConcealedDomainRenderer::new);
+            EntityRenderers.register(ModEntities.DARKNESS_POUR.get(), DarknessPourRenderer::new);
             EntityRenderers.register(ModEntities.UNDERWORLD_GATE.get(), UnderworldGateRenderer::new);
             EntityRenderers.register(ModEntities.PLANET.get(), PlanetRenderer::new);
             EntityRenderers.register(ModEntities.CHAOS_VORTEX.get(), ChaosVortextRenderer::new);
             EntityRenderers.register(ModEntities.CONTROL_BODY_DOUBLE.get(), ControlBodyDoubleRenderer::new);
+            EntityRenderers.register(ModEntities.NIGHTMARE_BODY.get(), NightmareBodyRenderer::new);
             EntityRenderers.register(ModEntities.RABBIT_OF_KNOWLEDGE.get(), RabbitOfKnowledgeRenderer::new);
             EntityRenderers.register(ModEntities.FORS_WALL.get(), BeyonderNPCRenderer::new);
 
@@ -422,12 +447,13 @@ public class LOTMCraft
             event.register(ModMenuTypes.SEFIRAH_MENU.get(), SefirahScreen::new);
             event.register(ModMenuTypes.ABILITY_WHEEL_MENU.get(), AbilityWheelScreen::new);
             event.register(ModMenuTypes.ARTIFACT_WHEEL_MENU.get(), ArtifactWheelScreen::new);
+            event.register(ModMenuTypes.COPIED_ABILITY_WHEEL_MENU.get(), CopiedAbilityWheelScreen::new);
             event.register(ModMenuTypes.HISTORICAL_VOID_MENU.get(), HistoricalVoidScreen::new);
             event.register(ModMenuTypes.MARIONETTE_MENU.get(), MarionetteControlScreen::new);
-            event.register(ModMenuTypes.COPIED_ABILITY_WHEEL_MENU.get(), CopiedAbilityWheelScreen::new);
+            event.register(ModMenuTypes.SPIRIT_MANAGE_MENU.get(), SpiritManageScreen::new);
+            event.register(ModMenuTypes.SPIRIT_COMMAND_MENU.get(), SpiritCommandScreen::new);
             event.register(ModMenuTypes.FLAMING_JUMP_MENU.get(), FlamingJumpScreen::new);
             event.register(ModMenuTypes.MASS_PUPPETEERING_MENU.get(), MassPuppeteeringScreen::new);
-            event.register(ModMenuTypes.MALICE_SEED_MENU.get(), MaliceSeedScreen::new);
             event.register(ModMenuTypes.PATHWAY_SELECTION.get(), PathwaySelectionScreen::new);
             event.register(ModMenuTypes.INGREDIENT_ENCYCLOPEDIA.get(), IngredientEncyclopediaScreen::new);
             event.register(ModMenuTypes.CONTRACT.get(), ContractScreen::new);

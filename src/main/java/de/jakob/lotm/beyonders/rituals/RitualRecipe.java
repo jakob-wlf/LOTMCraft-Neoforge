@@ -1,5 +1,7 @@
 package de.jakob.lotm.beyonders.rituals;
 
+import de.jakob.lotm.beyonders.potions.BeyonderCharacteristicItem;
+import de.jakob.lotm.beyonders.potions.PotionRecipeItemHandler;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.ItemStack;
 
@@ -54,20 +56,30 @@ public record  RitualRecipe(
             return false;
         }
 
-        Map<String, Integer> providedSacrifices = new HashMap<>();
-        for (ItemStack sacrifice : sacrifices) {
-            String key = BuiltInRegistries.ITEM.getKey(sacrifice.getItem()) + "|" + sacrifice.getCount();
-            providedSacrifices.merge(key, 1, Integer::sum);
-        }
+        if (this.sacrifices.size() == 1 && "lotmcraft:beyonder_characteristic".equals(this.sacrifices.getFirst().item())) {
+            ItemStack offered = sacrifices.getFirst();
+            if (!(offered.getItem() instanceof BeyonderCharacteristicItem characteristic) || offered.getCount() != this.sacrifices.getFirst().count()) {
+                return false;
+            }
+            if (PotionRecipeItemHandler.selectRecipeOfPathwayAndSequence(characteristic.getPathway(), characteristic.getSequence() + 1) == null) {
+                return false;
+            }
+        } else {
+            Map<String, Integer> providedSacrifices = new HashMap<>();
+            for (ItemStack sacrifice : sacrifices) {
+                String key = BuiltInRegistries.ITEM.getKey(sacrifice.getItem()) + "|" + sacrifice.getCount();
+                providedSacrifices.merge(key, 1, Integer::sum);
+            }
 
-        Map<String, Integer> requiredSacrifices = new HashMap<>();
-        for (Sacrifice requiredSacrifice : this.sacrifices) {
-            String key = requiredSacrifice.item() + "|" + requiredSacrifice.count();
-            requiredSacrifices.merge(key, 1, Integer::sum);
-        }
+            Map<String, Integer> requiredSacrifices = new HashMap<>();
+            for (Sacrifice requiredSacrifice : this.sacrifices) {
+                String key = requiredSacrifice.item() + "|" + requiredSacrifice.count();
+                requiredSacrifices.merge(key, 1, Integer::sum);
+            }
 
-        if (!providedSacrifices.equals(requiredSacrifices)) {
-            return false;
+            if (!providedSacrifices.equals(requiredSacrifices)) {
+                return false;
+            }
         }
 
         if (sequence > this.conditions.minSequence()) {

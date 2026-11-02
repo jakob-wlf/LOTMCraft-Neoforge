@@ -28,7 +28,7 @@ import java.util.UUID;
 @EventBusSubscriber(modid = LOTMCraft.MOD_ID)
 public class BlinkAfterimageEntity extends Mob {
 
-    private static final int LIFETIME = 40;
+    private static final int LIFETIME = 120;
 
     private static final EntityDataAccessor<Optional<UUID>> OWNER_UUID =
             SynchedEntityData.defineId(BlinkAfterimageEntity.class, EntityDataSerializers.OPTIONAL_UUID);

@@ -137,7 +137,23 @@ public class SpiritBlueWizardEntity extends Animal {
         return WIZARD_DUST_SMALL;
     }
 
-    static class WizardAttackGoal extends Goal {
+    public static class WizardAttackGoal extends Goal {
+
+        public static void attack(ServerLevel level, LivingEntity caster, LivingEntity target) {
+            float damage = caster instanceof SpiritBlueWizardEntity wizard
+                    ? (float) wizard.getAttributeValue(Attributes.ATTACK_DAMAGE)
+                    : 40f;
+            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, FREEZE_DURATION, 100, false, true));
+            target.addEffect(new MobEffectInstance(MobEffects.JUMP, FREEZE_DURATION, 128, false, false));
+            ParticleUtil.spawnSphereParticles(level, ParticleTypes.SNOWFLAKE, target.position().add(0, 1, 0), 1.0, 60);
+            ParticleUtil.spawnParticles(level, WIZARD_DUST_SMALL, target.position().add(0, 1, 0), 40, 0.5);
+            Vec3 origin = caster.position().add(0, 1.5, 0);
+            Vec3 dir = target.getEyePosition().subtract(origin).normalize();
+            SpiritBallEntity ball = new SpiritBallEntity(level, caster, damage, dir, 6);
+            ball.setPos(origin);
+            level.addFreshEntity(ball);
+        }
+
 
         private enum AttackType { AOE, FREEZE_PROJECTILE, JUMP_SLAM }
 
@@ -232,40 +248,17 @@ public class SpiritBlueWizardEntity extends Animal {
 
         private void performAoEAttack(LivingEntity target) {
             if (!(wizard.level() instanceof ServerLevel serverLevel)) return;
-
             float damage = (float) wizard.getAttributeValue(Attributes.ATTACK_DAMAGE) * AOE_DAMAGE_FRACTION;
             Vec3 center = wizard.position();
-
-            // Visual: expanding sphere of blue particles
             ParticleUtil.spawnSphereParticles(serverLevel, wizard.getWizardDust(), center.add(0, 1, 0), AOE_RADIUS, 250);
             ParticleUtil.spawnSphereParticles(serverLevel, ParticleTypes.SNOWFLAKE, center.add(0, 1, 0), AOE_RADIUS * 0.7, 120);
-
-            // Damage all nearby entities
             AbilityUtil.damageNearbyEntities(serverLevel, wizard, AOE_RADIUS, damage, center, true, true);
-
             attackCooldown = 60;
         }
 
         private void performFreezeProjectileAttack(LivingEntity target) {
             if (!(wizard.level() instanceof ServerLevel serverLevel)) return;
-
-            float damage = (float) wizard.getAttributeValue(Attributes.ATTACK_DAMAGE);
-
-            // Freeze the target
-            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, FREEZE_DURATION, 100, false, true));
-            target.addEffect(new MobEffectInstance(MobEffects.JUMP, FREEZE_DURATION, 128, false, false));
-
-            // Freeze visual particles on target
-            ParticleUtil.spawnSphereParticles(serverLevel, ParticleTypes.SNOWFLAKE, target.position().add(0, 1, 0), 1.0, 60);
-            ParticleUtil.spawnParticles(serverLevel, wizard.getWizardDustSmall(), target.position().add(0, 1, 0), 40, 0.5);
-
-            // Fire a magical projectile at the frozen target
-            Vec3 projectilePos = wizard.position().add(0, 1.5, 0);
-            Vec3 projectileDir = target.getEyePosition().subtract(projectilePos).normalize();
-            SpiritBallEntity spiritBall = new SpiritBallEntity(wizard.level(), wizard, damage, projectileDir, 6);
-            spiritBall.setPos(projectilePos);
-            wizard.level().addFreshEntity(spiritBall);
-
+            attack(serverLevel, wizard, target);
             attackCooldown = 40;
         }
 
@@ -294,13 +287,10 @@ public class SpiritBlueWizardEntity extends Animal {
 
             if ((distanceSq <= JUMP_SLAM_DISTANCE * JUMP_SLAM_DISTANCE && jumpTimer > 5) || jumpTimer > 40) {
                 float damage = (float) wizard.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.2f;
-                Vec3 impactPos = wizard.position();
-
-                ParticleUtil.spawnSphereParticles(serverLevel, wizard.getWizardDust(), impactPos, 3.0, 40);
-                ParticleUtil.spawnParticles(serverLevel, ParticleTypes.EXPLOSION, impactPos, 5, 1.0);
-
-                AbilityUtil.damageNearbyEntities(serverLevel, wizard, 4.0, damage, impactPos, true, true);
-
+                Vec3 impact = wizard.position();
+                ParticleUtil.spawnSphereParticles(serverLevel, wizard.getWizardDust(), impact, 3.0, 40);
+                ParticleUtil.spawnParticles(serverLevel, ParticleTypes.EXPLOSION, impact, 5, 1.0);
+                AbilityUtil.damageNearbyEntities(serverLevel, wizard, 4.0, damage, impact, true, true);
                 jumping = false;
                 jumpTimer = 0;
                 attackCooldown = 50;

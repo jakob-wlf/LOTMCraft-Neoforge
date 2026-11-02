@@ -1,6 +1,7 @@
 package de.jakob.lotm.network.packets.toServer;
 
 import de.jakob.lotm.LOTMCraft;
+import de.jakob.lotm.beyonders.abilities.darkness.ConcealmentAuthorityAbility;
 import de.jakob.lotm.util.BeyonderData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderSet;
@@ -85,6 +86,12 @@ public record StructureDivinationSelectedPacket(String structureId) implements C
                 int dx = structurePos.getX() - playerPos.getX();
                 int dz = structurePos.getZ() - playerPos.getZ();
                 int distance = (int) Math.sqrt(dx * dx + dz * dz);
+
+                String mislead = ConcealmentAuthorityAbility.misleadPlace(player, structurePos);
+                if (mislead != null) {
+                    player.sendSystemMessage(Component.literal(mislead));
+                    return;
+                }
 
                 String direction = getDirection(dx, dz);
                 String structureName = packet.structureId();

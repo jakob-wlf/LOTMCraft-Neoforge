@@ -1,5 +1,6 @@
 package de.jakob.lotm.beyonders.abilities.core;
 
+import de.jakob.lotm.beyonders.abilities.darkness.RequiemAbility;
 import de.jakob.lotm.network.PacketHandler;
 import de.jakob.lotm.network.packets.toClient.SyncToggleAbilityPacket;
 import de.jakob.lotm.util.BeyonderData;
@@ -67,8 +68,8 @@ public abstract class ToggleAbility extends Ability {
 
     public void prepareTick(Level level, LivingEntity entity) {
         if(!level.isClientSide && shouldConsumeSpirituality(entity)) {
-            float cost = getSpiritualityCost();
-            if(BeyonderData.getSpirituality(entity) <= cost * BeyonderData.getSpiritualityCostMultiplier()) {
+            float cost = getSpiritualityCost() * RequiemAbility.consumption(entity);
+            if(BeyonderData.getSpirituality(entity) <= cost  * BeyonderData.getSpiritualityCostMultiplier()) {
                 cancel((ServerLevel) level, entity);
                 return;
             }

@@ -53,6 +53,18 @@ public final class JusticeEnforcement {
         strikes.keySet().removeIf(key -> key.startsWith(owner + ":h:"));
     }
 
+    public static boolean inHalo(LivingEntity entity) {
+        if (entity == null || halos.isEmpty()) return false;
+        long now = entity.level().getGameTime();
+        for (Halo halo : halos.values()) {
+            if (now > halo.end() || entity.level().dimension() != halo.dimension()) continue;
+            double dx = entity.getX() - halo.center().x;
+            double dz = entity.getZ() - halo.center().z;
+            if (dx * dx + dz * dz <= halo.radius() * halo.radius()) return true;
+        }
+        return false;
+    }
+
     public static boolean isEnhanced(Player player) {
         Long until = enhancedUntil.get(player.getUUID());
         if (until == null) return false;

@@ -1,6 +1,7 @@
 package de.jakob.lotm.network.packets.toServer;
 
 import de.jakob.lotm.LOTMCraft;
+import de.jakob.lotm.beyonders.abilities.darkness.ConcealmentAuthorityAbility;
 import de.jakob.lotm.util.BeyonderData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
@@ -81,6 +82,12 @@ public record BiomeDivinationSelectedPacket(String biomeId) implements CustomPac
                 int dx = biomePos.getX() - playerPos.getX();
                 int dz = biomePos.getZ() - playerPos.getZ();
                 int distance = (int) Math.sqrt(dx * dx + dz * dz);
+
+                String mislead = ConcealmentAuthorityAbility.misleadPlace(player, biomePos);
+                if (mislead != null) {
+                    player.sendSystemMessage(Component.literal(mislead));
+                    return;
+                }
 
                 String direction = getDirection(dx, dz);
                 String biomeName = packet.biomeId();

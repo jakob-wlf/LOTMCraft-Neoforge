@@ -287,7 +287,7 @@ public class DeceitAbility extends SelectableAbility {
 
         if(!(source instanceof LivingEntity livingSource) ||
                 BeyonderData.getSequence(livingSource) < seqMap.getOrDefault(entity.getUUID(), LOTMCraft.NON_BEYONDER_SEQ)){
-           return;
+            return;
         }
 
         ParticleUtil.spawnParticles(serverLevel, ParticleTypes.END_ROD, entity.position().add(0, entity.getEyeHeight() / 2, 0), 60, 0.5, 0.5, 0.5, 0.1);

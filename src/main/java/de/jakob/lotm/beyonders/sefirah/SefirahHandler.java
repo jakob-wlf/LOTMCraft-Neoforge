@@ -51,6 +51,11 @@ public class SefirahHandler {
             return false;
         }
 
+        if (de.jakob.lotm.beyonders.abilities.twilight_giant.ProxyAbility.blocksAccommodation(player)) {
+            player.sendSystemMessage(Component.translatable("ability.lotmcraft.proxy.cannot_accommodate").withStyle(ChatFormatting.RED));
+            return false;
+        }
+
         boolean buff =  SefirotData.get(player.server).claimSefirot(player.getUUID(), sefirot);
 
         if (buff)
@@ -273,7 +278,7 @@ public class SefirahHandler {
                         yaw,
                         0);
 
-                sefirotLevel.setBlockAndUpdate(BlockPos.containing(21, -58, 0), ModBlocks.SEFIRAH_BLOCK.get().defaultBlockState());
+                //sefirotLevel.setBlockAndUpdate(BlockPos.containing(21, -58, 0), ModBlocks.SEFIRAH_BLOCK.get().defaultBlockState());
 
                 if(playTeleportEffect) {
                     playCorrectEffect(BlockPos.containing(x, y, z), sefirot, isOwner, sefirotLevel);
@@ -461,6 +466,9 @@ public class SefirahHandler {
             }
             case "brood_hive" -> {
                 return new String[]{"mother", "moon"};
+            }
+            case "river_of_eternal_darkness" -> {
+                return new String[]{"darkness", "death", "twilight_giant"};
             }
             default -> {
                 return new String[]{};

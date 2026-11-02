@@ -5,6 +5,8 @@ import de.jakob.lotm.beyonders.abilities.death.handlers.SpiritHandler;
 import de.jakob.lotm.entity.custom.*;
 import de.jakob.lotm.entity.custom.ability_entities.*;
 import de.jakob.lotm.entity.custom.ability_entities.darkness_pathway.ConcealedDomainEntity;
+import de.jakob.lotm.entity.custom.ability_entities.darkness_pathway.DarknessPourEntity;
+import de.jakob.lotm.entity.custom.ability_entities.darkness_pathway.NightmareBodyEntity;
 import de.jakob.lotm.entity.custom.ability_entities.death_pathway.DeathDivineKingdomEntity;
 import de.jakob.lotm.entity.custom.ability_entities.death_pathway.UnderworldGateEntity;
 import de.jakob.lotm.entity.custom.ability_entities.demoness_pathway.ChaosVortexEntity;
@@ -21,6 +23,13 @@ import de.jakob.lotm.entity.custom.ability_entities.justiciar_pathway.JudgmentSw
 import de.jakob.lotm.entity.custom.ability_entities.sun_pathway.JusticeSwordEntity;
 import de.jakob.lotm.entity.custom.ability_entities.sun_pathway.SunEntity;
 import de.jakob.lotm.entity.custom.ability_entities.sun_pathway.SunKingdomEntity;
+import de.jakob.lotm.entity.custom.ability_entities.twilight_giant.FightingArenaEntity;
+import de.jakob.lotm.entity.custom.ability_entities.twilight_giant.ProtectionBarrierEntity;
+import de.jakob.lotm.entity.custom.ability_entities.twilight_giant.HurricaneOfLightEntity;
+import de.jakob.lotm.entity.custom.ability_entities.twilight_giant.ProtectiveCageEntity;
+import de.jakob.lotm.entity.custom.ability_entities.twilight_giant.SilverRapierEntity;
+import de.jakob.lotm.entity.custom.ability_entities.twilight_giant.TwilightDomeEntity;
+import de.jakob.lotm.entity.custom.ability_entities.twilight_giant.TwilightSlashEntity;
 import de.jakob.lotm.entity.custom.ability_entities.tyrant_pathway.*;
 import de.jakob.lotm.entity.custom.ability_entities.wheel_of_fortune_pathway.CycleOfFateEntity;
 import de.jakob.lotm.entity.custom.ability_entities.wheel_of_fortune_pathway.MisfortuneWordsEntity;
@@ -123,6 +132,10 @@ public class ModEntities {
     public static final Supplier<EntityType<ConcealedDomainEntity>> CONCEALED_DOMAIN =
             ENTITY_TYPES.register("concealed_domain", () -> EntityType.Builder.<ConcealedDomainEntity>of(ConcealedDomainEntity::new, MobCategory.MISC)
                     .sized(0.5F, 0.5F).clientTrackingRange(64).updateInterval(1).noSummon().noSave().fireImmune().build("concealed_domain"));
+
+    public static final Supplier<EntityType<DarknessPourEntity>> DARKNESS_POUR =
+            ENTITY_TYPES.register("darkness_pour", () -> EntityType.Builder.<DarknessPourEntity>of(DarknessPourEntity::new, MobCategory.MISC)
+                    .sized(0.5F, 0.5F).clientTrackingRange(64).updateInterval(1).noSummon().fireImmune().build("darkness_pour"));
     
     // Ability Entities - Door Pathway
 
@@ -133,6 +146,10 @@ public class ModEntities {
     public static final Supplier<EntityType<PortalEntity>> PORTAL =
             ENTITY_TYPES.register("portal", () -> EntityType.Builder.<PortalEntity>of(PortalEntity::new, MobCategory.MISC)
                     .sized(1f, 1f).noSummon().build("portal"));
+
+    public static final Supplier<EntityType<DimensionSightEntity>> DIMENSION_SIGHT =
+            ENTITY_TYPES.register("dimension_sight", () -> EntityType.Builder.<DimensionSightEntity>of(DimensionSightEntity::new, MobCategory.MISC)
+                    .sized(3.5f, 3.5f).clientTrackingRange(64).updateInterval(1).noSave().noSummon().fireImmune().build("dimension_sight"));
 
     public static final Supplier<EntityType<TravelersDoorEntity>> TRAVELERS_DOOR =
             ENTITY_TYPES.register("travelers_door", () -> EntityType.Builder.<TravelersDoorEntity>of(TravelersDoorEntity::new, MobCategory.MISC)
@@ -484,6 +501,13 @@ public class ModEntities {
                     .noSummon()
                     .build("control_body_double"));
 
+    public static final Supplier<EntityType<NightmareBodyEntity>> NIGHTMARE_BODY =
+            ENTITY_TYPES.register("nightmare_body", () -> EntityType.Builder.<NightmareBodyEntity>of(NightmareBodyEntity::new, MobCategory.MISC)
+                    .sized(0.6F, 1.8F)
+                    .noSave()
+                    .noSummon()
+                    .build("nightmare_body"));
+
     // Utility
 
     public static final Supplier<EntityType<UnderworldGateEntity>> UNDERWORLD_GATE =
@@ -549,6 +573,34 @@ public class ModEntities {
                             .updateInterval(1)
                             .build("uniqueness_entity")
             );
+
+    public static final Supplier<EntityType<SilverRapierEntity>> SILVER_RAPIER =
+            ENTITY_TYPES.register("silver_rapier", () -> EntityType.Builder.of(SilverRapierEntity::new, MobCategory.MISC)
+                    .sized(0.5F, 0.5F).clientTrackingRange(64).updateInterval(1).noSummon().noSave().build("silver_rapier"));
+
+    public static final Supplier<EntityType<ProtectionBarrierEntity>> PROTECTION_BARRIER =
+            ENTITY_TYPES.register("protection_barrier", () -> EntityType.Builder.of(ProtectionBarrierEntity::new, MobCategory.MISC)
+                    .sized(0.1F, 0.1F).clientTrackingRange(24).updateInterval(1).fireImmune().noSummon().noSave().build("protection_barrier"));
+
+    public static final Supplier<EntityType<TwilightDomeEntity>> TWILIGHT_DOME =
+            ENTITY_TYPES.register("twilight_dome", () -> EntityType.Builder.of(TwilightDomeEntity::new, MobCategory.MISC)
+                    .sized(0.1F, 0.1F).clientTrackingRange(24).updateInterval(1).fireImmune().noSummon().noSave().build("twilight_dome"));
+
+    public static final Supplier<EntityType<FightingArenaEntity>> FIGHTING_ARENA =
+            ENTITY_TYPES.register("fighting_arena", () -> EntityType.Builder.of(FightingArenaEntity::new, MobCategory.MISC)
+                    .sized(0.1F, 0.1F).clientTrackingRange(24).updateInterval(10).fireImmune().noSummon().noSave().build("fighting_arena"));
+
+    public static final Supplier<EntityType<ProtectiveCageEntity>> PROTECTIVE_CAGE =
+            ENTITY_TYPES.register("protective_cage", () -> EntityType.Builder.of(ProtectiveCageEntity::new, MobCategory.MISC)
+                    .sized(0.1F, 0.1F).clientTrackingRange(24).updateInterval(10).fireImmune().noSummon().noSave().build("protective_cage"));
+
+    public static final Supplier<EntityType<HurricaneOfLightEntity>> HURRICANE_OF_LIGHT =
+            ENTITY_TYPES.register("hurricane_of_light", () -> EntityType.Builder.of(HurricaneOfLightEntity::new, MobCategory.MISC)
+                    .sized(0.1F, 0.1F).clientTrackingRange(24).updateInterval(1).fireImmune().noSummon().noSave().build("hurricane_of_light"));
+
+    public static final Supplier<EntityType<TwilightSlashEntity>> TWILIGHT_SLASH =
+            ENTITY_TYPES.register("twilight_slash", () -> EntityType.Builder.of(TwilightSlashEntity::new, MobCategory.MISC)
+                    .sized(0.1F, 0.1F).clientTrackingRange(24).updateInterval(1).fireImmune().noSummon().noSave().build("twilight_slash"));
 
     public static boolean isBeyonderMob(LivingEntity entity) {
         return entity instanceof MurlocEntity

@@ -13,12 +13,16 @@ import de.jakob.lotm.attachments.AllyComponent;
 import de.jakob.lotm.attachments.DisabledAbilitiesComponent;
 import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.block.ModBlocks;
+import de.jakob.lotm.gui.custom.conceal_secret.ConcealSecretScreen;
 import de.jakob.lotm.gui.custom.coordinate_input.CoordinateInputScreen;
+import de.jakob.lotm.gui.custom.divination_mislead.DivinationMisleadScreen;
 import de.jakob.lotm.gui.custom.introspect.IntrospectScreen;
 import de.jakob.lotm.gui.custom.quest.QuestAcceptanceScreen;
 import de.jakob.lotm.gui.custom.selection_gui.*;
 import de.jakob.lotm.network.PacketHandler;
 import de.jakob.lotm.network.packets.toClient.*;
+import de.jakob.lotm.entity.custom.ability_entities.door_pathway.DimensionSightEntity;
+import de.jakob.lotm.network.packets.toServer.RemoveSpatialCagePacket;
 import de.jakob.lotm.network.packets.toServer.ShapeShiftingPlayerModelPacket;
 import de.jakob.lotm.beyonders.quest.Quest;
 import de.jakob.lotm.beyonders.quest.QuestRegistry;
@@ -34,6 +38,7 @@ import de.jakob.lotm.util.helper.ParticleUtil;
 import de.jakob.lotm.util.helper.RingExpansionRenderer;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -56,12 +61,14 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.ViewportEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.joml.Random;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -69,11 +76,54 @@ import java.util.UUID;
 @EventBusSubscriber(modid = LOTMCraft.MOD_ID, value = Dist.CLIENT)
 public class ClientHandler {
     public static Boolean isSpectating = false;
+    private static final ArrayList<Double> concealmentSpheres = new ArrayList<>();
+    private static final HashSet<Integer> bareConcealment = new HashSet<>();
+    private static final HashSet<Integer> concealedOthers = new HashSet<>();
+    private static float holdCharge;
+    private static int holdNeeded;
+
+    public static void setHoldCharge(float charge, int needed) {
+        holdCharge = charge;
+        holdNeeded = needed;
+    }
+
+    public static void syncDimensionSight(SyncDimensionSightPacket packet) {
+        if (Minecraft.getInstance().level == null) return;
+        if (Minecraft.getInstance().level.getEntity(packet.veil()) instanceof DimensionSightEntity veil) {
+            veil.receive(packet);
+        }
+    }
+
+    public static float holdCharge() {
+        return holdCharge;
+    }
+
+    public static int holdNeeded() {
+        return holdNeeded;
+    }
 
     private static final HashMap<UUID, EntityEffectExecutor> activeEffects = new HashMap<>();
     private static final HashMap<UUID, BlockEffectExecutor> activeBlockEffects = new HashMap<>();
     public static void openCoordinateScreen(Player player, String use) {
         Minecraft.getInstance().setScreen(new CoordinateInputScreen(player, use));
+    }
+
+    public static void openSpatialCageScreen(UUID cage, int cost, int seconds) {
+        Component message = cost > 0
+                ? Component.translatable("ability.lotmcraft.spatial_cage.remove_message", seconds, cost)
+                : Component.translatable("ability.lotmcraft.spatial_cage.remove_free", seconds);
+        Minecraft.getInstance().setScreen(new ConfirmScreen(confirmed -> {
+            if (confirmed) PacketHandler.sendToServer(new RemoveSpatialCagePacket(cage));
+            Minecraft.getInstance().setScreen(null);
+        }, Component.translatable("ability.lotmcraft.spatial_cage.remove_title"), message));
+    }
+
+    public static void openConcealSecretScreen(List<String> words) {
+        Minecraft.getInstance().setScreen(new ConcealSecretScreen(words));
+    }
+
+    public static void openDivinationMisleadScreen(List<String> lines) {
+        Minecraft.getInstance().setScreen(new DivinationMisleadScreen(lines));
     }
 
     public static void syncLivingEntityBeyonderData(SyncLivingEntityBeyonderDataPacket packet) {
@@ -288,9 +338,58 @@ public class ClientHandler {
             return;
         }
 
-        entity.getData(ModAttachments.FOG_COMPONENT.get()).setActive(packet.active());
-        entity.getData(ModAttachments.FOG_COMPONENT.get()).setFogIndex(packet.index());
-        entity.getData(ModAttachments.FOG_COMPONENT.get()).setColor(new Vec3f(packet.red(), packet.green(), packet.blue()));
+        entity.getData(ModAttachments.FOG_COMPONENT.get()).apply(packet.active(), packet.index(), new Vec3f(packet.red(), packet.green(), packet.blue()), packet.durationMillis());
+    }
+
+    public static void setConcealmentSpheres(List<Double> packed, List<Integer> bare, List<Integer> concealed) {
+        concealmentSpheres.clear();
+        bareConcealment.clear();
+        concealedOthers.clear();
+        if (packed != null) concealmentSpheres.addAll(packed);
+        if (bare != null) bareConcealment.addAll(bare);
+        if (concealed != null) concealedOthers.addAll(concealed);
+    }
+
+    public static final int VEIL_STRIDE = 8;
+
+    public static List<Double> concealmentSpheres() {
+        return concealmentSpheres;
+    }
+
+    public static boolean concealmentHides(Entity entity) {
+        if (concealedOthers.contains(entity.getId())) return true;
+        if (bareConcealment.contains(entity.getId())) return false;
+        return concealmentHides(entity.getX(), entity.getY(), entity.getZ());
+    }
+
+    public static boolean concealmentHides(double x, double y, double z) {
+        Vec3 camera = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+        for (int i = 0; i + VEIL_STRIDE - 1 < concealmentSpheres.size(); i += VEIL_STRIDE) {
+            if (concealmentSpheres.get(i + 4) < 0.5 || !insideVeil(i, x, y, z)) continue;
+            boolean ground = concealmentSpheres.get(i + 5) > 0.5;
+            boolean affected = concealmentSpheres.get(i + 7) > 0.5;
+            if (!ground && affected && insideVeil(i, camera.x, camera.y, camera.z)) continue;
+            return true;
+        }
+        return false;
+    }
+
+    public static boolean concealmentMutes(double x, double y, double z) {
+        if (concealmentHides(x, y, z)) return true;
+        Vec3 camera = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+        for (int i = 0; i + VEIL_STRIDE - 1 < concealmentSpheres.size(); i += VEIL_STRIDE) {
+            if (concealmentSpheres.get(i + 5) > 0.5 || concealmentSpheres.get(i + 7) < 0.5) continue;
+            if (insideVeil(i, camera.x, camera.y, camera.z) && !insideVeil(i, x, y, z)) return true;
+        }
+        return false;
+    }
+
+    private static boolean insideVeil(int index, double x, double y, double z) {
+        double dx = x - concealmentSpheres.get(index);
+        double dy = y - concealmentSpheres.get(index + 1);
+        double dz = z - concealmentSpheres.get(index + 2);
+        double radius = concealmentSpheres.get(index + 3);
+        return dx * dx + dy * dy + dz * dz < radius * radius;
     }
 
     public static void addEffect(AddEffectPacket packet) {
@@ -633,7 +732,7 @@ public class ClientHandler {
     public static void handleSyncIntrospectMenuPacket(SyncIntrospectMenuPacket packet, UUID playerUUID) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.screen instanceof IntrospectScreen screen) {
-            screen.updateMenuData(packet.sequence(), packet.pathway(), ClientBeyonderCache.getDigestionProgress(playerUUID), packet.sanity());
+            screen.updateMenuData(packet.sequence(), packet.pathway(), ClientBeyonderCache.getDigestionProgress(playerUUID), packet.sanity(), packet.years());
         }
     }
 

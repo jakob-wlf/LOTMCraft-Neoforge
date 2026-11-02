@@ -126,9 +126,13 @@ public class AsmannEntity extends Monster {
         target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, weaknessDuration, amplifier, false, true));
     }
 
+    private static void portals(ServerLevel level, double x, double y, double z, int count) {
+        level.sendParticles(ParticleTypes.PORTAL, x, y, z, count, 0.3, 0.4, 0.3, 0.05);
+    }
+
     private void spawnPsychicParticles(double x, double y, double z, int count) {
         if (this.level() instanceof ServerLevel serverLevel) {
-            serverLevel.sendParticles(ParticleTypes.PORTAL, x, y, z, count, 0.3, 0.4, 0.3, 0.05);
+            portals(serverLevel, x, y, z, count);
         }
     }
 
@@ -227,7 +231,17 @@ public class AsmannEntity extends Monster {
         return SoundEvents.ILLUSIONER_DEATH;
     }
 
-    private static class MindSpikeGoal extends Goal {
+    public static class MindSpikeGoal extends Goal {
+
+        public static void attack(ServerLevel level, LivingEntity caster, LivingEntity target) {
+            level.playSound(null, caster.blockPosition(), SoundEvents.ILLUSIONER_CAST_SPELL, caster.getSoundSource(), 1.0F, 1.0F);
+            portals(level, caster.getX(), caster.getY(0.7), caster.getZ(), 10);
+            target.hurt(ModDamageTypes.source(level, ModDamageTypes.MIND_BASED, caster), MIND_SPIKE_DAMAGE);
+            target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, MIND_SPIKE_BLIND_DURATION, 0, false, true));
+            target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, MIND_SPIKE_NAUSEA_DURATION, 0, false, true));
+            target.addEffect(new MobEffectInstance(MobEffects.DARKNESS, MIND_SPIKE_DARKNESS_DURATION, 0, false, true));
+            portals(level, target.getX(), target.getY(1.0), target.getZ(), 14);
+        }
 
         private final AsmannEntity asmann;
 
@@ -257,16 +271,9 @@ public class AsmannEntity extends Monster {
             LivingEntity target = asmann.getTarget();
             if (target == null) return;
 
-            asmann.spawnPsychicParticles(asmann.getX(), asmann.getY(0.7), asmann.getZ(), 10);
-            asmann.playSound(SoundEvents.ILLUSIONER_CAST_SPELL, 1.0F, 1.0F);
-
-            DamageSource source = ModDamageTypes.source(asmann.level(), ModDamageTypes.MIND_BASED, asmann);
-            target.hurt(source, MIND_SPIKE_DAMAGE);
-            target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, MIND_SPIKE_BLIND_DURATION, 0, false, true));
-            target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, MIND_SPIKE_NAUSEA_DURATION, 0, false, true));
-            target.addEffect(new MobEffectInstance(MobEffects.DARKNESS, MIND_SPIKE_DARKNESS_DURATION, 0, false, true));
-
-            asmann.spawnPsychicParticles(target.getX(), target.getY(1.0), target.getZ(), 14);
+            if (asmann.level() instanceof ServerLevel serverLevel) {
+                attack(serverLevel, asmann, target);
+            }
             asmann.mindSpikeCooldown = MIND_SPIKE_COOLDOWN;
         }
     }
@@ -301,21 +308,20 @@ public class AsmannEntity extends Monster {
             LivingEntity target = asmann.getTarget();
             if (target == null) return;
 
-            Vec3 pullDirection = asmann.position().subtract(target.position()).normalize();
-            target.setDeltaMovement(target.getDeltaMovement().add(
-                    pullDirection.x * TELEKINESIS_PULL_STRENGTH,
-                    0.15,
-                    pullDirection.z * TELEKINESIS_PULL_STRENGTH
-            ));
-            target.hasImpulse = true;
-
-            target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, TELEKINESIS_WEAKNESS_DURATION, 1, false, true));
-            target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, TELEKINESIS_NAUSEA_DURATION, 0, false, true));
-
-            asmann.playSound(SoundEvents.ILLUSIONER_CAST_SPELL, 1.0F, 0.7F);
-            asmann.spawnPsychicParticles(asmann.getX(), asmann.getY(0.7), asmann.getZ(), 16);
-            asmann.spawnPsychicParticles(target.getX(), target.getY(1.0), target.getZ(), 16);
-
+            if (asmann.level() instanceof ServerLevel serverLevel) {
+                Vec3 pullDirection = asmann.position().subtract(target.position()).normalize();
+                target.setDeltaMovement(target.getDeltaMovement().add(
+                        pullDirection.x * TELEKINESIS_PULL_STRENGTH,
+                        0.15,
+                        pullDirection.z * TELEKINESIS_PULL_STRENGTH
+                ));
+                target.hasImpulse = true;
+                target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, TELEKINESIS_WEAKNESS_DURATION, 1, false, true));
+                target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, TELEKINESIS_NAUSEA_DURATION, 0, false, true));
+                serverLevel.playSound(null, asmann.blockPosition(), SoundEvents.ILLUSIONER_CAST_SPELL, asmann.getSoundSource(), 1.0F, 0.7F);
+                portals(serverLevel, asmann.getX(), asmann.getY(0.7), asmann.getZ(), 16);
+                portals(serverLevel, target.getX(), target.getY(1.0), target.getZ(), 16);
+            }
             asmann.telekinesisCooldown = TELEKINESIS_COOLDOWN;
         }
     }

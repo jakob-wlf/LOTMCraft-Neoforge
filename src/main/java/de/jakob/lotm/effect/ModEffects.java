@@ -50,6 +50,9 @@ public class ModEffects {
     public static final Holder<MobEffect> FOOLING = MOB_EFFECTS.register("fooling",
             () -> new FoolingEffect(MobEffectCategory.HARMFUL, 0xE040FB));
 
+    public static final Holder<MobEffect> COMBAT_MASTERY = MOB_EFFECTS.register("combat_mastery",
+            () -> new CombatMasteryEffect(MobEffectCategory.BENEFICIAL, 0x944b16));
+
     public static void register(IEventBus eventBus) {
         MOB_EFFECTS.register(eventBus);
     }

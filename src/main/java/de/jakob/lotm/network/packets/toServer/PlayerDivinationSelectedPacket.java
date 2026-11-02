@@ -1,6 +1,11 @@
 package de.jakob.lotm.network.packets.toServer;
 
 import de.jakob.lotm.LOTMCraft;
+import de.jakob.lotm.beyonders.abilities.darkness.ConcealmentAuthorityAbility;
+import de.jakob.lotm.beyonders.abilities.door.DimensionSightAbility;
+import de.jakob.lotm.beyonders.abilities.twilight_giant.CombatAuthorityAbility;
+import de.jakob.lotm.beyonders.abilities.twilight_giant.ProxyAbility;
+import de.jakob.lotm.beyonders.abilities.twilight_giant.ServantsAbility;
 import de.jakob.lotm.beyonders.abilities.visionary.DreamTraversalAbility;
 import de.jakob.lotm.beyonders.abilities.visionary.handlers.VisionaryHandler;
 import de.jakob.lotm.beyonders.abilities.visionary.passives.MetaAwarenessAbility;
@@ -61,6 +66,9 @@ public record PlayerDivinationSelectedPacket(UUID selectedPlayerUuid, PlayerSele
             switch (packet.types){
                 case DIVINATION -> performDivination(packet, player);
                 case DREAM_TRAVERSAL -> performDreamTraversal(packet, player);
+                case PROXY -> ProxyAbility.select(player, packet.selectedPlayerUuid);
+                case SERVANT_MANAGE -> ServantsAbility.dismiss(player, packet.selectedPlayerUuid);
+                case DIMENSION_SIGHT -> DimensionSightAbility.watchPlayer(player, packet.selectedPlayerUuid);
             }
         });
     }
@@ -69,7 +77,7 @@ public record PlayerDivinationSelectedPacket(UUID selectedPlayerUuid, PlayerSele
         ServerPlayer targetPlayer = player.serverLevel().getServer().getPlayerList()
                 .getPlayer(packet.selectedPlayerUuid);
 
-        if (targetPlayer == null || !(player.level().dimension() == targetPlayer.level().dimension())) {
+        if(targetPlayer == null){
             player.sendSystemMessage(Component.literal("§cPlayer not found"));
             return;
         }
@@ -79,6 +87,11 @@ public record PlayerDivinationSelectedPacket(UUID selectedPlayerUuid, PlayerSele
         String targetPath = BeyonderData.getPathway(targetPlayer);
 
         if(VisionaryHandler.shouldFailAndTrigger(playerSeq, player, targetPlayer, null)){
+            return;
+        }
+
+        if (!(player.level().dimension() == targetPlayer.level().dimension())) {
+            player.sendSystemMessage(Component.literal("§cPlayer not found"));
             return;
         }
 
@@ -94,13 +107,32 @@ public record PlayerDivinationSelectedPacket(UUID selectedPlayerUuid, PlayerSele
 
         int distance = (int) player.distanceTo(targetPlayer);
         if(distance <= DreamTraversalAbility.getRangeBySeq(BeyonderData.getSequence(player))){
+            var skill = (DreamTraversalAbility) LOTMCraft.abilityHandler.getById("dream_traversal_ability");
+
             DreamTraversalAbility.performTeleport(player, targetPlayer);
+            //skill.hideWithJump(player, targetPlayer);
         }
     }
 
     private static void performDivination(PlayerDivinationSelectedPacket packet, ServerPlayer player) {
         ServerPlayer targetPlayer = player.serverLevel().getServer().getPlayerList()
                 .getPlayer(packet.selectedPlayerUuid);
+
+        if (targetPlayer != null && CombatAuthorityAbility.blocksDivination(player, targetPlayer)) {
+            player.sendSystemMessage(Component.translatable("ability.lotmcraft.combat_authority.divination_blocked"));
+            return;
+        }
+
+        if (ConcealmentAuthorityAbility.undivinable(targetPlayer)) {
+            player.sendSystemMessage(Component.literal("§cDivination failed"));
+            return;
+        }
+
+        String mislead = ConcealmentAuthorityAbility.misleadPlayer(player, targetPlayer);
+        if (mislead != null) {
+            player.sendSystemMessage(Component.literal(mislead));
+            return;
+        }
 
         MetaAwarenessAbility.onDivined(player, targetPlayer);
 

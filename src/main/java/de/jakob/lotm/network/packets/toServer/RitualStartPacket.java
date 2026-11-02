@@ -55,7 +55,7 @@ public record RitualStartPacket(BlockPos pos, String field1, String field2, Stri
                 ItemStack sacrifice1 = be.itemHandler.getStackInSlot(RitualMenu.SACRIFICE_SLOT_1);
                 ItemStack sacrifice2 = be.itemHandler.getStackInSlot(RitualMenu.SACRIFICE_SLOT_2);
                 ItemStack sacrifice3 = be.itemHandler.getStackInSlot(RitualMenu.SACRIFICE_SLOT_3);
-                List<ItemStack> sacrifices = List.of(sacrifice1, sacrifice2, sacrifice3).stream().filter(stack -> !stack.isEmpty()).toList();
+                List<ItemStack> sacrifices = List.of(sacrifice1, sacrifice2, sacrifice3).stream().filter(stack -> !stack.isEmpty()).map(ItemStack::copy).toList();
 
                 List<String> honorificLines = List.of(payload.field1(), payload.field2(), payload.field3());
 
@@ -67,7 +67,7 @@ public record RitualStartPacket(BlockPos pos, String field1, String field2, Stri
 
                 RitualRecipe ritual = RitualManager.getRitualByRecipe(candle, sacrifices, BeyonderData.getSequence(serverPlayer), honorificLines);
 
-                RitualManager.performRitual(ritual, serverPlayer, payload.pos());
+                RitualManager.performRitual(ritual, serverPlayer, payload.pos(), sacrifices);
             }
         });
     }

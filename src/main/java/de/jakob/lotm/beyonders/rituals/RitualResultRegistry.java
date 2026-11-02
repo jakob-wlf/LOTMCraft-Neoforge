@@ -15,6 +15,7 @@ public final class RitualResultRegistry {
         register("area_effect", new RitualMagicAreaEffect());
         register("summon_entity", new RitualMagicSummonEntity());
         register("open_portal", new RitualMagicOpenPortal());
+        register("higher_sequence_recipe", new RitualHigherSequenceRecipe());
     }
 
     private RitualResultRegistry() {}
