@@ -77,6 +77,8 @@ public class ConcealmentAbility extends SelectableAbility {
 
         hasDynamicSpirituality = true;
         dynamicSpirituality = new LinkedList<>(List.of(18000f, 10000f, 6500f));
+
+        isHoldable(60,1);
     }
 
     @Override

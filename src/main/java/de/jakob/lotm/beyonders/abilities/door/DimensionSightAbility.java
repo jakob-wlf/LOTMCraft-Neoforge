@@ -259,7 +259,7 @@ public class DimensionSightAbility extends SelectableAbility {
         Ability deceit = LOTMCraft.abilityHandler.getById("deceit_ability");
         return deceit != null && deceit.hasAbility(target, true) && BeyonderData.getSequence(viewer) > BeyonderData.getSequence(target);
     }
-
+    //Used in teleportation authority
     public static boolean unwatchable(ServerPlayer viewer, LivingEntity target) {
         if (concealed(viewer, target)) return true;
         return "door".equals(BeyonderData.getPathway(target)) && BeyonderData.getSequence(target) < BeyonderData.getSequence(viewer);

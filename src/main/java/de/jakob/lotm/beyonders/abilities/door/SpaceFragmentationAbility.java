@@ -1,9 +1,10 @@
 package de.jakob.lotm.beyonders.abilities.door;
 
-import de.jakob.lotm.beyonders.abilities.core.Ability;
+import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.damage.ModDamageTypes;
 import de.jakob.lotm.entity.ModEntities;
-import de.jakob.lotm.entity.custom.ability_entities.door_pathway.PlanetEntity;
+import de.jakob.lotm.entity.custom.ability_entities.TimeChangeEntity;
+import de.jakob.lotm.entity.custom.ability_entities.door_pathway.BlinkAfterimageEntity;
 import de.jakob.lotm.network.PacketHandler;
 import de.jakob.lotm.network.packets.toClient.PlayPhotonBlockEffectPacket;
 import de.jakob.lotm.rendering.effectRendering.EffectIds;
@@ -13,6 +14,8 @@ import de.jakob.lotm.util.helper.AbilityUtil;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -22,7 +25,12 @@ import net.minecraft.world.phys.Vec3;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class SpaceFragmentationAbility extends Ability {
+public class SpaceFragmentationAbility extends SelectableAbility {
+
+    private static final int COPIES = 9;
+    private static final int SHATTER_RADIUS = 12;
+    private static final int SHATTER_TICKS = 20 * 10;
+
     public SpaceFragmentationAbility(String id) {
         super(id, 20);
 
@@ -33,12 +41,109 @@ public class SpaceFragmentationAbility extends Ability {
         dynamicCooldown = new LinkedList<>(List.of(5, 15));
 
         baseDamage = 6f;
+
+        isHoldable(40,0);
+        isHoldable(80,1);
     }
 
     @Override
-    public void onAbilityUse(Level level, LivingEntity entity) {
-        if(level.isClientSide) return;
+    public Map<String, Integer> getRequirements() {
+        return new HashMap<>(Map.of("door", 1));
+    }
 
+    @Override
+    protected float getSpiritualityCost() {
+        return 12000;
+    }
+
+    @Override
+    protected String[] getAllAbilityNames() {
+        return new String[]{
+                "ability.lotmcraft.space_fragmentation.shatter_space",
+                "ability.lotmcraft.space_fragmentation.starfall"
+        };
+    }
+
+    @Override
+    public String[] getSequenceDependantAbilityNames(int sequence) {
+        if (sequence <= 0) return getAllAbilityNames();
+        return new String[]{"ability.lotmcraft.space_fragmentation.shatter_space"};
+    }
+
+    @Override
+    protected void castSelectedAbility(Level level, LivingEntity entity, int selectedAbility) {
+        if (!(level instanceof ServerLevel serverLevel)) return;
+        if (selectedAbility == 0) shatterSpace(serverLevel, entity);
+        else                      starfall(serverLevel, entity);
+    }
+
+    private void shatterSpace(ServerLevel level, LivingEntity entity) {
+        Vec3 center = entity.position();
+        boolean griefing = BeyonderData.isGriefingEnabled(entity);
+
+        List<BlinkAfterimageEntity> copies = new ArrayList<>();
+        for (int i = 0; i < COPIES; i++) {
+            double angle = Math.PI * 2 * i / COPIES;
+            Vec3 pos = center.add(Math.cos(angle) * SHATTER_RADIUS, 0, Math.sin(angle) * SHATTER_RADIUS);
+            BlinkAfterimageEntity copy = new BlinkAfterimageEntity(level, pos, entity, SHATTER_TICKS);
+            float yaw = (float) Math.toDegrees(Math.atan2(center.z - pos.z, center.x - pos.x)) - 90f;
+            copy.setYRot(yaw);
+            copy.setYHeadRot(yaw);
+            copy.setYBodyRot(yaw);
+            level.addFreshEntity(copy);
+            copies.add(copy);
+        }
+
+        TimeChangeEntity timeStop = new TimeChangeEntity(ModEntities.TIME_CHANGE.get(), level, SHATTER_TICKS, entity.getUUID(), SHATTER_RADIUS, 0.001f);
+        timeStop.setPos(center);
+        level.addFreshEntity(timeStop);
+
+        UUID tear = EffectManager.playEffect(EffectIds.SPACE_TEAR, center.x, center.y + 1, center.z, level, entity);
+        level.playSound(null, BlockPos.containing(center), SoundEvents.WITHER_SPAWN, SoundSource.AMBIENT, 1.5f, 0.6f);
+
+        float damage = baseDamage * 2.5f;
+        BlockPos below = BlockPos.containing(entity.position().subtract(0, 1, 0));
+        AtomicInteger tick = new AtomicInteger();
+        UUID[] task = new UUID[1];
+        task[0] = ServerScheduler.scheduleForDuration(0, 1, SHATTER_TICKS, () -> {
+            int t = tick.incrementAndGet();
+
+            if (copies.stream().filter(LivingEntity::isAlive).count() < (COPIES + 1) / 2) {
+                copies.forEach(LivingEntity::discard);
+                timeStop.discard();
+                EffectManager.cancelEffect(tear, level);
+                ServerScheduler.cancel(task[0]);
+                return;
+            }
+
+            if (t % 10 == 0) {
+                AbilityUtil.damageNearbyEntities(level, entity, SHATTER_RADIUS, ModDamageTypes.SPACE_DESTRUCTION, damage, center, true, false);
+                level.playSound(null, BlockPos.containing(center), SoundEvents.WITHER_SHOOT, SoundSource.AMBIENT, 1.2f, 0.6f + random.nextFloat() * 0.4f);
+            }
+
+            AABB ring = new AABB(center, center).inflate(SHATTER_RADIUS + 10);
+            for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, ring)) {
+                if (living == entity || copies.contains(living) || !AbilityUtil.mayTarget(entity, living)) continue;
+                Vec3 toCenter = center.subtract(living.position());
+                double dist = toCenter.length();
+                if (dist <= SHATTER_RADIUS || dist > SHATTER_RADIUS + 10) continue;
+                living.setDeltaMovement(living.getDeltaMovement().add(toCenter.normalize().scale(0.12)));
+                living.hurtMarked = true;
+            }
+
+            if (griefing && t % 10 == 0) {
+                AbilityUtil.getBlocksInSphereRadius(level, center, SHATTER_RADIUS - 1, true, true, false).forEach(pos -> {
+                    if (random.nextInt(30) == 0
+                            && !pos.equals(below)
+                            && level.getBlockState(pos).getDestroySpeed(level, pos) >= 0) {
+                        level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
+                    }
+                });
+            }
+        }, () -> EffectManager.cancelEffect(tear, level), level);
+    }
+
+    private void starfall(ServerLevel level, LivingEntity entity) {
         Vec3 targetLoc =  AbilityUtil.getTargetLocation(entity, (int) (35*multiplier(entity)), 2);
 
         BlockPos blockPos = BlockPos.containing(targetLoc);
@@ -49,7 +154,7 @@ public class SpaceFragmentationAbility extends Ability {
 
         PacketHandler.sendToNearbyPlayers(
                 new PlayPhotonBlockEffectPacket("space_fragmentation", blockPos, offsetX, offsetY, offsetZ, 1, null, -1, false, true, null),
-                (ServerLevel) level, targetLoc, 128
+                level, targetLoc, 128
         );
 
         final int BLOW_TICK = 160;
@@ -65,7 +170,7 @@ public class SpaceFragmentationAbility extends Ability {
             float progress = Math.min(t / (float) BLOW_TICK, 1f);
 
             if (t == BLOW_TICK) {
-                AbilityUtil.damageNearbyEntities((ServerLevel) level, entity, 40,
+                AbilityUtil.damageNearbyEntities(level, entity, 40,
                         blowDamage, targetLoc, true, true);
 
                 if (BeyonderData.isGriefingEnabled(entity)) {
@@ -89,7 +194,7 @@ public class SpaceFragmentationAbility extends Ability {
 
             if (t % 20 == 0) {
                 double dmgRadius = 8 + progress * 22;
-                AbilityUtil.damageNearbyEntities((ServerLevel) level, entity, dmgRadius,
+                AbilityUtil.damageNearbyEntities(level, entity, dmgRadius,
                         tickDamage, targetLoc, true, true);
             }
 
@@ -125,16 +230,6 @@ public class SpaceFragmentationAbility extends Ability {
             }
 
             tick.getAndIncrement();
-        }, null, (ServerLevel) level);
-    }
-
-    @Override
-    public Map<String, Integer> getRequirements() {
-        return new HashMap<>(Map.of("door", 1));
-    }
-
-    @Override
-    protected float getSpiritualityCost() {
-        return 12000;
+        }, null, level);
     }
 }

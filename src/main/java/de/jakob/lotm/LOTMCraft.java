@@ -115,6 +115,7 @@ import de.jakob.lotm.gui.custom.artifact_wheel.ArtifactWheelScreen;
 import de.jakob.lotm.gui.custom.brewing_cauldron.BrewingCauldronScreen;
 import de.jakob.lotm.gui.custom.cohort.CohortScreen;
 import de.jakob.lotm.gui.custom.copied_ability_wheel.CopiedAbilityWheelScreen;
+import de.jakob.lotm.gui.custom.malice_seed.MaliceSeedScreen;
 import de.jakob.lotm.gui.custom.spirit_command.SpiritCommandScreen;
 import de.jakob.lotm.gui.custom.spirit_housing.SpiritManageScreen;
 import de.jakob.lotm.gui.custom.encyclopedia.IngredientEncyclopediaScreen;
@@ -459,6 +460,7 @@ public class LOTMCraft
             event.register(ModMenuTypes.CONTRACT.get(), ContractScreen::new);
             event.register(ModMenuTypes.CONFIRM_CONTRACT.get(), ConfirmScreen::new);
             event.register(ModMenuTypes.JUSTICE_PRINCIPLES.get(), JusticePrincipleScreen::new);
+            event.register(ModMenuTypes.MALICE_SEED_MENU.get(), MaliceSeedScreen::new);
         }
 
         @SubscribeEvent

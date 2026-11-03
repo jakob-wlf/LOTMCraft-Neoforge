@@ -8,6 +8,7 @@ import de.jakob.lotm.network.packets.toClient.SyncPlayerTeleportationOnlinePlaye
 import de.jakob.lotm.network.packets.toClient.SyncPlayerTeleportationPlayerNamesPacket;
 import de.jakob.lotm.rendering.effectRendering.EffectIds;
 import de.jakob.lotm.rendering.effectRendering.EffectManager;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -95,13 +96,17 @@ public class PlayerTeleportationAbility extends SelectableAbility {
         targetLevel.playSound(null, targetPlayer.getX(), targetPlayer.getY(), targetPlayer.getZ(), SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 1, 1);
         EffectManager.playEffect(EffectIds.WAYPOINT, targetPlayer.getX(), targetPlayer.getY() + 1, targetPlayer.getZ(), targetLevel);
     }
-
+    // Used in teleport authority
     public static boolean unreachable(ServerPlayer player) {
-        return player.level().dimension().location().equals(ModDimensions.SEFIRAH_CASTLE_TYPE_KEY.location())
-                //|| (player.level().dimension().location().equals(ModDimensions.SPACE_TYPE_KEY.location()))
-                || player.level().dimension().equals(ModDimensions.CONCEALMENT_WORLD_DIMENSION_KEY)
-                //|| (player.level().dimension().location().equals(ModDimensions.WORLD_CREATION_LEVEL_KEY.location()))
-                || player.level().dimension().equals(ModDimensions.DREAM_MAZE_DIMENSION_KEY);
+        return unreachable(player.level().dimension());
+    }
+
+    public static boolean unreachable(ResourceKey<Level> dimension) {
+        return dimension.location().equals(ModDimensions.SEFIRAH_CASTLE_TYPE_KEY.location())
+                //|| (dimension.location().equals(ModDimensions.SPACE_TYPE_KEY.location()))
+                || dimension.equals(ModDimensions.CONCEALMENT_WORLD_DIMENSION_KEY)
+                //|| (dimension.location().equals(ModDimensions.WORLD_CREATION_LEVEL_KEY.location()))
+                || dimension.equals(ModDimensions.DREAM_MAZE_DIMENSION_KEY);
     }
 
     @Override

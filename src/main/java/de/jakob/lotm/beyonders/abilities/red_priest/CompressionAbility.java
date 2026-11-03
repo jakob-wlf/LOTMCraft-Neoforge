@@ -20,7 +20,7 @@ import java.util.Map;
 
 public class CompressionAbility extends SelectableAbility {
 
-    public static int CHARGES = 0;
+    public static String CHARGES_TAG = "COMPRESSION_CHARGES";
     public static int[] LIMITS = new int[]{3,6,9,12};
     public static int MAX;
     public CompressionAbility(String id) {
@@ -32,8 +32,13 @@ public class CompressionAbility extends SelectableAbility {
 
     @Override
     public int getHoldTime(LivingEntity entity, int subIndex) {
-        int ticks = super.getHoldTime(entity, subIndex);
-        return ticks > 0 ? ticks + 20 * CHARGES : 0;
+        if(subIndex == 1) return 1;
+        return switch (BeyonderData.getSequence(entity)) {
+            case 0,1,2 -> 10;
+            case 3,4 -> 20;
+            case 5,6 -> 40;
+            default -> 50;
+        };
     }
 
     @Override
@@ -67,9 +72,9 @@ public class CompressionAbility extends SelectableAbility {
     @Override
     public void onHold(Level level, LivingEntity entity) {
         if(!(entity instanceof ServerPlayer player)) return;
-        if(BeyonderData.getSequence(entity) <= 2 && CHARGES<3) CHARGES=3;
-        else if(BeyonderData.getSequence(entity) <= 4 && CHARGES<2) CHARGES=2;
-        else if(BeyonderData.getSequence(entity) <= 6 && CHARGES<1) CHARGES=1;
+        int CHARGES =  getCharges(player);
+        if(BeyonderData.getSequence(entity) <= 2 && CHARGES<3) CHARGES=setCharges(entity, 3);
+        else if(BeyonderData.getSequence(entity) <= 6 && CHARGES<1) CHARGES=setCharges(entity, 1);
         player.displayClientMessage(Component.translatable("lotm.charges").append(": " + CHARGES).withStyle(ChatFormatting.DARK_RED), true);
     }
 
@@ -77,16 +82,15 @@ public class CompressionAbility extends SelectableAbility {
         if(level.isClientSide) return;
         int Seq = BeyonderData.getSequence(entity);
         MAX = (Seq <= 1) ? LIMITS[3] : (Seq <= 3) ? LIMITS[2] : (Seq <= 5) ? LIMITS[1] : LIMITS[0];
-//        entity.sendSystemMessage(Component.literal(Seq + " " + MAX + " " + CHARGES));
         Vec3 startPos = VectorUtil.getRelativePosition(entity.getEyePosition().add(entity.getLookAngle().normalize()), entity.getLookAngle().normalize(), 0, random.nextDouble(1, 2.85f), random.nextDouble(-.1, .6));
 
         level.playSound(null, startPos.x,startPos.y,startPos.z, SoundEvents.BLAZE_HURT, entity.getSoundSource(), 1.0f, 1.0f);
-
+        int CHARGES = getCharges(entity);
         if(CHARGES >= MAX) {
             entity.sendSystemMessage(Component.literal("You have the maximum amount of charges").withStyle(ChatFormatting.RED));
             return;
         }
-        CHARGES++;
+        CHARGES = setCharges(entity, CHARGES+1);
         if(CHARGES == 3) entity.sendSystemMessage(Component.literal("You have unlocked the giant fireball").withStyle(ChatFormatting.YELLOW));
         if(CHARGES == 6) entity.sendSystemMessage(Component.literal("Giant fireball have been enhanced").withStyle(ChatFormatting.GOLD));
         if(CHARGES == 9) entity.sendSystemMessage(Component.literal("Giant fireball is getting greater").withStyle(ChatFormatting.RED));
@@ -100,6 +104,8 @@ public class CompressionAbility extends SelectableAbility {
             return;
         int Seq = BeyonderData.getSequence(entity);
         MAX = (Seq < 1) ? LIMITS[3] : (Seq < 3) ? LIMITS[2] : (Seq < 5) ? LIMITS[1] : LIMITS[0];
+        int CHARGES =  getCharges(entity);
+        entity.sendSystemMessage(Component.literal(CHARGES + ""));
         if( CHARGES == 0 ) {
             entity.sendSystemMessage(Component.literal("You have no charges").withStyle(ChatFormatting.RED));
             return;
@@ -115,7 +121,7 @@ public class CompressionAbility extends SelectableAbility {
             fireball.setVariant(PriestFlameVariants.byId(BeyonderData.getSequence(entity)));
             fireball.shoot(direction.x, direction.y, direction.z, 1.85f*multiplier(entity), 0);
             level.addFreshEntity(fireball);
-            CHARGES--;
+            setCharges(entity, CHARGES-1);
         } else {
             int Scale = ArrayUtils.indexOf(LIMITS, CHARGES) + 1;
             FireballEntity fireball = new FireballEntity(level, entity, baseDamage * 1.25f, BeyonderData.isGriefingEnabled(entity), Scale*5.5f);
@@ -124,15 +130,21 @@ public class CompressionAbility extends SelectableAbility {
 
             fireball.shoot(direction.x, direction.y, direction.z, 2.35f * multiplier(entity), 0);
             level.addFreshEntity(fireball);
-//            if (CHARGES == MAX) {
-            CHARGES = 0;
-//            } else
-//            CHARGES-=3;
+            setCharges(entity, 0);
         }
 
         BeyonderData.reduceSpirituality(entity, 30);
 
     }
 
-
+    private static int getCharges(LivingEntity entity) {
+        if(!entity.getPersistentData().contains(CHARGES_TAG)) {
+            entity.getPersistentData().putInt(CHARGES_TAG, 0);
+        }
+        return entity.getPersistentData().getInt(CHARGES_TAG);
+    }
+    private static int setCharges(LivingEntity entity, int charges) {
+        entity.getPersistentData().putInt(CHARGES_TAG, charges);
+        return getCharges(entity);
+    }
 }

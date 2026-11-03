@@ -82,9 +82,16 @@ public class ClientHandler {
     private static float holdCharge;
     private static int holdNeeded;
 
+    private static long holdUpdated;
+
     public static void setHoldCharge(float charge, int needed) {
         holdCharge = charge;
         holdNeeded = needed;
+        holdUpdated = System.currentTimeMillis();
+    }
+
+    public static boolean remoteHold() {
+        return holdNeeded > 0 && System.currentTimeMillis() - holdUpdated < 250;
     }
 
     public static void syncDimensionSight(SyncDimensionSightPacket packet) {
