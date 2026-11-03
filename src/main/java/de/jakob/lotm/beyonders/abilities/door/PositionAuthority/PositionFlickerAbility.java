@@ -13,19 +13,24 @@ import de.jakob.lotm.util.helper.AbilityUtil;
 import de.jakob.lotm.util.helper.AllyUtil;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import de.jakob.lotm.util.shapeShifting.ShapeShiftingUtil;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.TicketType;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -78,10 +83,19 @@ public class PositionFlickerAbility extends PositionAuthorityAbility {
         NeoForge.EVENT_BUS.addListener(PositionFlickerAbility::onTrack);
         NeoForge.EVENT_BUS.addListener(PositionFlickerAbility::onAttacked);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, EntityJoinLevelEvent.class, PositionFlickerAbility::onJoin);
+        NeoForge.EVENT_BUS.addListener(PositionFlickerAbility::onLeave);
     }
 
     private static void onJoin(EntityJoinLevelEvent event) {
-        if (!event.getLevel().isClientSide() && ownerOf(event.getEntity()) != null) event.setCanceled(false);
+        if (event.getLevel().isClientSide() || ownerOf(event.getEntity()) == null) return;
+        event.setCanceled(false);
+        if (event.getLevel() instanceof ServerLevel level) holdChunk(level, event.getEntity());
+    }
+
+    private static void onLeave(EntityLeaveLevelEvent event) {
+        if (!event.getLevel().isClientSide() && ownerOf(event.getEntity()) != null && event.getLevel() instanceof ServerLevel level) {
+            releaseChunk(level, event.getEntity());
+        }
     }
 
     @Override
@@ -144,20 +158,47 @@ public class PositionFlickerAbility extends PositionAuthorityAbility {
         }
         clone.moveTo(pos.x, pos.y, pos.z, caster.getYRot(), caster.getXRot());
         clone.setPersistenceRequired();
-        ControllingUtils.copyAttributesAndHealthFrom(caster, clone);
+        ChunkPos chunk = new ChunkPos(BlockPos.containing(pos));
+        level.getChunk(chunk.x, chunk.z);
+        for (MobEffectInstance effect : caster.getActiveEffects()) clone.addEffect(new MobEffectInstance(effect));
         AllyUtil.makeAllies(caster, clone, false);
         for (BeyonderNPCEntity other : clones(caster)) AllyUtil.makeAllies(clone, other, false);
         if (!level.addFreshEntity(clone)) return;
+        float fraction = caster.getMaxHealth() <= 0 ? 1f : caster.getHealth() / caster.getMaxHealth();
         ServerScheduler.scheduleDelayed(2, () -> {
-            if (!clone.isAlive()) return;
-            ControllingUtils.copyAttributesAndHealthFrom(caster, clone);
-            clone.setHealth(clone.getMaxHealth());
+            if (clone.isAlive()) clone.setHealth(clone.getMaxHealth() * fraction);
         }, level);
 
         level.sendParticles(ParticleTypes.PORTAL, pos.x, pos.y + 1, pos.z, 60, 0.4, 0.9, 0.4, 0.2);
         level.playSound(null, pos.x, pos.y, pos.z, SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 1f, 0.6f);
         AbilityUtil.sendActionBar(caster, Component.translatable("ability.lotmcraft.position_flicker.summoned", level.dimension().location().toString(),
                 (int) pos.x, (int) pos.y, (int) pos.z).withColor(BeyonderData.pathwayInfos.get("door").color()));
+    }
+
+    private static final Map<String, Integer> heldChunks = new HashMap<>();
+    private static final Map<UUID, ChunkPos> tickets = new HashMap<>();
+
+    private static void holdChunk(ServerLevel level, Entity entity) {
+        if (tickets.containsKey(entity.getUUID())) return;
+        ChunkPos chunk = new ChunkPos(entity.blockPosition());
+        tickets.put(entity.getUUID(), chunk);
+        String key = level.dimension().location() + "|" + chunk.toLong();
+        int count = heldChunks.getOrDefault(key, 0);
+        if (count == 0) level.getChunkSource().addRegionTicket(TicketType.FORCED, chunk, 2, chunk);
+        heldChunks.put(key, count + 1);
+    }
+
+    private static void releaseChunk(ServerLevel level, Entity entity) {
+        ChunkPos chunk = tickets.remove(entity.getUUID());
+        if (chunk == null) return;
+        String key = level.dimension().location() + "|" + chunk.toLong();
+        int count = heldChunks.getOrDefault(key, 0) - 1;
+        if (count <= 0) {
+            heldChunks.remove(key);
+            level.getChunkSource().removeRegionTicket(TicketType.FORCED, chunk, 2, chunk);
+        } else {
+            heldChunks.put(key, count);
+        }
     }
 
     @Nullable
