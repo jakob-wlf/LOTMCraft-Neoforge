@@ -126,6 +126,9 @@ public class ModItems {
                     .stacksTo(1)
             )
     );
+    public static final DeferredItem<Item> CONCEALED_BUNDLE = ITEMS.register("concealed_bundle",
+            () -> new ConcealedBundleItem(new Item.Properties().stacksTo(1).fireResistant()));
+
     public static final Supplier<Item> SPIRIT_TOKEN = ITEMS.register("spirit_token",
             () -> new Item(new Item.Properties().stacksTo(1))
     );

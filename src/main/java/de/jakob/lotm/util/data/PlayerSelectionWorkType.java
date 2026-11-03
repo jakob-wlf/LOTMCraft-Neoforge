@@ -5,5 +5,8 @@ public enum PlayerSelectionWorkType {
     DREAM_TRAVERSAL,
     PROXY,
     SERVANT_MANAGE,
-    DIMENSION_SIGHT
+    DIMENSION_SIGHT,
+    FLICKER_REMOVE,
+    FLICKER_POSSESS,
+    FLICKER_ANCHOR
 }

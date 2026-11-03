@@ -224,6 +224,12 @@ public class PacketHandler {
         );
 
         registrar.playToClient(
+                FlickerClonePacket.TYPE,
+                FlickerClonePacket.STREAM_CODEC,
+                FlickerClonePacket::handle
+        );
+
+        registrar.playToClient(
                 SyncSanityPacket.TYPE,
                 SyncSanityPacket.STREAM_CODEC,
                 SyncSanityPacket::handle

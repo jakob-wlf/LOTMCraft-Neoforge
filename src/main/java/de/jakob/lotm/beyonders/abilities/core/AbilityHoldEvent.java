@@ -9,13 +9,18 @@ public class AbilityHoldEvent extends Event {
     private final Ability ability;
     private final int subIndex;
     private float speed = 1f;
+    private final int tick;
 
-    public AbilityHoldEvent(LivingEntity entity, Ability ability, int subIndex) {
+    public AbilityHoldEvent(LivingEntity entity, Ability ability, int subIndex, int next) {
         this.entity = entity;
         this.ability = ability;
         this.subIndex = subIndex;
+        this.tick = next;
     }
 
+    public int getTick() {
+        return tick;
+    }
     public LivingEntity getEntity() {
         return entity;
     }

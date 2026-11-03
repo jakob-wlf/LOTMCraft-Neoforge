@@ -68,6 +68,7 @@ public abstract class Ability {
     public boolean isHoldable = false;
     public int holdTime = 0;
     protected final HashMap<Integer, Integer> holdableSubAbilities = new HashMap<>();
+    protected final HashSet<Integer> hiddenHoldBars = new HashSet<>();
 
     // Utility
     protected final Random random = new Random();
@@ -239,6 +240,14 @@ public abstract class Ability {
     isHoldable(120, 1); - 120 ability 1
     isHoldable(40, 2, 3); - 40 ability 2 and 3
      */
+    protected void hideHoldBar(int... subAbilities) {
+        if (subAbilities.length == 0) {
+            hiddenHoldBars.add(-1);
+            return;
+        }
+        for (int subAbility : subAbilities) hiddenHoldBars.add(subAbility);
+    }
+
     protected void isHoldable(int ticks, int... subAbilities) {
         int time = Math.max(0, ticks);
         if (subAbilities.length == 0) {
@@ -251,6 +260,9 @@ public abstract class Ability {
             else holdableSubAbilities.remove(subAbility);
         }
     }
+    public boolean hasHold() {
+        return isHoldable || !holdableSubAbilities.isEmpty();
+    }
 
     public int getHoldTime(LivingEntity entity, int subIndex) {
         Integer ticks = holdableSubAbilities.get(subIndex);
@@ -258,8 +270,17 @@ public abstract class Ability {
         return isHoldable ? holdTime : 0;
     }
 
+    public boolean showsHoldBar(LivingEntity entity, int subIndex) {
+        if (holdableSubAbilities.containsKey(subIndex)) return !hiddenHoldBars.contains(subIndex);
+        return !hiddenHoldBars.contains(-1);
+    }
+
     // Event to play effects while on hold, idk put animations in there
     public void onHolding(ServerLevel level, LivingEntity entity, int subIndex, int ticks, int holdTime) {
+
+    }
+
+    public void onRelease(ServerLevel level, LivingEntity entity, int subIndex, int ticks, int holdTime) {
 
     }
 

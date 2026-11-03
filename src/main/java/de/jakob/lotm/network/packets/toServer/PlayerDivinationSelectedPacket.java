@@ -3,6 +3,7 @@ package de.jakob.lotm.network.packets.toServer;
 import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.beyonders.abilities.darkness.ConcealmentAuthorityAbility;
 import de.jakob.lotm.beyonders.abilities.door.DimensionSightAbility;
+import de.jakob.lotm.beyonders.abilities.door.PositionAuthority.PositionFlickerAbility;
 import de.jakob.lotm.beyonders.abilities.twilight_giant.CombatAuthorityAbility;
 import de.jakob.lotm.beyonders.abilities.twilight_giant.ProxyAbility;
 import de.jakob.lotm.beyonders.abilities.twilight_giant.ServantsAbility;
@@ -69,6 +70,9 @@ public record PlayerDivinationSelectedPacket(UUID selectedPlayerUuid, PlayerSele
                 case PROXY -> ProxyAbility.select(player, packet.selectedPlayerUuid);
                 case SERVANT_MANAGE -> ServantsAbility.dismiss(player, packet.selectedPlayerUuid);
                 case DIMENSION_SIGHT -> DimensionSightAbility.watchPlayer(player, packet.selectedPlayerUuid);
+                case FLICKER_REMOVE -> PositionFlickerAbility.remove(player, packet.selectedPlayerUuid);
+                case FLICKER_POSSESS -> PositionFlickerAbility.possess(player, packet.selectedPlayerUuid);
+                case FLICKER_ANCHOR -> PositionFlickerAbility.anchor(player, packet.selectedPlayerUuid);
             }
         });
     }

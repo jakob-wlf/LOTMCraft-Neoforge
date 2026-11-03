@@ -12,25 +12,29 @@ import java.util.List;
 
 public class MarionetteMenuProvider implements MenuProvider {
     private final List<LivingEntity> marionettes;
-    private final boolean servantMenu;
+    private final String title;
 
     public MarionetteMenuProvider(List<LivingEntity> marionettes) {
         this.marionettes = marionettes;
-        this.servantMenu = false;
+        this.title = "gui.lotm.marionette_control.title";
     }
 
     public static MarionetteMenuProvider servants() {
-        return new MarionetteMenuProvider(true);
+        return new MarionetteMenuProvider("gui.lotm.servants.title");
     }
 
-    private MarionetteMenuProvider(boolean servantMenu) {
+    public static MarionetteMenuProvider flickers() {
+        return new MarionetteMenuProvider("gui.lotm.flickers.title");
+    }
+
+    private MarionetteMenuProvider(String title) {
         this.marionettes = List.of();
-        this.servantMenu = servantMenu;
+        this.title = title;
     }
 
     @Override
     public @NotNull Component getDisplayName() {
-        return Component.translatable(servantMenu ? "gui.lotm.servants.title" : "gui.lotm.marionette_control.title");
+        return Component.translatable(title);
     }
 
     @Override

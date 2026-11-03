@@ -11,8 +11,6 @@ import java.util.List;
 
 public class CopiedAbilityComponent implements INBTSerializable<CompoundTag> {
 
-    public static final int MAX_ABILITIES = 36;
-
     public record CopiedAbilityData(String abilityId, String copyType, int remainingUses, String originalOwnerUUID) {
 
         public CompoundTag toTag() {
@@ -40,9 +38,6 @@ public class CopiedAbilityComponent implements INBTSerializable<CompoundTag> {
     private final ArrayList<CopiedAbilityData> abilities = new ArrayList<>();
 
     public void addAbility(CopiedAbilityData data) {
-        if (abilities.size() >= MAX_ABILITIES) {
-            abilities.remove(0);
-        }
         abilities.add(data);
     }
 

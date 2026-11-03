@@ -52,7 +52,14 @@ public class KeyInputHandler {
 
     public static float holdProgress(float partialTick) {
         if ((holdKey == null && !ClientHandler.remoteHold()) || needed() <= 0) return -1;
+        if (holdKey != null && !showsHoldBar(Minecraft.getInstance().player, holdAbility)) return -1;
         return Math.min(1f, ClientHandler.holdCharge() / needed());
+    }
+
+    private static boolean showsHoldBar(Player player, String abilityId) {
+        if (player == null || abilityId == null) return true;
+        Ability ability = LOTMCraft.abilityHandler.getById(abilityId.split(":")[0]);
+        return ability == null || ability.showsHoldBar(player, getIndex(abilityId));
     }
 
     public static int holdTicksLeft() {
@@ -85,9 +92,11 @@ public class KeyInputHandler {
         }
         if (holdKey.isDown()) {
             while (holdKey.consumeClick()) {}
-            if (holdAbility != null) PacketHandler.sendToServer(new HoldAbilityPacket(holdAbility, holdStart));
+            if (holdAbility != null) PacketHandler.sendToServer(new HoldAbilityPacket(holdAbility, 1, holdStart));
             holdStart = false;
             return;
+        } else {
+            if (holdAbility != null) PacketHandler.sendToServer(new HoldAbilityPacket(holdAbility, 0, holdStart));
         }
         Runnable cast = holdCast;
         boolean ready = ClientHandler.holdCharge() >= needed();
@@ -263,7 +272,7 @@ public class KeyInputHandler {
                     if (sharedAbility instanceof SelectableAbility selectableShared) {
                         selectableShared.nextAbility(player);
                         player.displayClientMessage(
-                            Component.translatable(selectableShared.getSelectedAbility(player)).withStyle(ChatFormatting.AQUA), true);
+                                Component.translatable(selectableShared.getSelectedAbility(player)).withStyle(ChatFormatting.AQUA), true);
                     }
                 }
             }
@@ -280,7 +289,7 @@ public class KeyInputHandler {
                     if (sharedAbility instanceof SelectableAbility selectableShared) {
                         selectableShared.previousAbility(player);
                         player.displayClientMessage(
-                            Component.translatable(selectableShared.getSelectedAbility(player)).withStyle(ChatFormatting.AQUA), true);
+                                Component.translatable(selectableShared.getSelectedAbility(player)).withStyle(ChatFormatting.AQUA), true);
                     }
                 }
             }

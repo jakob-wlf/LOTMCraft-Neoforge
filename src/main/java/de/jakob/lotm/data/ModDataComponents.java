@@ -3,6 +3,7 @@ package de.jakob.lotm.data;
 import com.mojang.serialization.Codec;
 import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.beyonders.artifacts.SealedArtifactData;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -11,6 +12,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 public class ModDataComponents {
@@ -99,6 +101,34 @@ public class ModDataComponents {
             DATA_COMPONENT_TYPES.register("sealed_artifact_generated_failed",
                     () -> DataComponentType.<Boolean>builder()
                             .persistent(Codec.BOOL)
+                            .build());
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<UUID>> CONCEALED_BUNDLE_OWNER =
+            DATA_COMPONENT_TYPES.register("concealed_bundle_owner",
+                    () -> DataComponentType.<UUID>builder()
+                            .persistent(UUIDUtil.CODEC)
+                            .networkSynchronized(UUIDUtil.STREAM_CODEC)
+                            .build());
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> CONCEALED_BUNDLE_SIZE =
+            DATA_COMPONENT_TYPES.register("concealed_bundle_size",
+                    () -> DataComponentType.<Integer>builder()
+                            .persistent(Codec.INT)
+                            .networkSynchronized(ByteBufCodecs.VAR_INT)
+                            .build());
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> CONCEALED_BUNDLE_OPENS =
+            DATA_COMPONENT_TYPES.register("concealed_bundle_opens",
+                    () -> DataComponentType.<Integer>builder()
+                            .persistent(Codec.INT)
+                            .networkSynchronized(ByteBufCodecs.VAR_INT)
+                            .build());
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> CONCEALED_BUNDLE_ID =
+            DATA_COMPONENT_TYPES.register("concealed_bundle_id",
+                    () -> DataComponentType.<Integer>builder()
+                            .persistent(Codec.INT)
+                            .networkSynchronized(ByteBufCodecs.VAR_INT)
                             .build());
 
     // Data component for storing the center position of excavation

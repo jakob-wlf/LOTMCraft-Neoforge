@@ -33,6 +33,7 @@ import de.jakob.lotm.beyonders.abilities.demoness.passives.PhysicalEnhancementsD
 import de.jakob.lotm.beyonders.abilities.door.passives.PhysicalEnhancementsDoorAbility;
 import de.jakob.lotm.beyonders.abilities.door.passives.SpiritWorldAwarenessAbility;
 import de.jakob.lotm.beyonders.abilities.door.passives.VoidImmunityAbility;
+import de.jakob.lotm.beyonders.abilities.door.passives.SealingAuthorityPassiveAbility;
 import de.jakob.lotm.beyonders.abilities.error.passives.*;
 import de.jakob.lotm.beyonders.abilities.fool.passives.*;
 import de.jakob.lotm.beyonders.abilities.justiciar.passives.ChaosHuntingAbility;
@@ -121,6 +122,7 @@ public class PassiveAbilityHandler {
         // Door
         passiveAbilities.add(new SpiritWorldAwarenessAbility("spirit_world_awareness_ability"));
         passiveAbilities.add(new VoidImmunityAbility("void_immunity_ability"));
+        passiveAbilities.add(new SealingAuthorityPassiveAbility("sealing_authority_passive_ability"));
 
         // Wheel of fortune
         passiveAbilities.add(new PassiveLuckAbility("passive_luck_ability"));

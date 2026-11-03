@@ -30,7 +30,7 @@ import java.util.*;
 public abstract class PositionAuthorityAbility extends Ability {
 
     private static final String PREFIX = "position:";
-    private record Order(ServerPlayer target, @Nullable ServerLevel level, @Nullable Vec3 pos) {}
+    private record Order(ServerPlayer target, @Nullable ServerLevel level, @Nullable Vec3 pos, boolean hostile) {}
 
     private static final HashMap<UUID, Order> pending = new HashMap<>();
     private static final HashSet<UUID> charging = new HashSet<>();
@@ -57,6 +57,22 @@ public abstract class PositionAuthorityAbility extends Ability {
     protected void applyAt(ServerPlayer caster, ServerPlayer target, ServerLevel level, Vec3 pos, int seq) {
     }
 
+    protected boolean acceptsHostile() {
+        return false;
+    }
+
+    protected void apply(ServerPlayer caster, ServerPlayer target, int seq, boolean hostile) {
+        apply(caster, target, seq);
+    }
+
+    protected void applyAt(ServerPlayer caster, ServerPlayer target, ServerLevel level, Vec3 pos, int seq, boolean hostile) {
+        applyAt(caster, target, level, pos, seq);
+    }
+
+    protected static boolean ordered(LivingEntity entity) {
+        return pending.containsKey(entity.getUUID());
+    }
+
     @Override
     public Map<String, Integer> getRequirements() {
         return new HashMap<>(Map.of("door", 2));
@@ -73,8 +89,8 @@ public abstract class PositionAuthorityAbility extends Ability {
         Order order = pending.remove(caster.getUUID());
         if (order == null || !order.target().isAlive()) return;
         int seq = AbilityUtil.getSeqWithArt(caster, this);
-        if (order.level() != null) applyAt(caster, order.target(), order.level(), order.pos(), seq);
-        else                       apply(caster, order.target(), seq);
+        if (order.level() != null) applyAt(caster, order.target(), order.level(), order.pos(), seq, order.hostile());
+        else                       apply(caster, order.target(), seq, order.hostile());
     }
 
     @SubscribeEvent
@@ -102,6 +118,14 @@ public abstract class PositionAuthorityAbility extends Ability {
 
         int color = BeyonderData.pathwayInfos.get("door").color();
         String[] args = rest.substring(chosen.command().length()).trim().split("\\s+");
+        boolean hostile = false;
+        if (chosen.acceptsHostile() && args.length > 1) {
+            String last = args[args.length - 1];
+            if (last.equalsIgnoreCase("hostile") || last.equals("-")) {
+                hostile = last.equalsIgnoreCase("hostile");
+                args = Arrays.copyOf(args, args.length - 1);
+            }
+        }
 
         boolean destination = chosen.acceptsDestination() && (args.length == 4 || args.length == 5);
         String name = destination && args.length == 4 ? caster.getGameProfile().getName() : args[0];
@@ -139,7 +163,7 @@ public abstract class PositionAuthorityAbility extends Ability {
         }
 
         PositionAuthorityAbility ability = chosen;
-        Order order = new Order(target, level, pos);
+        Order order = new Order(target, level, pos, hostile);
         caster.server.execute(() -> ability.charge(caster, order));
     }
 

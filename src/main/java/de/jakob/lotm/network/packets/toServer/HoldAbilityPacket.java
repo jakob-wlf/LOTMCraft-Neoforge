@@ -20,7 +20,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import java.util.HashMap;
 import java.util.UUID;
 
-public record HoldAbilityPacket(String abilityId, boolean start) implements CustomPacketPayload {
+public record HoldAbilityPacket(String abilityId, int state, boolean start) implements CustomPacketPayload {
     private static final HashMap<UUID, Float> charge = new HashMap<>();
 
     public static final Type<HoldAbilityPacket> TYPE =
@@ -29,6 +29,8 @@ public record HoldAbilityPacket(String abilityId, boolean start) implements Cust
     public static final StreamCodec<FriendlyByteBuf, HoldAbilityPacket> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.STRING_UTF8,
             HoldAbilityPacket::abilityId,
+            ByteBufCodecs.INT,
+            HoldAbilityPacket::state,
             ByteBufCodecs.BOOL,
             HoldAbilityPacket::start,
             HoldAbilityPacket::new
@@ -56,7 +58,7 @@ public record HoldAbilityPacket(String abilityId, boolean start) implements Cust
             }
             if (subIndex < 0 && ability instanceof SelectableAbility selectable) subIndex = selectable.getSelectedAbilityIndex(player.getUUID());
             int needed = ability.getHoldTime(player, subIndex);
-            if (needed <= 0) return;
+            if (needed < 0) return;
 
             UUID id = player.getUUID();
 
@@ -66,14 +68,17 @@ public record HoldAbilityPacket(String abilityId, boolean start) implements Cust
                 PacketHandler.sendToPlayer(player, new HoldCastProgressPacket(charge.getOrDefault(id, 0f), needed));
                 return;
             }
-
-            AbilityHoldEvent event = new AbilityHoldEvent(player, ability, subIndex);
+            AbilityHoldEvent event = new AbilityHoldEvent(player, ability, subIndex, (int) Math.min(needed, charge.getOrDefault(id, 0f)));
             NeoForge.EVENT_BUS.post(event);
             float next = Math.min(needed, charge.getOrDefault(id, 0f) + event.getSpeed());
             charge.put(id, next);
+            if(packet.state() > 0) {
+                ability.onHolding(player.serverLevel(), player, subIndex, (int) next, needed);
+                PacketHandler.sendToPlayer(player, new HoldCastProgressPacket(next, needed));
+            } else {
+                ability.onRelease(player.serverLevel(), player, subIndex, (int) next, needed);
+            }
 
-            ability.onHolding(player.serverLevel(), player, subIndex, (int) next, needed);
-            PacketHandler.sendToPlayer(player, new HoldCastProgressPacket(next, needed));
         });
     }
 }
