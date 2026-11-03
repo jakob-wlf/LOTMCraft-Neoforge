@@ -669,6 +669,16 @@ public class PacketHandler {
                 PlayPhotonEntityEffectPacket.STREAM_CODEC,
                 PlayPhotonEntityEffectPacket::handle
         );
+        registrar.playToClient(
+                SyncMaliceSeedsToClient.TYPE,
+                SyncMaliceSeedsToClient.STREAM_CODEC,
+                SyncMaliceSeedsToClient::handle
+        );
+        registrar.playToClient(
+                DevilWorshipNetwork.OpenSummonScreen.TYPE,
+                DevilWorshipNetwork.OpenSummonScreen.STREAM_CODEC,
+                DevilWorshipNetwork.OpenSummonScreen::handle
+        );
     }
 
     private static void registerServerPackets(PayloadRegistrar registrar) {
@@ -1130,6 +1140,16 @@ public class PacketHandler {
                 MassPuppeteeringSelectedEntitiesPacket.TYPE,
                 MassPuppeteeringSelectedEntitiesPacket.STREAM_CODEC,
                 MassPuppeteeringSelectedEntitiesPacket::handle
+        );
+        registrar.playToServer(
+                RequestMaliceSeedSyncPacket.TYPE,
+                RequestMaliceSeedSyncPacket.STREAM_CODEC,
+                RequestMaliceSeedSyncPacket::handle
+        );
+        registrar.playToServer(
+                DevilWorshipNetwork.ChooseMission.TYPE,
+                DevilWorshipNetwork.ChooseMission.STREAM_CODEC,
+                DevilWorshipNetwork.ChooseMission::handle
         );
     }
 
