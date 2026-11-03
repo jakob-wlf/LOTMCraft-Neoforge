@@ -6,7 +6,6 @@ import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.damage.ModDamageTypes;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.helper.AbilityUtil;
-import de.jakob.lotm.util.helper.DamageLookup;
 import de.jakob.lotm.util.helper.ParticleUtil;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.ChatFormatting;
@@ -48,6 +47,14 @@ public class JusticeLanguageAbility extends SelectableAbility {
         interactionRadius = 20;
         hasOptimalDistance = false;
         postsUsedAbilityEventManually = true;
+
+        hasDynamicCooldown = true;
+        dynamicCooldown = new LinkedList<>(List.of(2, 2, 2, 2, 3, 3, 4));
+
+        hasDynamicSpirituality = true;
+        dynamicSpirituality = new LinkedList<>(List.of(1400f, 820f, 580f, 410f, 360f, 250f, 200f));
+
+        baseDamage = 18.5f;
     }
 
     @Override
@@ -134,7 +141,7 @@ public class JusticeLanguageAbility extends SelectableAbility {
             Vec3 startPos = caster.getEyePosition().subtract(0, .2, 0).add(caster.getLookAngle().normalize());
             serverLevel.playSound(null, startPos.x, startPos.y, startPos.z, SoundEvents.BLAZE_SHOOT, caster.getSoundSource(), 2.0f, .5f);
             target.hurt(ModDamageTypes.source(serverLevel, ModDamageTypes.BEYONDER_GENERIC, caster),
-                    (float) DamageLookup.lookupDamage(5, 1.2) * multiplier(caster));
+                    baseDamage);
             target.hurtMarked = true;
             String targetName = target.getDisplayName().getString();
             spawnWordBeam(serverLevel, caster, target, DUST_DARK);
@@ -151,6 +158,7 @@ public class JusticeLanguageAbility extends SelectableAbility {
                         .withStyle(ChatFormatting.DARK_RED));
             }
         }else {
+            float damage = baseDamage * .8f;
             AtomicBoolean done = new AtomicBoolean(false);
             AtomicInteger ticks = new AtomicInteger(0);
 
@@ -175,7 +183,7 @@ public class JusticeLanguageAbility extends SelectableAbility {
 
                 if (dist <= 1.8) {
                     done.set(true);
-                    spawnDeathImpact(serverLevel, caster, target, dir);
+                    spawnDeathImpact(serverLevel, caster, target, dir, damage);
                     return;
                 }
 
@@ -188,9 +196,9 @@ public class JusticeLanguageAbility extends SelectableAbility {
         NeoForge.EVENT_BUS.post(new AbilityUsedEvent(serverLevel, caster.position(), caster, this, interactionFlags, 20, 20 * 2));
     }
 
-    private void spawnDeathImpact(ServerLevel serverLevel, LivingEntity caster, LivingEntity target, Vec3 dir) {
+    private void spawnDeathImpact(ServerLevel serverLevel, LivingEntity caster, LivingEntity target, Vec3 dir, float damage) {
         target.hurt(ModDamageTypes.source(serverLevel, ModDamageTypes.BEYONDER_GENERIC, caster),
-                (float) DamageLookup.lookupDamage(6, 0.9) * multiplier(caster));
+                damage);
         target.setDeltaMovement(dir.x * 2.2, 0.45, dir.z * 2.2);
         target.hurtMarked = true;
 

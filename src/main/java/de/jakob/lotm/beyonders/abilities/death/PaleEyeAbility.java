@@ -5,7 +5,6 @@ import de.jakob.lotm.beyonders.abilities.visionary.handlers.VisionaryHandler;
 import de.jakob.lotm.damage.ModDamageTypes;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.helper.AbilityUtil;
-import de.jakob.lotm.util.helper.DamageLookup;
 import de.jakob.lotm.util.helper.ParticleUtil;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -32,6 +31,8 @@ public class PaleEyeAbility extends ToggleAbility {
         canBeShared = false;
         canBeReplicated = false;
         cannotBeStolen = true;
+
+        baseDamage = 3.7f;
     }
 
     @Override
@@ -75,7 +76,7 @@ public class PaleEyeAbility extends ToggleAbility {
         targetEntity.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 20 * 3, 1, false, false, false));
         targetEntity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20 * 3, 2, false, false, false));
 
-        targetEntity.hurt(ModDamageTypes.source(level, ModDamageTypes.BEYONDER_GENERIC, entity), (float) (DamageLookup.lookupDps(3, .9, 5, 35) * multiplier(entity)));
+        targetEntity.hurt(ModDamageTypes.source(level, ModDamageTypes.BEYONDER_GENERIC, entity), baseDamage * multiplier(entity));
     }
 
     @Override

@@ -5,7 +5,6 @@ import de.jakob.lotm.entity.custom.projectiles.FireballEntity;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.data.PriestFlameVariants;
 import de.jakob.lotm.util.helper.AbilityUtil;
-import de.jakob.lotm.util.helper.DamageLookup;
 import de.jakob.lotm.util.helper.VectorUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -28,6 +27,8 @@ public class CompressionAbility extends SelectableAbility {
         super(id, 1.0f, "burning");
         isHoldable(40, 0);
         hideHoldBar(0);
+
+        baseDamage = 12f;
     }
 
     @Override
@@ -131,7 +132,7 @@ public class CompressionAbility extends SelectableAbility {
         level.playSound(null, startPos.x, startPos.y, startPos.z, SoundEvents.BLAZE_SHOOT, entity.getSoundSource(), 1.0f, 1.0f);
 
         if(!ArrayUtils.contains(LIMITS, CHARGES)) {
-            FireballEntity fireball = new FireballEntity(level, entity, DamageLookup.lookupDamage(7, 0.8) * multiplier(entity), BeyonderData.isGriefingEnabled(entity));
+            FireballEntity fireball = new FireballEntity(level, entity, baseDamage, BeyonderData.isGriefingEnabled(entity));
             fireball.setPos(startPos.x, startPos.y, startPos.z); // Set initial position
             fireball.setVariant(PriestFlameVariants.byId(BeyonderData.getSequence(entity)));
             fireball.shoot(direction.x, direction.y, direction.z, 1.85f*multiplier(entity), 0);
@@ -139,7 +140,7 @@ public class CompressionAbility extends SelectableAbility {
             setCharges(entity, CHARGES-1);
         } else {
             int Scale = ArrayUtils.indexOf(LIMITS, CHARGES) + 1;
-            FireballEntity fireball = new FireballEntity(level, entity, DamageLookup.lookupDamage(7, Scale*3.2) * multiplier(entity), BeyonderData.isGriefingEnabled(entity), Scale*5.5f);
+            FireballEntity fireball = new FireballEntity(level, entity, baseDamage * 1.25f, BeyonderData.isGriefingEnabled(entity), Scale*5.5f);
             fireball.setPos(startPos.x, startPos.y, startPos.z); // Set initial position
             fireball.setVariant(PriestFlameVariants.byId(BeyonderData.getSequence(entity)));
 

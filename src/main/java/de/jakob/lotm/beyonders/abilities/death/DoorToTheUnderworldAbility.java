@@ -6,7 +6,6 @@ import de.jakob.lotm.entity.custom.ability_entities.death_pathway.UnderworldGate
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.helper.AbilityUtil;
-import de.jakob.lotm.util.helper.DamageLookup;
 import de.jakob.lotm.util.helper.VectorUtil;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -16,6 +15,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 public class DoorToTheUnderworldAbility extends SelectableAbility {
@@ -34,6 +35,14 @@ public class DoorToTheUnderworldAbility extends SelectableAbility {
 
     public DoorToTheUnderworldAbility(String id) {
         super(id, 10f, "death");
+
+        hasDynamicCooldown = true;
+        dynamicCooldown = new LinkedList<>(List.of(4, 5, 6, 7, 8, 10));
+
+        hasDynamicSpirituality = true;
+        dynamicSpirituality = new LinkedList<>(List.of(3350f, 1950f, 1400f, 970f, 860f, 600f));
+
+        baseDamage = 16f;
     }
 
     @Override
@@ -106,7 +115,8 @@ public class DoorToTheUnderworldAbility extends SelectableAbility {
         }
 
         UnderworldGateEntity gate = UnderworldGateEntity.open(level, caster, UnderworldGateEntity.Mode.TENTACLES, center, lookAt.position());
-        gate.setDamageFunction(owner -> DamageLookup.lookupDamage(5, .85) * multiplier(owner));
+        // evaluated on gate ticks, after useAbility restored baseDamage to its unscaled value
+        gate.setDamageFunction(owner -> baseDamage * multiplier(owner));
     }
 
     private void openUnderworldGate(ServerLevel level, LivingEntity caster) {

@@ -11,7 +11,6 @@ import de.jakob.lotm.effect.ModEffects;
 import de.jakob.lotm.particle.ModParticles;
 import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.helper.AbilityUtil;
-import de.jakob.lotm.util.helper.DamageLookup;
 import de.jakob.lotm.util.helper.ParticleUtil;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.BlockPos;
@@ -34,6 +33,8 @@ import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import org.joml.Vector3f;
 
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -62,6 +63,14 @@ public class BloodlineCorroderAbility extends SelectableAbility {
     public BloodlineCorroderAbility(String id) {
         super(id, 5f);
         canBeUsedByNPC = false;
+
+        hasDynamicCooldown = true;
+        dynamicCooldown = new LinkedList<>(List.of(2, 2, 3, 3, 4, 4, 5));
+
+        hasDynamicSpirituality = true;
+        dynamicSpirituality = new LinkedList<>(List.of(570f, 330f, 230f, 160f, 140f, 100f, 80f));
+
+        baseDamage = 14.5f;
     }
     @Override
     public Map<String, Integer> getRequirements() {
@@ -101,7 +110,7 @@ public class BloodlineCorroderAbility extends SelectableAbility {
         ParticleUtil.drawParticleLine(level, corrodingDust, startPos, look, 2, .5, 23, .4);
         // Purification neutralizes the wither and corroded effects
         boolean purified = InteractionHandler.isInteractionPossible(new Location(startPos, level), "purification", seq);
-        AbilityUtil.damageNearbyEntities(level, entity, 2.75 * multiplier(entity), DamageLookup.lookupDamage(6, .9) * multiplier(entity), startPos, true, false, true, 0, 20 * 3, ModDamageTypes.source(level, ModDamageTypes.CORROSION, entity));
+        AbilityUtil.damageNearbyEntities(level, entity, 2.75 * multiplier(entity), baseDamage, startPos, true, false, true, 0, 20 * 3, ModDamageTypes.source(level, ModDamageTypes.CORROSION, entity));
         // Everything hit gets the Corroded debuff
         if (!purified) {
             AbilityUtil.getNearbyEntities(entity, level, startPos, 2.75 * multiplier(entity)).forEach(hit -> {
@@ -121,6 +130,7 @@ public class BloodlineCorroderAbility extends SelectableAbility {
     //Dissolving Mist
     private void castDissolvingMist(ServerLevel level, LivingEntity entity) {
         level.playSound(null, entity.blockPosition(), SoundEvents.BREWING_STAND_BREW, SoundSource.PLAYERS, 1.5f, 0.6f);
+        float damage = baseDamage / 10 * getPoisonDamageMultiplier(entity);
         ServerScheduler.scheduleForDuration(0, 20, (int) (MIST_DURATION_TICKS * multiplier(entity)), () -> {
             if (entity.level().isClientSide) return;
             Location currentLoc = new Location(entity.position(), entity.level());
@@ -140,7 +150,8 @@ public class BloodlineCorroderAbility extends SelectableAbility {
                 dissolvedUntil.put(target.getUUID(), gameTime + MIST_LINGER_TICKS);
                 applyCorroded(target, MIST_CORRODED_TICKS);
             });
-            AbilityUtil.damageNearbyEntities(serverLevel, entity, MIST_RADIUS, (float) DamageLookup.lookupDps(6, .2, 35, 20)*getPoisonDamageMultiplier(entity), entity.position(), true, false, true, 0, ModDamageTypes.source(serverLevel, ModDamageTypes.CORROSION, entity));}, () -> clearArtifactScaling(entity), level, () -> AbilityUtil.getTimeInArea(entity, new Location(entity.position(), level)));
+            AbilityUtil.damageNearbyEntities(serverLevel, entity, MIST_RADIUS, damage, entity.position(), true, false, true, 0, ModDamageTypes.source(serverLevel, ModDamageTypes.CORROSION, entity));
+        }, () -> clearArtifactScaling(entity), level, () -> AbilityUtil.getTimeInArea(entity, new Location(entity.position(), level)));
     }
     private static void applyCorroded(LivingEntity target, int ticks) {target.addEffect(new MobEffectInstance(ModEffects.CORRODED, ticks, CORRODED_AMPLIFIER, false, true));}
     @SubscribeEvent

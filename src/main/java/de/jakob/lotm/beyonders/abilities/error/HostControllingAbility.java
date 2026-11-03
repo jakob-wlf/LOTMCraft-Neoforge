@@ -3,7 +3,6 @@ package de.jakob.lotm.beyonders.abilities.error;
 import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.util.helper.AbilityUtil;
 import de.jakob.lotm.util.helper.AllyUtil;
-import de.jakob.lotm.util.helper.DamageLookup;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
@@ -21,6 +20,8 @@ public class HostControllingAbility extends SelectableAbility {
         canAlwaysBeUsed = true;
         canBeShared = false;
         cannotBeStolen = true;
+
+        baseDamage = 21.5f;
     }
 
     @Override
@@ -56,7 +57,7 @@ public class HostControllingAbility extends SelectableAbility {
 
         switch (abilityIndex) {
             case 0 -> {
-                float healthToDrain = (float) (DamageLookup.lookupDamage(4, .75f) * multiplier(entity));
+                float healthToDrain = baseDamage;
 
                 host.hurt(entity.damageSources().magic(), healthToDrain);
                 entity.heal(healthToDrain);

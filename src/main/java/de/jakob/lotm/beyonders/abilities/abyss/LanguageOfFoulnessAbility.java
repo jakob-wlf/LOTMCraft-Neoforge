@@ -10,7 +10,6 @@ import de.jakob.lotm.effect.ModEffects;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.helper.AbilityUtil;
-import de.jakob.lotm.util.helper.DamageLookup;
 import de.jakob.lotm.util.helper.ParticleUtil;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.particles.DustParticleOptions;
@@ -32,6 +31,7 @@ import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -76,6 +76,14 @@ public class LanguageOfFoulnessAbility extends SelectableAbility {
     private final DustParticleOptions dust = new DustParticleOptions(new Vector3f(114 / 255f, 59 / 255f, 148 / 255f), 1.5f);
     public LanguageOfFoulnessAbility(String id) {
         super(id, 6); // 3 = cooldown in seconds
+
+        hasDynamicCooldown = true;
+        dynamicCooldown = new LinkedList<>(List.of(2, 3, 3, 4, 4, 5, 6));
+
+        hasDynamicSpirituality = true;
+        dynamicSpirituality = new LinkedList<>(List.of(710f, 410f, 290f, 200f, 180f, 130f, 100f));
+
+        baseDamage = 14f;
     }
     @Override
     public Map<String, Integer> getRequirements() {
@@ -162,8 +170,9 @@ public class LanguageOfFoulnessAbility extends SelectableAbility {
     private void castDeath(ServerLevel serverLevel, LivingEntity entity, LivingEntity target) {
         int entitySeq = AbilityUtil.getSeqWithArt(entity, this);
         if (AbilityUtil.isTargetSignificantlyStronger(entitySeq, BeyonderData.getSequence(target))) return;
+        float damage = baseDamage * foulness(entity);
         ServerScheduler.scheduleForDuration(0, 1, 20 * 2, () -> {
-            if (random.nextInt(8) == 0) {target.hurt(ModDamageTypes.source(serverLevel, ModDamageTypes.FILTH, entity), (float) (DamageLookup.lookupDps(6, .8, 8, 8) * multiplier(entity) * foulness(entity)));}
+            if (random.nextInt(8) == 0) {target.hurt(ModDamageTypes.source(serverLevel, ModDamageTypes.FILTH, entity), damage);}
             target.addEffect(new MobEffectInstance(MobEffects.WITHER, 8 * 20 * foulness(entity), 3 * foulness(entity), false, false, false));
         }, null, serverLevel, () -> AbilityUtil.getTimeInArea(entity, new Location(entity.position(), serverLevel)));
     }

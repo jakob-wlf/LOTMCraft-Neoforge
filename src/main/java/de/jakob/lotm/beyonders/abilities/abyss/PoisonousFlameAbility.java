@@ -6,7 +6,6 @@ import de.jakob.lotm.beyonders.abilities.core.interaction.InteractionHandler;
 import de.jakob.lotm.damage.ModDamageTypes;
 import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.helper.AbilityUtil;
-import de.jakob.lotm.util.helper.DamageLookup;
 import de.jakob.lotm.util.helper.FxHandler;
 import de.jakob.lotm.util.helper.ParticleUtil;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
@@ -33,6 +32,8 @@ public class PoisonousFlameAbility extends Ability {
 
         hasOptimalDistance = true;
         optimalDistance = 1.75f;
+
+        baseDamage = 8.5f;
     }
 
     @Override
@@ -78,8 +79,7 @@ public class PoisonousFlameAbility extends Ability {
                 (ServerLevel) level,
                 entity,
                 2.75* multiplier(entity),
-                DamageLookup.lookupDamage(8, .9) *
-                        multiplier(entity),
+                baseDamage,
                 startPos,
                 true,
                 false,

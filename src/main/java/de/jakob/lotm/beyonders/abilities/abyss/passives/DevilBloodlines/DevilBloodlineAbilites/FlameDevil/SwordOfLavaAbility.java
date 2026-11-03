@@ -11,7 +11,6 @@ import de.jakob.lotm.particle.ModParticles;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.helper.AbilityUtil;
-import de.jakob.lotm.util.helper.DamageLookup;
 import de.jakob.lotm.util.helper.ParticleUtil;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.BlockPos;
@@ -44,6 +43,8 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -72,6 +73,14 @@ public class SwordOfLavaAbility extends Ability {
         canBeCopied = false;
         canBeReplicated = false;
         instance = this;
+
+        hasDynamicCooldown = true;
+        dynamicCooldown = new LinkedList<>(List.of(23, 27, 31, 37, 43, 51, 60));
+
+        hasDynamicSpirituality = true;
+        dynamicSpirituality = new LinkedList<>(List.of(2100f, 1200f, 870f, 610f, 540f, 380f, 300f));
+
+        baseDamage = 15f;
     }
 
     @Override
@@ -142,7 +151,8 @@ public class SwordOfLavaAbility extends Ability {
         Vec3 up = computeUp(forward, right);
         Vec3 sweepAxis = right.scale(Math.cos(ARC_TILT)).add(up.scale(Math.sin(ARC_TILT))).normalize();
         boolean griefing = BeyonderData.isGriefingEnabled(owner);
-        double damage = DamageLookup.lookupDamage(6, 1.0) * multiplier(owner) * BloodlineFilthFlameSpiritAbility.getFireDamageMultiplier(owner);
+        // fired by the sword item, outside of useAbility, so baseDamage is not scaled yet
+        double damage = baseDamage * multiplier(owner) * BloodlineFilthFlameSpiritAbility.getFireDamageMultiplier(owner);
         int seq = AbilityUtil.getSeqWithArt(owner, this);
         Vec3[] position = {owner.getEyePosition().add(0, -0.3, 0).add(forward.scale(0.8))};
         Set<UUID> alreadyHit = new HashSet<>();

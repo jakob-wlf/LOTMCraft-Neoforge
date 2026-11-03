@@ -10,7 +10,6 @@ import de.jakob.lotm.rendering.effectRendering.EffectManager;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.helper.AbilityUtil;
-import de.jakob.lotm.util.helper.DamageLookup;
 import de.jakob.lotm.util.helper.ParticleUtil;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.BlockPos;
@@ -52,6 +51,14 @@ public class BloodSovereignAbility extends SelectableAbility {
     public BloodSovereignAbility(String id) {
         super(id, 12f, "blood", "corruption");
         canBeUsedInArtifact = false;
+
+        hasDynamicCooldown = true;
+        dynamicCooldown = new LinkedList<>(List.of(9, 10, 12));
+
+        hasDynamicSpirituality = true;
+        dynamicSpirituality = new LinkedList<>(List.of(1200f, 710f, 500f));
+
+        baseDamage = 52f;
     }
 
     @Override
@@ -84,7 +91,7 @@ public class BloodSovereignAbility extends SelectableAbility {
     private void castBloodSurge(ServerLevel level, LivingEntity entity) {
         Vec3 center = entity.position().add(0, 1, 0);
         double range = 25 * multiplier(entity);
-        double damage = DamageLookup.lookupDamage(2, 0.9) * multiplier(entity);
+        float damage = baseDamage;
         int seq = AbilityUtil.getSeqWithArt(entity, this);
 
         level.playSound(null, BlockPos.containing(center),
@@ -148,7 +155,7 @@ public class BloodSovereignAbility extends SelectableAbility {
                             return;
 
                         t.hurt(ModDamageTypes.source(level, ModDamageTypes.CORROSION, entity),
-                                (float) damage);
+                                damage);
 
                         Vec3 tp = t.position().add(0, 1, 0);
                         for (int yy = 0; yy < 7; yy++) {
@@ -199,6 +206,7 @@ public class BloodSovereignAbility extends SelectableAbility {
         ParticleUtil.spawnParticles(level, ParticleTypes.DAMAGE_INDICATOR,
                 target.position().add(0, 1, 0), 30, 0.6, 0.10);
 
+        float damage = baseDamage / 12;
         AtomicInteger pulseCount = new AtomicInteger(0);
         final double[] helixAngleOffset = {0.0};
 
@@ -234,12 +242,11 @@ public class BloodSovereignAbility extends SelectableAbility {
 
                     if (pulseCount.get() % 10 == 0) {
                         int stage = pulseCount.get() / 10;
-                        double escalating = DamageLookup.lookupDps(2, 0.9, 10, 20 * 6)
-                                * multiplier(entity) * (1 + stage * 0.3);
+                        float escalating = damage * (1 + stage * 0.3f);
 
                         if (!AbilityUtil.isTargetSignificantlyStronger(seq, BeyonderData.getSequence(target))) {
                             target.hurt(ModDamageTypes.source(level, ModDamageTypes.CORROSION, entity),
-                                    (float) escalating);
+                                    escalating);
                         }
                         target.addEffect(new MobEffectInstance(MobEffects.POISON,  20 * 3, 2 + stage / 2, false, false));
                         target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 20 * 3, 2 + stage / 2, false, false));

@@ -7,7 +7,6 @@ import de.jakob.lotm.damage.ModDamageTypes;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.helper.AbilityUtil;
-import de.jakob.lotm.util.helper.DamageLookup;
 import de.jakob.lotm.util.helper.ParticleUtil;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.component.DataComponents;
@@ -30,6 +29,8 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -43,6 +44,11 @@ public class IllusionaryTortureDevicesAbility extends SelectableAbility {
     public IllusionaryTortureDevicesAbility(String id) {
         super(id, 1.5f);
         canBeUsedByNPC = true;
+
+        hasDynamicSpirituality = true;
+        dynamicSpirituality = new LinkedList<>(List.of(880f, 510f, 360f, 250f, 220f, 160f, 120f, 100f));
+
+        baseDamage = 12f;
     }
 
     @Override
@@ -110,6 +116,7 @@ public class IllusionaryTortureDevicesAbility extends SelectableAbility {
 
         Location entityLoc = new Location(entity.position(), serverLevel);
 
+        float damage = baseDamage * .65f;
         UUID task = ServerScheduler.scheduleRepeating(
                 0, 1, durationTicks,
                 () -> {
@@ -119,8 +126,7 @@ public class IllusionaryTortureDevicesAbility extends SelectableAbility {
                     LivingEntity target = AbilityUtil.getTargetEntity(player, scaledRange(entity, 4), 0.8f);
                     if (target == null) return;
 
-                    double damage = DamageLookup.lookupDamage(7, 0.2) * (int )Math.max (multiplier(entity),1);
-                    target.hurt(ModDamageTypes.source(level, ModDamageTypes.BEYONDER_GENERIC, entity), (float) damage);
+                    target.hurt(ModDamageTypes.source(level, ModDamageTypes.BEYONDER_GENERIC, entity), damage);
                     target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 200, 0));
                     applySanity(entity, target, 0.12f);
 
@@ -187,7 +193,7 @@ public class IllusionaryTortureDevicesAbility extends SelectableAbility {
         if (target == null || target == entity) return;
 
         target.hurt(ModDamageTypes.source(level, ModDamageTypes.BEYONDER_GENERIC, entity),
-                (float) DamageLookup.lookupDamage(7, 0.8) * multiplier(entity));
+                baseDamage);
         float percentDamage = (float) Math.min(multiplier(entity) / 100, 0.1);
         target.setHealth(target.getHealth() - (target.getMaxHealth() * percentDamage));
 
@@ -229,8 +235,7 @@ public class IllusionaryTortureDevicesAbility extends SelectableAbility {
         LivingEntity target = AbilityUtil.getTargetEntity(entity, scaledRange(entity, 12), 1.3f);
         if (target == null || target == entity) return;
 
-        double damage = DamageLookup.lookupDamage(7, 0.8) * multiplier(entity);
-        target.hurt(ModDamageTypes.source(level, ModDamageTypes.BEYONDER_GENERIC, entity), (float) damage);
+        target.hurt(ModDamageTypes.source(level, ModDamageTypes.BEYONDER_GENERIC, entity), baseDamage);
         target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 80, 0));
         applySanity(entity, target, 0.05f);
 

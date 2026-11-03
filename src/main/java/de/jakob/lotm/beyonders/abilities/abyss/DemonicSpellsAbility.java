@@ -13,7 +13,6 @@ import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.helper.AbilityUtil;
 import de.jakob.lotm.util.helper.AllyUtil;
-import de.jakob.lotm.util.helper.DamageLookup;
 import de.jakob.lotm.util.helper.ParticleUtil;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.BlockPos;
@@ -44,6 +43,14 @@ public class DemonicSpellsAbility extends SelectableAbility {
     public DemonicSpellsAbility(String id) {
         super(id, 3f);
         postsUsedAbilityEventManually = true;
+
+        hasDynamicCooldown = true;
+        dynamicCooldown = new LinkedList<>(List.of(2, 2, 2, 3, 3));
+
+        hasDynamicSpirituality = true;
+        dynamicSpirituality = new LinkedList<>(List.of(1550f, 910f, 640f, 450f, 400f));
+
+        baseDamage = 20.5f;
     }
 
     @Override
@@ -89,7 +96,7 @@ public class DemonicSpellsAbility extends SelectableAbility {
         level.playSound(null, entity.blockPosition(), SoundEvents.SLIME_BLOCK_BREAK, entity.getSoundSource(), 2f, 0.8f);
 
         double swampRadius = 15* (int) Math.max(multiplier(entity)/2,1);
-        double damage = DamageLookup.lookupDamage(4, 0.7) *multiplier(entity);
+        float damage = baseDamage;
 
         ServerScheduler.scheduleForDuration(0, 20, 20 * 8, () -> {
             if(InteractionHandler.isInteractionPossible(new Location(swampCenter, level), "purification", BeyonderData.getSequence(entity))) {
@@ -142,9 +149,10 @@ public class DemonicSpellsAbility extends SelectableAbility {
             }
         });
 
+        float damage = baseDamage;
         ServerScheduler.scheduleDelayed(20 * 5, () -> {
             if (clone.isAlive()) {
-                explodeClone(level, entity, clone.position());
+                explodeClone(level, entity, clone.position(), damage);
                 clone.discard();
             }
         }, level);
@@ -152,14 +160,12 @@ public class DemonicSpellsAbility extends SelectableAbility {
         this.clearArtifactScaling(entity);
     }
 
-    private void explodeClone(ServerLevel level, LivingEntity caster, Vec3 explosionPos) {
+    private void explodeClone(ServerLevel level, LivingEntity caster, Vec3 explosionPos, float damage) {
         ParticleUtil.spawnSphereParticles(level, purpleDust, explosionPos, 6, 200);
         ParticleUtil.spawnSphereParticles(level, ParticleTypes.EXPLOSION, explosionPos, 5, 80);
         level.playSound(null, explosionPos.x, explosionPos.y, explosionPos.z, SoundEvents.GENERIC_EXPLODE, caster.getSoundSource(), 1.5f, 1.0f);
 
-        double explosionDamage = DamageLookup.lookupDamage(4, 0.65) * multiplier(caster);
-
-        AbilityUtil.damageNearbyEntities(level, caster, 15, explosionDamage, explosionPos, true, false);
+        AbilityUtil.damageNearbyEntities(level, caster, 15, damage, explosionPos, true, false);
         AbilityUtil.getNearbyEntities(caster, level, explosionPos, 15)
                 .stream()
                 .filter(target -> AbilityUtil.mayDamage(caster, target) && !AllyUtil.isAlly(target, caster.getUUID()))
@@ -173,7 +179,7 @@ public class DemonicSpellsAbility extends SelectableAbility {
 
     private void castHellfireWall(ServerLevel level, LivingEntity entity) {
         double wallRadius = 13* (int) Math.max(multiplier(entity)/2,1);
-        double damage = multiplier(entity);
+        float damage = baseDamage / 20;
 
         final double centerX = entity.getX();
         final double centerY = entity.getY();

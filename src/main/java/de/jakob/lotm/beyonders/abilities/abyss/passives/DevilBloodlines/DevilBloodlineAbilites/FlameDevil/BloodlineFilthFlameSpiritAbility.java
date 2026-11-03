@@ -7,7 +7,6 @@ import de.jakob.lotm.damage.ModDamageTypes;
 import de.jakob.lotm.entity.custom.AvatarEntity;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.helper.AbilityUtil;
-import de.jakob.lotm.util.helper.DamageLookup;
 import de.jakob.lotm.util.helper.ParticleUtil;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -24,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class BloodlineFilthFlameSpiritAbility extends PassiveAbility {
     public static final float FIRE_DAMAGE_MULTIPLIER = 1.25F;
-    private static final double RETALIATION_DAMAGE_SCALE = 0.5;
+    private static final float RETALIATION_DAMAGE = 12.5f;
     private static final int RETALIATION_BURN_TICKS = 20 * 2;
     private static final long RETALIATION_COOLDOWN_TICKS = 20L;
     private static final Map<UUID, Long> lastRetaliation = new ConcurrentHashMap<>();
@@ -72,8 +71,7 @@ public class BloodlineFilthFlameSpiritAbility extends PassiveAbility {
         return true;
     }
     private static void retaliate(ServerLevel level, LivingEntity invader, LivingEntity victim) {
-        float damage = (float) (DamageLookup.lookupDamage(5, RETALIATION_DAMAGE_SCALE));
-        invader.hurt(ModDamageTypes.source(level, ModDamageTypes.FILTH, victim), damage);
+        invader.hurt(ModDamageTypes.source(level, ModDamageTypes.FILTH, victim), RETALIATION_DAMAGE);
         invader.setRemainingFireTicks(RETALIATION_BURN_TICKS);
         ParticleUtil.spawnParticles(level, FILTH_DUST, invader.getEyePosition(), 60, 0.5, 0.02);
         ParticleUtil.spawnParticles(level, ParticleTypes.FLAME, invader.getEyePosition(), 25, 0.4, 0.04);

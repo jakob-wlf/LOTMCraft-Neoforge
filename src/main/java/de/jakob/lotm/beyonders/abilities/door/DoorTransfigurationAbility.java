@@ -7,7 +7,6 @@ import de.jakob.lotm.beyonders.abilities.core.ToggleAbility;
 import de.jakob.lotm.damage.ModDamageTypes;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.helper.AbilityUtil;
-import de.jakob.lotm.util.helper.DamageLookup;
 import de.jakob.lotm.util.helper.FxHandler;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.server.level.ServerLevel;
@@ -34,7 +33,6 @@ public class DoorTransfigurationAbility extends ToggleAbility {
     private static final int ESCAPE_COOLDOWN = 10;
     private static final int DOOR_BURST_DELAY = 35;
     private static final double BURST_RADIUS = 4.5;
-    private static final double BURST_DAMAGE_SCALE = .8;
 
     public DoorTransfigurationAbility(String id) {
         super(id, "escape");
@@ -44,6 +42,8 @@ public class DoorTransfigurationAbility extends ToggleAbility {
         canBeCopied = false;
         canBeUsedInArtifact = false;
         canBeShared = false;
+
+        baseDamage = 22f;
     }
 
     @Override
@@ -87,6 +87,16 @@ public class DoorTransfigurationAbility extends ToggleAbility {
             case 1 -> 3150f;
             case 0 -> 8100f;
             default -> 10000f;
+        };
+    }
+
+    private static float getBurstDamageScale(int seq){
+        return switch (seq){
+            case 3 -> 1.1f;
+            case 2 -> 2.25f;
+            case 1 -> 2.8f;
+            case 0 -> 3.5f;
+            default -> 1f;
         };
     }
 
@@ -147,7 +157,7 @@ public class DoorTransfigurationAbility extends ToggleAbility {
         ServerScheduler.scheduleDelayed(20, () ->
                 level.playSound(null, oldLoc.x, oldLoc.y, oldLoc.z, SoundEvents.WOODEN_DOOR_OPEN, SoundSource.PLAYERS, .8f, .6f), level);
         DoorTransfigurationAbility ability = (DoorTransfigurationAbility) LOTMCraft.abilityHandler.getById("door_transfiguration_ability");
-        double burstDamage = DamageLookup.lookupDamage(BeyonderData.getSequence(entity), BURST_DAMAGE_SCALE) * ability.multiplier(entity);
+        double burstDamage = ability.baseDamage * getBurstDamageScale(BeyonderData.getSequence(entity)) * ability.multiplier(entity);
         Vec3 burstCenter = oldLoc.add(0, 1.65 * scale, 0);
         ServerScheduler.scheduleDelayed(DOOR_BURST_DELAY, () -> {
             AbilityUtil.damageNearbyEntities(level, entity, BURST_RADIUS * scale, ModDamageTypes.SPACE_DESTRUCTION, burstDamage, burstCenter, true, true);

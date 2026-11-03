@@ -10,7 +10,6 @@ import de.jakob.lotm.damage.ModDamageTypes;
 import de.jakob.lotm.network.PacketHandler;
 import de.jakob.lotm.network.packets.toClient.SyncSpiritChannelingPacket;
 import de.jakob.lotm.util.helper.AbilityUtil;
-import de.jakob.lotm.util.helper.DamageLookup;
 import de.jakob.lotm.util.helper.ParticleUtil;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.particles.DustParticleOptions;
@@ -32,6 +31,8 @@ import org.joml.Vector3f;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -79,6 +80,14 @@ public class SpiritChannelingAbility extends SelectableAbility {
         cannotBeStolen = true;
         canBeUsedInArtifact = false;
         canBeShared = false;
+
+        hasDynamicCooldown = true;
+        dynamicCooldown = new LinkedList<>(List.of(1, 2, 2, 2, 2, 3, 3, 4));
+
+        hasDynamicSpirituality = true;
+        dynamicSpirituality = new LinkedList<>(List.of(2650f, 1500f, 1050f, 760f, 670f, 470f, 370f, 300f));
+
+        baseDamage = 10f;
     }
 
     @Override
@@ -468,6 +477,7 @@ public class SpiritChannelingAbility extends SelectableAbility {
         Vec3 startPos = entity.getEyePosition();
         Vec3 direction = entity.getLookAngle().normalize();
         AtomicBoolean hasHit = new AtomicBoolean(false);
+        float damage = baseDamage;
 
         Vec3 up = new Vec3(0, 1, 0);
         Vec3 right = new Vec3(
@@ -495,7 +505,7 @@ public class SpiritChannelingAbility extends SelectableAbility {
                 ParticleUtil.spawnParticles((ServerLevel) level, STONE_DUST, pos, 4, 0.2);
 
                 if (AbilityUtil.damageNearbyEntities((ServerLevel) level, entity, 1.2f * multiplier(entity),
-                        DamageLookup.lookupDamage(7, 0.5) * multiplier(entity), pos, true, false,
+                        damage, pos, true, false,
                         ModDamageTypes.source(level, ModDamageTypes.BEYONDER_GENERIC, entity))) {
                     hasHit.set(true);
                     ParticleUtil.spawnParticles((ServerLevel) level, EARTH_DUST, pos, 30, 0.5);

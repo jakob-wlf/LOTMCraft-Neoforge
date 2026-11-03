@@ -6,7 +6,6 @@ import de.jakob.lotm.damage.ModDamageTypes;
 import de.jakob.lotm.particle.ModParticles;
 import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.helper.AbilityUtil;
-import de.jakob.lotm.util.helper.DamageLookup;
 import de.jakob.lotm.util.helper.ParticleUtil;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.particles.DustParticleOptions;
@@ -31,6 +30,8 @@ public class ToxicSmokeAbility extends Ability {
 
         hasOptimalDistance = true;
         optimalDistance = 7;
+
+        baseDamage = 8f;
     }
 
     @Override
@@ -53,6 +54,7 @@ public class ToxicSmokeAbility extends Ability {
             return;
 
         Vec3 pos = entity.getEyePosition();
+        float damage = baseDamage;
 
         final UUID[] taskIdHolder = new UUID[1];
         taskIdHolder[0] = ServerScheduler.scheduleForDuration(0, 6, (int) (20 * 5* multiplier(entity)), () -> {
@@ -64,8 +66,7 @@ public class ToxicSmokeAbility extends Ability {
                 AbilityUtil.damageNearbyEntities((ServerLevel) level,
                         null,
                         9,
-                        DamageLookup.lookupDamage(8, 1.2) *
-                                multiplier(entity),
+                        damage * 1.25f,
                         pos,
                         true,
                         false,
@@ -89,7 +90,7 @@ public class ToxicSmokeAbility extends Ability {
             AbilityUtil.damageNearbyEntities((ServerLevel) level,
                     entity,
                     6.5* multiplier(entity),
-                    DamageLookup.lookupDps(8, .8, 6, 20) * multiplier(entity),
+                    damage / 3,
                     pos,
                     true,
                     false,

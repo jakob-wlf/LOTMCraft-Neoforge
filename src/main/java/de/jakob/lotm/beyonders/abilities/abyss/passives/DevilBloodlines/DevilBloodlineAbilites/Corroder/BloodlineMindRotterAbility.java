@@ -8,7 +8,6 @@ import de.jakob.lotm.damage.ModDamageTypes;
 import de.jakob.lotm.entity.custom.AvatarEntity;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.helper.AbilityUtil;
-import de.jakob.lotm.util.helper.DamageLookup;
 import de.jakob.lotm.util.helper.ParticleUtil;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.network.chat.Component;
@@ -26,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class BloodlineMindRotterAbility extends PassiveAbility {
     public static final float POISON_DAMAGE_MULTIPLIER = 1.25F;
-    private static final double RETALIATION_DAMAGE_SCALE = 0.5;
+    private static final float RETALIATION_DAMAGE = 12.5f;
     private static final int RETALIATION_NAUSEA_TICKS = 20 * 10;
     private static final long RETALIATION_COOLDOWN_TICKS = 20L;
     private static final Map<UUID, Long> lastRetaliation = new ConcurrentHashMap<>();
@@ -67,7 +66,7 @@ public class BloodlineMindRotterAbility extends PassiveAbility {
         if (now - last < RETALIATION_COOLDOWN_TICKS) return;
         lastRetaliation.put(invader.getUUID(), now);
         if (lastRetaliation.size() > 64) lastRetaliation.values().removeIf(t -> now - t > 200);
-        float damage = (float) (DamageLookup.lookupDamage(5, RETALIATION_DAMAGE_SCALE) * POISON_DAMAGE_MULTIPLIER);
+        float damage = RETALIATION_DAMAGE * POISON_DAMAGE_MULTIPLIER;
         // Deal corrosion damage.
         invader.hurt(ModDamageTypes.source(level, ModDamageTypes.CORROSION, victim), damage);
         // Apply Nausea IV for 6 seconds.
