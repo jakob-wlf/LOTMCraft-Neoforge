@@ -1157,6 +1157,26 @@ public class PacketHandler {
                 DevilWorshipNetwork.ChooseMission.STREAM_CODEC,
                 DevilWorshipNetwork.ChooseMission::handle
         );
+        registrar.playToServer(
+                SetMaliceChannelPacket.TYPE,
+                SetMaliceChannelPacket.STREAM_CODEC,
+                SetMaliceChannelPacket::handle
+        );
+        registrar.playToServer(
+                TakeOverMaliceHostPacket.TYPE,
+                TakeOverMaliceHostPacket.STREAM_CODEC,
+                TakeOverMaliceHostPacket::handle
+        );
+        registrar.playToServer(
+                SubmitContractBuilderPacket.TYPE,
+                SubmitContractBuilderPacket.STREAM_CODEC,
+                SubmitContractBuilderPacket::handle
+        );
+        registrar.playToServer(
+                StruggleInFilthPacket.TYPE,
+                StruggleInFilthPacket.STREAM_CODEC,
+                StruggleInFilthPacket::handle
+        );
     }
 
     public static boolean sendToServer(CustomPacketPayload packet) {

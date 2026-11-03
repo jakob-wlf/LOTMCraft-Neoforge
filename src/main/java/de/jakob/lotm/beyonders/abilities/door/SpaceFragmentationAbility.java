@@ -7,10 +7,9 @@ import de.jakob.lotm.entity.custom.ability_entities.TimeChangeEntity;
 import de.jakob.lotm.entity.custom.ability_entities.door_pathway.BlinkAfterimageEntity;
 import de.jakob.lotm.network.PacketHandler;
 import de.jakob.lotm.network.packets.toClient.PlayPhotonBlockEffectPacket;
-import de.jakob.lotm.rendering.effectRendering.EffectIds;
-import de.jakob.lotm.rendering.effectRendering.EffectManager;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.helper.AbilityUtil;
+import de.jakob.lotm.util.helper.FxHandler;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -28,7 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SpaceFragmentationAbility extends SelectableAbility {
 
     private static final int COPIES = 9;
-    private static final int SHATTER_RADIUS = 12;
+    private static final int SHATTER_RADIUS = 15;
     private static final int SHATTER_TICKS = 20 * 10;
 
     public SpaceFragmentationAbility(String id) {
@@ -83,12 +82,13 @@ public class SpaceFragmentationAbility extends SelectableAbility {
         List<BlinkAfterimageEntity> copies = new ArrayList<>();
         for (int i = 0; i < COPIES; i++) {
             double angle = Math.PI * 2 * i / COPIES;
-            Vec3 pos = center.add(Math.cos(angle) * SHATTER_RADIUS, 0, Math.sin(angle) * SHATTER_RADIUS);
+            Vec3 pos = center.add(Math.cos(angle) * SHATTER_RADIUS, 1.25, Math.sin(angle) * SHATTER_RADIUS);
             BlinkAfterimageEntity copy = new BlinkAfterimageEntity(level, pos, entity, SHATTER_TICKS);
             float yaw = (float) Math.toDegrees(Math.atan2(center.z - pos.z, center.x - pos.x)) - 90f;
             copy.setYRot(yaw);
             copy.setYHeadRot(yaw);
             copy.setYBodyRot(yaw);
+            copy.setNoGravity(true);
             level.addFreshEntity(copy);
             copies.add(copy);
         }
@@ -97,7 +97,12 @@ public class SpaceFragmentationAbility extends SelectableAbility {
         timeStop.setPos(center);
         level.addFreshEntity(timeStop);
 
-        UUID tear = EffectManager.playEffect(EffectIds.SPACE_TEAR, center.x, center.y + 1, center.z, level, entity);
+        UUID tear = FxHandler.playCancellable(level, "shatter_space", center, 1);
+        Runnable sealSpace = () -> {
+            FxHandler.cancel(level, tear);
+            FxHandler.play(level, "shatter_space_end", center, 1);
+            level.playSound(null, BlockPos.containing(center), SoundEvents.AMETHYST_CLUSTER_BREAK, SoundSource.AMBIENT, 2f, 0.5f);
+        };
         level.playSound(null, BlockPos.containing(center), SoundEvents.WITHER_SPAWN, SoundSource.AMBIENT, 1.5f, 0.6f);
 
         float damage = baseDamage * 2.5f;
@@ -110,7 +115,7 @@ public class SpaceFragmentationAbility extends SelectableAbility {
             if (copies.stream().filter(LivingEntity::isAlive).count() < (COPIES + 1) / 2) {
                 copies.forEach(LivingEntity::discard);
                 timeStop.discard();
-                EffectManager.cancelEffect(tear, level);
+                sealSpace.run();
                 ServerScheduler.cancel(task[0]);
                 return;
             }
@@ -139,7 +144,7 @@ public class SpaceFragmentationAbility extends SelectableAbility {
                     }
                 });
             }
-        }, () -> EffectManager.cancelEffect(tear, level), level);
+        }, sealSpace, level);
     }
 
     private void starfall(ServerLevel level, LivingEntity entity) {

@@ -8,7 +8,9 @@
     "ErrorItemNameMixin",
     "MixinIngredient",
     "MercuryPushMixin",
-    "SignConcealMixin"
+    "SignConcealMixin",
+    "PlayerPhantomMixin",
+    "EntityPhantomMixin"
   ],
   "client": [
     "EntityGlowMixin",
