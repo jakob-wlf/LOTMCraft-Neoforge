@@ -43,6 +43,7 @@ public class KeyInputHandler {
     private static Runnable holdCast;
     private static String holdAbility;
     private static int holdNeeded;
+    private static boolean holdStart;
 
     private static int needed() {
         int server = ClientHandler.holdNeeded();
@@ -70,6 +71,7 @@ public class KeyInputHandler {
         holdCast = cast;
         holdAbility = abilityId;
         holdNeeded = ticks;
+        holdStart = true;
         ClientHandler.setHoldCharge(0, 0);
     }
 
@@ -83,7 +85,8 @@ public class KeyInputHandler {
         }
         if (holdKey.isDown()) {
             while (holdKey.consumeClick()) {}
-            if (holdAbility != null) PacketHandler.sendToServer(new HoldAbilityPacket(holdAbility));
+            if (holdAbility != null) PacketHandler.sendToServer(new HoldAbilityPacket(holdAbility, holdStart));
+            holdStart = false;
             return;
         }
         Runnable cast = holdCast;

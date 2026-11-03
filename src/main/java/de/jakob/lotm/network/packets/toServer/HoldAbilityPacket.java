@@ -20,9 +20,8 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import java.util.HashMap;
 import java.util.UUID;
 
-public record HoldAbilityPacket(String abilityId) implements CustomPacketPayload {
+public record HoldAbilityPacket(String abilityId, boolean start) implements CustomPacketPayload {
     private static final HashMap<UUID, Float> charge = new HashMap<>();
-    private static final HashMap<UUID, Long> seen = new HashMap<>();
 
     public static final Type<HoldAbilityPacket> TYPE =
             new Type<>(ResourceLocation.fromNamespaceAndPath(LOTMCraft.MOD_ID, "hold_ability"));
@@ -30,6 +29,8 @@ public record HoldAbilityPacket(String abilityId) implements CustomPacketPayload
     public static final StreamCodec<FriendlyByteBuf, HoldAbilityPacket> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.STRING_UTF8,
             HoldAbilityPacket::abilityId,
+            ByteBufCodecs.BOOL,
+            HoldAbilityPacket::start,
             HoldAbilityPacket::new
     );
 
@@ -41,6 +42,7 @@ public record HoldAbilityPacket(String abilityId) implements CustomPacketPayload
     public static void handle(HoldAbilityPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player) || !player.isAlive()) return;
+            if (packet.start()) charge.put(player.getUUID(), 0f);
             String[] parts = packet.abilityId().split(":");
             Ability ability = LOTMCraft.abilityHandler.getById(parts[0]);
             if (ability == null || !ability.hasAbility(player, false)) return;
@@ -57,9 +59,6 @@ public record HoldAbilityPacket(String abilityId) implements CustomPacketPayload
             if (needed <= 0) return;
 
             UUID id = player.getUUID();
-            long now = player.level().getGameTime();
-            if (seen.getOrDefault(id, Long.MIN_VALUE) < now - 2) charge.put(id, 0f);
-            seen.put(id, now);
 
             DisabledAbilitiesComponent disabled = player.getData(ModAttachments.DISABLED_ABILITIES_COMPONENT);
             boolean sealed = !ability.canAlwaysBeUsed && (disabled.isAbilityUsageDisabled() || disabled.isSpecificAbilityDisabled(ability.getId()));
