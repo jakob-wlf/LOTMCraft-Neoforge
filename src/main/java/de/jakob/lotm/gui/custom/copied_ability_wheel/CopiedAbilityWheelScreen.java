@@ -15,19 +15,65 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class CopiedAbilityWheelScreen extends BaseAbilityWheelScreen<CopiedAbilityWheelMenu> {
 
     private static final int MAX_ABILITIES = 24;
 
+    private int page;
+
     public CopiedAbilityWheelScreen(CopiedAbilityWheelMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
     }
 
+    private List<Integer> visible() {
+        List<String> all = AbilityWheelClientData.getCopiedAbilityIds();
+        List<Integer> indices = new ArrayList<>();
+        for (int i = 0; i < all.size(); i++) {
+            Ability ability = LOTMCraft.abilityHandler.getById(AbilityId.parse(all.get(i)).baseId());
+            if (ability != null && !ability.hasHold()) indices.add(i);
+        }
+        return indices;
+    }
+
+    private int pages() {
+        return Math.max(1, (visible().size() + MAX_ABILITIES - 1) / MAX_ABILITIES);
+    }
+
+    private int original(int slot) {
+        List<Integer> indices = visible();
+        int index = page * MAX_ABILITIES + slot;
+        return index < indices.size() ? indices.get(index) : -1;
+    }
+
     @Override
     protected List<String> getAbilities() {
-        return AbilityWheelClientData.getCopiedAbilityIds();
+        List<String> all = AbilityWheelClientData.getCopiedAbilityIds();
+        List<Integer> indices = visible();
+        page = Math.min(page, pages() - 1);
+        int from = page * MAX_ABILITIES;
+        return indices.subList(Math.min(from, indices.size()), Math.min(indices.size(), from + MAX_ABILITIES))
+                .stream().map(all::get).toList();
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (pages() > 1 && scrollY != 0) {
+            page = Math.floorMod(page + (scrollY < 0 ? 1 : -1), pages());
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+    }
+
+    @Override
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        if (pages() <= 1) return;
+        String label = (page + 1) + "/" + pages();
+        var font = net.minecraft.client.Minecraft.getInstance().font;
+        guiGraphics.drawString(font, label, leftPos + imageWidth / 2 - font.width(label) / 2, topPos + imageHeight + 24, 0xFFFFFF, true);
     }
 
     @Override
@@ -90,7 +136,8 @@ public class CopiedAbilityWheelScreen extends BaseAbilityWheelScreen<CopiedAbili
             guiGraphics.fill(x + padding, y + padding, x + size - padding, y + size - padding, 0xFF146B8B);
         }
 
-        if (index < AbilityWheelClientData.getCopiedAbilityRemainingUses().size()) {
+        index = original(index);
+        if (index >= 0 && index < AbilityWheelClientData.getCopiedAbilityRemainingUses().size()) {
             int uses = AbilityWheelClientData.getCopiedAbilityRemainingUses().get(index);
             if (uses > 0) {
                 String usesText = String.valueOf(uses);
@@ -115,8 +162,8 @@ public class CopiedAbilityWheelScreen extends BaseAbilityWheelScreen<CopiedAbili
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 0 && hoveredSlot != -1) {
-            PacketHandler.sendToServer(new UseCopiedAbilityPacket(hoveredSlot));
+        if (button == 0 && hoveredSlot != -1 && original(hoveredSlot) >= 0) {
+            PacketHandler.sendToServer(new UseCopiedAbilityPacket(original(hoveredSlot)));
             this.onClose();
             return true;
         }

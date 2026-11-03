@@ -8,6 +8,7 @@ import de.jakob.lotm.util.helper.AbilityUtil;
 import de.jakob.lotm.util.helper.VectorUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.LivingEntity;
@@ -22,29 +23,48 @@ public class CompressionAbility extends SelectableAbility {
 
     public static String CHARGES_TAG = "COMPRESSION_CHARGES";
     public static int[] LIMITS = new int[]{3,6,9,12};
-    public static int MAX;
     public CompressionAbility(String id) {
         super(id, 1.0f, "burning");
         isHoldable(40, 0);
+        hideHoldBar(0);
 
         baseDamage = 12f;
     }
 
     @Override
     public int getHoldTime(LivingEntity entity, int subIndex) {
-        if(subIndex == 1) return 1;
-        return switch (BeyonderData.getSequence(entity)) {
+        int Seq = BeyonderData.getSequence(entity);
+        int MAX = (Seq <= 1) ? LIMITS[3] : (Seq <= 3) ? LIMITS[2] : (Seq <= 5) ? LIMITS[1] : LIMITS[0];
+        int interval = switch (BeyonderData.getSequence(entity)) {
             case 0,1,2 -> 10;
             case 3,4 -> 20;
             case 5,6 -> 40;
             default -> 50;
         };
+        return (interval*MAX);
+    }
+    @Override
+    public void onHolding(ServerLevel level, LivingEntity entity, int subIndex, int ticks, int holdTime) {
+        int interval = switch (BeyonderData.getSequence(entity)) {
+            case 0,1,2 -> 10;
+            case 3,4 -> 20;
+            case 5,6 -> 40;
+            default -> 50;
+        };
+
+        if(ticks%interval==0){
+            compress(entity.level(), entity);
+        }
+    }
+
+    @Override
+    public void onRelease(ServerLevel level, LivingEntity entity, int subIndex, int ticks, int holdTime) {
+        fireball(entity.level(), entity);
     }
 
     @Override
     protected String[] getAllAbilityNames() {
         return new String[]{
-                "ability.lotmcraft.pyrokinesis.compress",
                 "ability.lotmcraft.pyrokinesis.release",
         };
     }
@@ -52,8 +72,7 @@ public class CompressionAbility extends SelectableAbility {
     @Override
     protected void castSelectedAbility(Level level, LivingEntity entity, int selectedAbility) {
         switch (selectedAbility) {
-            case 0 -> compress(level, entity);
-            case 1 -> fireball(level, entity);
+            case 0 -> fireball(level, entity);
         }
     }
 
@@ -81,7 +100,7 @@ public class CompressionAbility extends SelectableAbility {
     public void compress(Level level, LivingEntity entity) {
         if(level.isClientSide) return;
         int Seq = BeyonderData.getSequence(entity);
-        MAX = (Seq <= 1) ? LIMITS[3] : (Seq <= 3) ? LIMITS[2] : (Seq <= 5) ? LIMITS[1] : LIMITS[0];
+        int MAX = (Seq <= 1) ? LIMITS[3] : (Seq <= 3) ? LIMITS[2] : (Seq <= 5) ? LIMITS[1] : LIMITS[0];
         Vec3 startPos = VectorUtil.getRelativePosition(entity.getEyePosition().add(entity.getLookAngle().normalize()), entity.getLookAngle().normalize(), 0, random.nextDouble(1, 2.85f), random.nextDouble(-.1, .6));
 
         level.playSound(null, startPos.x,startPos.y,startPos.z, SoundEvents.BLAZE_HURT, entity.getSoundSource(), 1.0f, 1.0f);
@@ -103,14 +122,11 @@ public class CompressionAbility extends SelectableAbility {
         if(level.isClientSide)
             return;
         int Seq = BeyonderData.getSequence(entity);
-        MAX = (Seq < 1) ? LIMITS[3] : (Seq < 3) ? LIMITS[2] : (Seq < 5) ? LIMITS[1] : LIMITS[0];
         int CHARGES =  getCharges(entity);
-        entity.sendSystemMessage(Component.literal(CHARGES + ""));
         if( CHARGES == 0 ) {
             entity.sendSystemMessage(Component.literal("You have no charges").withStyle(ChatFormatting.RED));
             return;
         }
-
         Vec3 startPos = VectorUtil.getRelativePosition(entity.getEyePosition().add(entity.getLookAngle().normalize()), entity.getLookAngle().normalize(), 0, random.nextDouble(1, 2.85f), random.nextDouble(-.1, .6));
         Vec3 direction = AbilityUtil.getTargetLocation(entity, (int) (50 * multiplier(entity)), 1.4f).subtract(startPos).normalize();
         level.playSound(null, startPos.x, startPos.y, startPos.z, SoundEvents.BLAZE_SHOOT, entity.getSoundSource(), 1.0f, 1.0f);

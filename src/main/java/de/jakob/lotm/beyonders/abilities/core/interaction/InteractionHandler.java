@@ -4,6 +4,7 @@ import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.beyonders.abilities.abyss.DefilingSeedAbility;
 import de.jakob.lotm.beyonders.abilities.core.AbilityUsedEvent;
 import de.jakob.lotm.beyonders.abilities.core.ToggleAbility;
+import de.jakob.lotm.beyonders.abilities.door.passives.SealingAuthorityPassiveAbility;
 import de.jakob.lotm.beyonders.abilities.tyrant.TorrentialDownpourAbility;
 import de.jakob.lotm.attachments.DoorAuthorityData;
 import de.jakob.lotm.util.BeyonderData;
@@ -84,7 +85,9 @@ public class InteractionHandler {
     }
 
     private static boolean isInteractionOfSameOrHigherSequence(AbilityUsedEvent event, int sequenceToCompare) {
-        return BeyonderData.getSequence(event.getEntity()) <= sequenceToCompare;
+        int sequence = BeyonderData.getSequence(event.getEntity());
+        if (event.getInteractionFlags().contains("sealing")) sequence = SealingAuthorityPassiveAbility.sealingSeq(event.getEntity(), sequence);
+        return sequence <= sequenceToCompare;
     }
 
     public static void cleanupInteractions() {

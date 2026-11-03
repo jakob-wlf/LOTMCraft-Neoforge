@@ -81,7 +81,7 @@ public class MarionetteControlScreen extends AbstractContainerScreen<MarionetteM
         boolean empty = menu.isServants() ? menu.getServants().isEmpty() : menu.getMarionettes().isEmpty();
         if (empty) {
             guiGraphics.drawCenteredString(this.font,
-                    Component.translatable(menu.isServants() ? "gui.lotm.servants.none" : "gui.lotm.marionette_control.none"),
+                    Component.translatable(menu.isFlickers() ? "gui.lotm.flickers.none" : menu.isServants() ? "gui.lotm.servants.none" : "gui.lotm.marionette_control.none"),
                     this.width / 2, this.height / 2, 0xAAAAAA);
         }
         super.render(guiGraphics, mouseX, mouseY, partialTick);
@@ -167,9 +167,21 @@ public class MarionetteControlScreen extends AbstractContainerScreen<MarionetteM
             private final Button modeButton;
             private Checkbox attackCheckbox;
             private final Button releaseButton;
+            private final boolean flicker;
+            private final Button possessButton;
+            private boolean anchored;
+            private final Button anchorButton;
 
             Entry(MarionetteControlScreen screen, MarionetteMenu.ServantRow row) {
                 this.screen = screen;
+                this.flicker = screen.menu.isFlickers();
+                this.possessButton = Button.builder(Component.translatable("gui.lotm.flickers.possess"), b -> possess())
+                        .bounds(0, 0, 60, 18)
+                        .build();
+                this.anchored = row.anchored();
+                this.anchorButton = Button.builder(anchorLabel(), b -> anchor())
+                        .bounds(0, 0, 60, 18)
+                        .build();
                 this.entity = null;
                 this.entityId = -1;
                 this.servant = true;
@@ -191,6 +203,9 @@ public class MarionetteControlScreen extends AbstractContainerScreen<MarionetteM
 
             Entry(MarionetteControlScreen screen, LivingEntity entity) {
                 this.screen = screen;
+                this.flicker = false;
+                this.possessButton = Button.builder(Component.empty(), b -> {}).bounds(0, 0, 0, 0).build();
+                this.anchorButton = Button.builder(Component.empty(), b -> {}).bounds(0, 0, 0, 0).build();
                 this.entity = entity;
                 this.entityId = entity.getId();
                 this.servant = false;
@@ -238,11 +253,26 @@ public class MarionetteControlScreen extends AbstractContainerScreen<MarionetteM
             }
 
             private void releaseServant() {
-                PacketDistributor.sendToServer(new PlayerDivinationSelectedPacket(servantId, PlayerSelectionWorkType.SERVANT_MANAGE));
+                PacketDistributor.sendToServer(new PlayerDivinationSelectedPacket(servantId, flicker ? PlayerSelectionWorkType.FLICKER_REMOVE : PlayerSelectionWorkType.SERVANT_MANAGE));
                 screen.minecraft.execute(() -> {
                     screen.menu.removeServant(servantId);
                     screen.list.removeServant(servantId);
                 });
+            }
+
+            private Component anchorLabel() {
+                return Component.translatable(anchored ? "gui.lotm.flickers.move" : "gui.lotm.flickers.stay");
+            }
+
+            private void anchor() {
+                PacketDistributor.sendToServer(new PlayerDivinationSelectedPacket(servantId, PlayerSelectionWorkType.FLICKER_ANCHOR));
+                anchored = !anchored;
+                anchorButton.setMessage(anchorLabel());
+            }
+
+            private void possess() {
+                PacketDistributor.sendToServer(new PlayerDivinationSelectedPacket(servantId, PlayerSelectionWorkType.FLICKER_POSSESS));
+                screen.onClose();
             }
 
             private boolean matches(UUID id) {
@@ -323,6 +353,15 @@ public class MarionetteControlScreen extends AbstractContainerScreen<MarionetteM
                     attackCheckbox.render(guiGraphics, mouseX, mouseY, partialTick);
                 }
 
+                if (flicker) {
+                    anchorButton.setX(left + width - 28 - 66 - 66);
+                    anchorButton.setY(controlsY);
+                    anchorButton.render(guiGraphics, mouseX, mouseY, partialTick);
+                    possessButton.setX(left + width - 28 - 66);
+                    possessButton.setY(controlsY);
+                    possessButton.render(guiGraphics, mouseX, mouseY, partialTick);
+                }
+
                 releaseButton.setX(servant ? left + width - 28 : controlsX + 92 + 8 + 20 + 40);
                 releaseButton.setY(controlsY);
                 releaseButton.render(guiGraphics, mouseX, mouseY, partialTick);
@@ -330,12 +369,14 @@ public class MarionetteControlScreen extends AbstractContainerScreen<MarionetteM
 
             @Override
             public List<? extends GuiEventListener> children() {
+                if (flicker) return List.of(anchorButton, possessButton, releaseButton);
                 if (servant) return List.of(releaseButton);
                 return List.of(modeButton, attackCheckbox, releaseButton);
             }
 
             @Override
             public List<? extends NarratableEntry> narratables() {
+                if (flicker) return List.of(anchorButton, possessButton, releaseButton);
                 if (servant) return List.of(releaseButton);
                 return List.of(modeButton, attackCheckbox, releaseButton);
             }

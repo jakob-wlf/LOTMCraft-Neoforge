@@ -18,6 +18,7 @@ import java.util.*;
 public class MarionetteMenu extends AbstractContainerMenu {
 
     private final boolean servants;
+    private final boolean flickers;
     private final List<Integer> entityIds;
     private final List<ServantRow> servantRows;
     private final List<LivingEntity> marionettes = new ArrayList<>();
@@ -26,6 +27,7 @@ public class MarionetteMenu extends AbstractContainerMenu {
     public MarionetteMenu(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf buf) {
         super(ModMenuTypes.MARIONETTE_MENU.get(), containerId);
         this.servants = buf.readBoolean();
+        this.flickers = this.servants && buf.readBoolean();
         if (this.servants) {
             this.entityIds = List.of();
             this.servantRows = readServants(buf);
@@ -54,6 +56,7 @@ public class MarionetteMenu extends AbstractContainerMenu {
     public MarionetteMenu(int containerId, Inventory playerInventory, List<Integer> entityIds) {
         super(ModMenuTypes.MARIONETTE_MENU.get(), containerId);
         this.servants = false;
+        this.flickers = false;
         this.entityIds = entityIds;
         this.servantRows = List.of();
 
@@ -67,7 +70,16 @@ public class MarionetteMenu extends AbstractContainerMenu {
     }
 
     public static void writeServants(RegistryFriendlyByteBuf buf, List<ServantRow> rows) {
+        writeRows(buf, rows, false);
+    }
+
+    public static void writeFlickers(RegistryFriendlyByteBuf buf, List<ServantRow> rows) {
+        writeRows(buf, rows, true);
+    }
+
+    private static void writeRows(RegistryFriendlyByteBuf buf, List<ServantRow> rows, boolean flickers) {
         buf.writeBoolean(true);
+        buf.writeBoolean(flickers);
         buf.writeVarInt(rows.size());
         for (ServantRow row : rows) {
             buf.writeUUID(row.id());
@@ -76,6 +88,7 @@ public class MarionetteMenu extends AbstractContainerMenu {
             buf.writeBoolean(row.beyonder());
             buf.writeUtf(row.pathway());
             buf.writeVarInt(row.sequence());
+            buf.writeBoolean(row.anchored());
         }
     }
 
@@ -83,7 +96,7 @@ public class MarionetteMenu extends AbstractContainerMenu {
         int size = buf.readVarInt();
         List<ServantRow> rows = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
-            rows.add(new ServantRow(buf.readUUID(), buf.readUtf(), buf.readUtf(), buf.readBoolean(), buf.readUtf(), buf.readVarInt()));
+            rows.add(new ServantRow(buf.readUUID(), buf.readUtf(), buf.readUtf(), buf.readBoolean(), buf.readUtf(), buf.readVarInt(), buf.readBoolean()));
         }
         return rows;
     }
@@ -100,6 +113,10 @@ public class MarionetteMenu extends AbstractContainerMenu {
 
     public boolean isServants() {
         return servants;
+    }
+
+    public boolean isFlickers() {
+        return flickers;
     }
 
     public List<ServantRow> getServants() {
@@ -132,7 +149,11 @@ public class MarionetteMenu extends AbstractContainerMenu {
         }
     }
 
-    public record ServantRow(UUID id, String name, String detail, boolean beyonder, String pathway, int sequence) {}
+    public record ServantRow(UUID id, String name, String detail, boolean beyonder, String pathway, int sequence, boolean anchored) {
+        public ServantRow(UUID id, String name, String detail, boolean beyonder, String pathway, int sequence) {
+            this(id, name, detail, beyonder, pathway, sequence, false);
+        }
+    }
 
 
 }

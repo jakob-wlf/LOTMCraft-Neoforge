@@ -102,7 +102,7 @@ public abstract class PhysicalEnhancementsAbility extends PassiveAbility {
 
     public static void recalculateAllEnhancementsForEntity(LivingEntity entity) {
         for (PassiveAbility passiveAbility : PassiveAbilityHandler.passiveAbilities) {
-            if (passiveAbility instanceof PhysicalEnhancementsAbility pe) {
+            if (passiveAbility instanceof PhysicalEnhancementsAbility pe && pe.shouldApplyTo(entity)) {
                 pe.recalculateEnhancements(entity, true);
             }
         }

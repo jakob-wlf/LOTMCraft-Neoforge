@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.attachments.CopiedAbilityComponent;
+import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.util.helper.CopiedAbilityHelper;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -21,10 +22,15 @@ public class CopiedAbilitiesCommand {
                     LOTMCraft.abilityHandler.getRegisteredAbilityIds(), builder
             );
 
+    private static final SuggestionProvider<CommandSourceStack> OWN_SUGGESTIONS =
+            (context, builder) -> context.getSource().getEntity() instanceof LivingEntity entity
+                    ? SharedSuggestionProvider.suggest(entity.getData(ModAttachments.COPIED_ABILITY_COMPONENT).getAbilityIds(), builder)
+                    : builder.buildFuture();
+
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("copied_abilities")
-                .requires(source -> source.hasPermission(2))
                 .then(Commands.literal("add")
+                        .requires(source -> source.hasPermission(2))
                         .then(Commands.argument("ability_id", StringArgumentType.string())
                                 .suggests(ABILITY_SUGGESTIONS)
                                 .executes(context -> {
@@ -54,7 +60,7 @@ public class CopiedAbilitiesCommand {
                 )
                 .then(Commands.literal("remove")
                         .then(Commands.argument("ability_id", StringArgumentType.string())
-                                .suggests(ABILITY_SUGGESTIONS)
+                                .suggests(OWN_SUGGESTIONS)
                                 .executes(context -> {
                                     CommandSourceStack source = context.getSource();
                                     if (!(source.getEntity() instanceof LivingEntity livingEntity)) {
@@ -65,6 +71,7 @@ public class CopiedAbilitiesCommand {
                                     return executeRemoveAbility(source, livingEntity, abilityId);
                                 })
                                 .then(Commands.argument("target", EntityArgument.entity())
+                                        .requires(source -> source.hasPermission(2))
                                         .executes(context -> {
                                             CommandSourceStack source = context.getSource();
                                             var targetEntity = EntityArgument.getEntity(context, "target");

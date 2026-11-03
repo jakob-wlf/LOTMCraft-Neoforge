@@ -1,16 +1,14 @@
 package de.jakob.lotm.beyonders.abilities.door;
 
+import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.attachments.CopiedAbilityComponent;
 import de.jakob.lotm.beyonders.abilities.core.Ability;
-import de.jakob.lotm.beyonders.abilities.core.AbilityUseTracker;
-import de.jakob.lotm.damage.ModDamageTypes;
-import de.jakob.lotm.entity.custom.ability_entities.door_pathway.ApprenticeBookEntity;
+import de.jakob.lotm.beyonders.abilities.core.AbilityUsedEvent;
+import de.jakob.lotm.beyonders.abilities.core.ToggleAbility;
+import de.jakob.lotm.effect.ModEffects;
 import de.jakob.lotm.util.helper.AbilityUtil;
 import de.jakob.lotm.util.helper.CopiedAbilityHelper;
 import de.jakob.lotm.util.helper.ParticleUtil;
-import de.jakob.lotm.util.helper.VectorUtil;
-import de.jakob.lotm.util.scheduling.ServerScheduler;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -19,17 +17,28 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
-public class ReplicatingAbility extends Ability {
+@EventBusSubscriber(modid = LOTMCraft.MOD_ID)
+public class ReplicatingAbility extends ToggleAbility {
+
+    private static final int COLOR = 0xFF8ff4ff;
+    private static final double RADIUS = 20;
+    private static final int REPEAT_TICKS = 40;
+
+    private static final int[][] USES = {{1, 1}, {2, 3}, {4, 6}, {7, 10}, {15, 15}, {20, 20}};
+
+    private record Understanding(int uses, int needed) {}
+
+    private static final Map<UUID, Map<String, Understanding>> understanding = new ConcurrentHashMap<>();
+    private static final Map<UUID, Map<String, Long>> lastSeen = new ConcurrentHashMap<>();
+
     public ReplicatingAbility(String id) {
-        super(id, 3f);
+        super(id);
 
         canBeCopied = false;
         canBeUsedByNPC = false;
@@ -37,97 +46,6 @@ public class ReplicatingAbility extends Ability {
         canBeReplicated = false;
         autoClear = false;
         canBeShared = false;
-
-        hasDynamicCooldown = true;
-        dynamicCooldown = new LinkedList<>(List.of(1, 2, 3));
-
-        hasDynamicSpirituality = true;
-        dynamicSpirituality = new LinkedList<>(List.of(12000f, 6000f, 5000f));
-
-    }
-
-    @Override
-    public void onAbilityUse(Level level, LivingEntity entity) {
-        if (!(level instanceof ServerLevel serverLevel))
-            return;
-
-        Vec3 playerDir = (new Vec3(entity.getLookAngle().x, 0, entity.getLookAngle().z)).normalize();
-        Vec3 pos = VectorUtil.getRelativePosition(entity.getEyePosition().add(0, -.4, 0), playerDir, 1.2, 0, -.4);
-        Vec3 dir = entity.getEyePosition().subtract(pos).normalize();
-
-        ApprenticeBookEntity book = new ApprenticeBookEntity(level, pos, dir);
-        level.addFreshEntity(book);
-
-        AtomicBoolean hasReplicatedAbility = new AtomicBoolean(false);
-
-        level.playSound(null, BlockPos.containing(entity.position()), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.BLOCKS, 1, 1);
-
-        ServerScheduler.scheduleForDuration(0, 1, 20 * 5, () -> {
-            if (hasReplicatedAbility.get())
-                return;
-
-            Vec3 currentPlayerDir = (new Vec3(entity.getLookAngle().x, 0, entity.getLookAngle().z)).normalize();
-            Vec3 currentPos = VectorUtil.getRelativePosition(entity.getEyePosition().add(0, -.8, 0), currentPlayerDir, 1.1, 0, -.2);
-            Vec3 currentDir = entity.getEyePosition().subtract(currentPos).normalize();
-            book.setPos(currentPos);
-            book.setFacingDirection(currentDir);
-
-            AbilityUseTracker.AbilityUseRecord record = AbilityUseTracker.getRecentUseInArea(
-                    entity.getEyePosition(), level, 15, entity);
-            if (record == null || record.ability() instanceof ReplicatingAbility)
-                return;
-
-            Ability usedAbility = record.ability();
-            hasReplicatedAbility.set(true);
-            book.discard();
-
-            if (!usedAbility.canBeReplicated) {
-                AbilityUtil.sendActionBar(entity, Component.translatable("ability.lotmcraft.replicating.cannot_copy").withColor(0xFF8ff4ff));
-                level.playSound(null, BlockPos.containing(entity.position()), SoundEvents.ANVIL_PLACE, SoundSource.BLOCKS, 1, 1);
-                ParticleUtil.spawnParticles(serverLevel, ParticleTypes.PORTAL, pos, 45, .3, .02);
-                return;
-            }
-
-            if (usedAbility.lowestSequenceUsable() + 2 < AbilityUtil.getSeqWithArt(entity, this)) {
-                entity.hurt(entity.damageSources().source(ModDamageTypes.LOOSING_CONTROL), entity.getHealth() - .5f);
-                AbilityUtil.sendActionBar(entity, Component.translatable("ability.lotmcraft.replicating.too_high_sequence").withColor(0xFF8ff4ff));
-                level.playSound(null, BlockPos.containing(entity.position()), SoundEvents.ANVIL_PLACE, SoundSource.BLOCKS, 1, 1);
-                ParticleUtil.spawnParticles(serverLevel, ParticleTypes.PORTAL, pos, 45, .3, .02);
-                return;
-            }
-
-            // 1 in 6 chance to succeed (harder than recording)
-            if (random.nextInt(6) != 0) {
-                AbilityUtil.sendActionBar(entity, Component.translatable("ability.lotmcraft.replicating.failed").withColor(0xFF8ff4ff));
-                level.playSound(null, BlockPos.containing(entity.position()), SoundEvents.ANVIL_PLACE, SoundSource.BLOCKS, 1, 1);
-                ParticleUtil.spawnParticles(serverLevel, ParticleTypes.PORTAL, pos, 45, .3, .02);
-                return;
-            }
-
-            level.playSound(null, BlockPos.containing(entity.position()), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.BLOCKS, 1, 1);
-
-            if (entity instanceof ServerPlayer player) {
-                CopiedAbilityHelper.addAbility(player,
-                        new CopiedAbilityComponent.CopiedAbilityData(
-                                usedAbility.getId(),
-                                "replicated",
-                                -1,
-                                null
-                        ));
-                AbilityUtil.sendActionBar(entity, Component.translatable("ability.lotmcraft.replicating.success").withColor(0xFF8ff4ff));
-            }
-
-            ParticleUtil.spawnParticles(serverLevel, ParticleTypes.END_ROD, book.position(), 60, .3, .08);
-            ParticleUtil.spawnParticles(serverLevel, ParticleTypes.ENCHANT, book.position(), 60, .3, .08);
-        }, () -> {
-            clearArtifactScaling(entity);
-            if (hasReplicatedAbility.get())
-                return;
-            AbilityUtil.sendActionBar(entity, Component.translatable("ability.lotmcraft.replicating.no_ability").withColor(0xFF8ff4ff));
-            level.playSound(null, BlockPos.containing(entity.position()), SoundEvents.ANVIL_PLACE, SoundSource.BLOCKS, 1, 1);
-            ParticleUtil.spawnParticles(serverLevel, ParticleTypes.PORTAL, book.position(), 90, .3, .1);
-            book.discard();
-        }, serverLevel);
     }
 
     @Override
@@ -137,6 +55,93 @@ public class ReplicatingAbility extends Ability {
 
     @Override
     public float getSpiritualityCost() {
-        return 0;
+        return 10;
+    }
+
+    @Override
+    public void start(Level level, LivingEntity entity) {
+        if (level.isClientSide) return;
+        level.playSound(null, entity.blockPosition(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 1, 1);
+    }
+
+    @Override
+    public void tick(Level level, LivingEntity entity) {
+        if (level instanceof ServerLevel serverLevel) {
+            ParticleUtil.spawnParticles(serverLevel, ParticleTypes.ENCHANT, entity.getEyePosition(), 2, .4, .3);
+        }
+    }
+
+    @Override
+    public void stop(Level level, LivingEntity entity) {
+        if (level.isClientSide) return;
+        clearArtifactScaling(entity);
+    }
+
+    private static int difficulty(int observerSeq, int abilitySeq, boolean concealed) {
+        int level;
+        if (abilitySeq >= 7)      level = 0;
+        else if (abilitySeq >= 5) level = 1;
+        else if (abilitySeq >= 3) level = 2;
+        else if (abilitySeq >= 1) level = 3;
+        else                      level = 4;
+
+        if (observerSeq < 2) level -= 2 - observerSeq;
+        if (concealed) level++;
+        return Math.min(level, USES.length - 1);
+    }
+
+    @SubscribeEvent
+    public static void onAbilityUsed(AbilityUsedEvent event) {
+        Ability used = event.getAbility();
+        LivingEntity user = event.getEntity();
+        if (used == null || user == null || used instanceof ReplicatingAbility) return;
+        if (!(LOTMCraft.abilityHandler.getById("replicating_ability") instanceof ReplicatingAbility replicating)) return;
+
+        ServerLevel level = event.getLevel();
+        long now = level.getGameTime();
+        Map<String, Long> seen = lastSeen.computeIfAbsent(user.getUUID(), k -> new ConcurrentHashMap<>());
+        Long previous = seen.put(used.getId(), now);
+        if (previous != null && now - previous < REPEAT_TICKS) return;
+
+        for (ServerPlayer observer : level.players()) {
+            if (observer == user || observer.distanceToSqr(event.getPosition()) > RADIUS * RADIUS) continue;
+            if (!replicating.isActiveForEntity(observer)) continue;
+            replicating.observe(level, observer, user, used);
+        }
+    }
+
+    private void observe(ServerLevel level, ServerPlayer observer, LivingEntity user, Ability used) {
+        if (CopiedAbilityHelper.hasCopiedAbility(observer, used.getId())) return;
+        if (!used.canBeReplicated) {
+            AbilityUtil.sendActionBar(observer, Component.translatable("ability.lotmcraft.replicating.cannot_copy").withColor(COLOR));
+            return;
+        }
+
+        int observerSeq = AbilityUtil.getSeqWithArt(observer, this);
+        boolean concealed = user.hasEffect(ModEffects.CONCEALMENT);
+        int difficulty = difficulty(observerSeq, used.lowestSequenceUsable(), concealed);
+
+        Map<String, Understanding> known = understanding.computeIfAbsent(observer.getUUID(), k -> new ConcurrentHashMap<>());
+        Understanding current = known.get(used.getId());
+        if (current == null) {
+            int[] range = USES[Math.max(0, difficulty)];
+            int needed = difficulty < 0 ? 1 : range[0] + random.nextInt(range[1] - range[0] + 1);
+            current = new Understanding(0, needed);
+        }
+        current = new Understanding(current.uses() + 1, current.needed());
+
+        if (current.uses() < current.needed()) {
+            known.put(used.getId(), current);
+            int percent = current.uses() * 100 / current.needed();
+            AbilityUtil.sendActionBar(observer, Component.translatable("ability.lotmcraft.replicating.understanding",
+                    used.getNameFormatted(observer), percent).withColor(COLOR));
+            return;
+        }
+
+        known.remove(used.getId());
+        CopiedAbilityHelper.addAbility(observer, new CopiedAbilityComponent.CopiedAbilityData(used.getId(), "replicated", -1, null));
+        AbilityUtil.sendActionBar(observer, Component.translatable("ability.lotmcraft.replicating.success", used.getNameFormatted(observer)).withColor(COLOR));
+        level.playSound(null, observer.blockPosition(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 1, 1.4f);
+        ParticleUtil.spawnParticles(level, ParticleTypes.END_ROD, observer.getEyePosition(), 30, .4, .08);
     }
 }

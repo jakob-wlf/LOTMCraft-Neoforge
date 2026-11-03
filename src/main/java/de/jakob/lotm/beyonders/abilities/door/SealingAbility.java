@@ -6,6 +6,7 @@ import de.jakob.lotm.beyonders.abilities.abyss.TheCorroderAbility;
 import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.beyonders.abilities.core.AbilityUsedEvent;
 import de.jakob.lotm.beyonders.abilities.core.interaction.InteractionHandler;
+import de.jakob.lotm.beyonders.abilities.door.passives.SealingAuthorityPassiveAbility;
 import de.jakob.lotm.network.PacketHandler;
 import de.jakob.lotm.network.packets.toClient.CancelPhotonBlockEffectPacket;
 import de.jakob.lotm.network.packets.toClient.PlayCancellablePhotonBlockEffectPacket;
@@ -75,7 +76,8 @@ public class SealingAbility extends Ability {
         seal(entity, (ServerLevel) level, targetLoc, AbilityUtil.getSeqWithArt(entity, this));
     }
 
-    public void seal(LivingEntity entity, ServerLevel level, Vec3 targetLoc, int entitySeq) {
+    public void seal(LivingEntity entity, ServerLevel level, Vec3 targetLoc, int seq) {
+        int entitySeq = SealingAuthorityPassiveAbility.sealingSeq(entity, seq);
         int radius = 10;
 
         NeoForge.EVENT_BUS.post(new AbilityUsedEvent(level, targetLoc, entity, this, interactionFlags, interactionRadius, interactionCacheTicks));

@@ -271,6 +271,7 @@ public class AbilityHandler {
         abilities.add(new InvisibleHandAbility("invisible_hand_ability"));
         abilities.add(new SpaceConcealmentAbility("space_concealment_ability"));
         abilities.add(new SecretKeepingAbility("secret_keeping_ability"));
+        abilities.add(new ConcealedBundleAbility("concealed_bundle_ability"));
         abilities.add(new DoorTransfigurationAbility("door_transfiguration_ability"));
         abilities.add(new BlinkAfterimageAbility("blink_afterimage_ability"));
         abilities.add(new ExileAbility("exile_ability"));
@@ -283,6 +284,9 @@ public class AbilityHandler {
         abilities.add(new PositionTravelAbility("position_travel_ability"));
         abilities.add(new PositionCageAbility("position_cage_ability"));
         abilities.add(new PositionSealAbility("position_seal_ability"));
+        abilities.add(new PositionTearAbility("position_tear_ability"));
+        abilities.add(new PositionFragmentationAbility("position_fragmentation_ability"));
+        abilities.add(new PositionFlickerAbility("position_flicker_ability"));
         abilities.add(new SpaceTearingAbility("space_tearing_ability"));
         abilities.add(new WaypointAbility("waypoint_ability"));
         abilities.add(new ReplicatingAbility("replicating_ability"));
@@ -299,6 +303,7 @@ public class AbilityHandler {
         abilities.add(new SpaceFragmentationAbility("space_fragmentation_ability"));
         abilities.add(new ConceptualizationAbility("conceptualization_ability"));
         abilities.add(new DoorAuthorityAbility("door_authority_ability"));
+        abilities.add(new ConcealNameAbility("conceal_name_ability"));
         abilities.add(new SealingAuthorityAbility("sealing_authority_ability"));
 
         // VISIONARY PATHWAY

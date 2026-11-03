@@ -86,6 +86,11 @@ public abstract class SelectableAbility extends Ability {
         return super.getHoldTime(entity, subIndex >= 0 ? subIndex : getSelectedAbilityIndex(entity.getUUID()));
     }
 
+    @Override
+    public boolean showsHoldBar(LivingEntity entity, int subIndex) {
+        return super.showsHoldBar(entity, subIndex >= 0 ? subIndex : getSelectedAbilityIndex(entity.getUUID()));
+    }
+
     public void addSubAbilityOverride(LivingEntity entity, int selectedAbility) {
         castedSubAbility.put(entity.getUUID(), selectedAbility);
     }

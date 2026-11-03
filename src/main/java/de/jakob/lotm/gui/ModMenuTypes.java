@@ -3,6 +3,7 @@ package de.jakob.lotm.gui;
 import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.gui.custom.artifact_wheel.ArtifactWheelMenu;
 import de.jakob.lotm.gui.custom.cohort.CohortMenu;
+import de.jakob.lotm.gui.custom.concealed_bundle.ConcealedBundleMenu;
 import de.jakob.lotm.gui.custom.copied_ability_wheel.CopiedAbilityWheelMenu;
 import de.jakob.lotm.gui.custom.encyclopedia.IngredientEncyclopediaMenu;
 import de.jakob.lotm.gui.custom.flaming_jump.FlamingJumpMenu;
@@ -135,6 +136,9 @@ public class ModMenuTypes {
 
     public static final DeferredHolder<MenuType<?>, MenuType<JusticePrincipleMenu>> JUSTICE_PRINCIPLES =
             MENU_TYPES.register("justice_principles", () -> IMenuTypeExtension.create((id, inventory, buf) -> new JusticePrincipleMenu(id, inventory)));
+
+    public static final DeferredHolder<MenuType<?>, MenuType<ConcealedBundleMenu>> CONCEALED_BUNDLE_MENU =
+            MENU_TYPES.register("concealed_bundle_menu", () -> IMenuTypeExtension.create(ConcealedBundleMenu::new));
 
     public static void register(IEventBus eventBus) {
         MENU_TYPES.register(eventBus);

@@ -73,12 +73,11 @@ public class SpaceFragmentationAbility extends SelectableAbility {
     @Override
     protected void castSelectedAbility(Level level, LivingEntity entity, int selectedAbility) {
         if (!(level instanceof ServerLevel serverLevel)) return;
-        if (selectedAbility == 0) shatterSpace(serverLevel, entity);
+        if (selectedAbility == 0) shatterSpace(serverLevel, entity, entity.position());
         else                      starfall(serverLevel, entity);
     }
-
-    private void shatterSpace(ServerLevel level, LivingEntity entity) {
-        Vec3 center = entity.position();
+// using this in position authority
+    public void shatterSpace(ServerLevel level, LivingEntity entity, Vec3 center) {
         boolean griefing = BeyonderData.isGriefingEnabled(entity);
 
         List<BlinkAfterimageEntity> copies = new ArrayList<>();

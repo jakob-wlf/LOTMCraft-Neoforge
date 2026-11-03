@@ -1,6 +1,7 @@
 package de.jakob.lotm.beyonders.abilities.door;
 
 import de.jakob.lotm.beyonders.abilities.core.Ability;
+import de.jakob.lotm.beyonders.abilities.door.passives.SealingAuthorityPassiveAbility;
 import de.jakob.lotm.entity.ModEntities;
 import de.jakob.lotm.entity.custom.ability_entities.door_pathway.ExileDoorsEntity;
 import de.jakob.lotm.util.helper.AbilityUtil;
@@ -46,7 +47,7 @@ public class ExileAbility extends Ability {
 
         Vec3 targetPos = AbilityUtil.getTargetLocation(entity, baseDistance, 2);
 
-        ExileDoorsEntity door = new ExileDoorsEntity(ModEntities.EXILE_DOORS.get(), level, 20 * 5, entity, AbilityUtil.getSeqWithArt(entity, this), multiplier(entity));
+        ExileDoorsEntity door = new ExileDoorsEntity(ModEntities.EXILE_DOORS.get(), level, 20 * 5, entity, SealingAuthorityPassiveAbility.sealingSeq(entity, AbilityUtil.getSeqWithArt(entity, this)), multiplier(entity));
         door.setPos(targetPos.x, targetPos.y, targetPos.z);
         level.addFreshEntity(door);
 

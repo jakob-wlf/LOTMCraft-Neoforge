@@ -228,8 +228,8 @@ public class ConcealmentAuthorityAbility extends SelectableAbility {
         }
         PacketHandler.sendToPlayer(player, new OpenDivinationMisleadScreenPacket(lines));
     }
-
-    private void concealName(LivingEntity entity) {
+//Door conceal name uses it
+    public static void concealName(LivingEntity entity) {
         if (!(entity instanceof ServerPlayer player)) return;
         if (hiddenNames.remove(player.getUUID())) bar(player, "The name can be written again.");
         else {
