@@ -9,7 +9,6 @@ import de.jakob.lotm.network.packets.toClient.PlayPhotonBlockEffectPacket;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.data.PriestFlameVariants;
 import de.jakob.lotm.util.helper.AbilityUtil;
-import de.jakob.lotm.util.helper.DamageLookup;
 import de.jakob.lotm.util.helper.VectorUtil;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.BlockPos;
@@ -81,7 +80,7 @@ public class PyrokinesisAbility extends SelectableAbility {
         level.playSound(null, startPos.x, startPos.y, startPos.z, SoundEvents.BLAZE_SHOOT, entity.getSoundSource(), 1.0f, 1.0f);
         boolean ride = player.isShiftKeyDown() && BeyonderData.getSequence(entity) <= 5;
         if(player.isPassenger()) ride = false;
-        FlamingSpearProjectileEntity spear = new FlamingSpearProjectileEntity(level, entity, DamageLookup.lookupDamage(7, 0.9) * multiplier(entity), BeyonderData.isGriefingEnabled(entity), 2.0f, ride);
+        FlamingSpearProjectileEntity spear = new FlamingSpearProjectileEntity(level, entity, baseDamage * 1.25f, BeyonderData.isGriefingEnabled(entity), 2.0f, ride);
         spear.setPos(startPos.x, startPos.y, startPos.z); // Set initial position
         spear.setVariant(PriestFlameVariants.byId(BeyonderData.getSequence(entity)));
         spear.shoot(direction.x, direction.y, direction.z, 3, 0);

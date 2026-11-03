@@ -8,7 +8,6 @@ import de.jakob.lotm.particle.ModParticles;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.helper.AbilityUtil;
-import de.jakob.lotm.util.helper.DamageLookup;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -21,6 +20,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -32,6 +33,14 @@ public class DeathFlameAbility extends Ability {
 
     public DeathFlameAbility(String id) {
         super(id, 10);
+
+        hasDynamicCooldown = true;
+        dynamicCooldown = new LinkedList<>(List.of(7, 8, 10));
+
+        hasDynamicSpirituality = true;
+        dynamicSpirituality = new LinkedList<>(List.of(24500f, 14000f, 10000f));
+
+        baseDamage = 50f;
     }
 
     @Override
@@ -46,6 +55,7 @@ public class DeathFlameAbility extends Ability {
 
         PacketHandler.sendToNearbyPlayers(new PlayPhotonEntityEffectPacket("pale_flame", entity.getId(), 0, -.5, 0, 1, null, false, true, UUID.randomUUID(), true), serverLevel, entity.position(), 128);
 
+        float damage = baseDamage / 30;
         ServerScheduler.scheduleForDuration(0, 1, DURATION, () -> {
             if (!entity.isAlive()) return;
 
@@ -54,7 +64,7 @@ public class DeathFlameAbility extends Ability {
             Vec3 p1 = getPerp(look);
             Vec3 p2 = look.cross(p1).normalize();
 
-            damageEntitiesInCone(serverLevel, entity, origin, look);
+            damageEntitiesInCone(serverLevel, entity, origin, look, damage);
 
             if (BeyonderData.isGriefingEnabled(entity)) {
                 placeFireInCone(serverLevel, origin, look);
@@ -122,7 +132,7 @@ public class DeathFlameAbility extends Ability {
         }
     }
 
-    private void damageEntitiesInCone(ServerLevel level, LivingEntity source, Vec3 origin, Vec3 look) {
+    private void damageEntitiesInCone(ServerLevel level, LivingEntity source, Vec3 origin, Vec3 look, float damage) {
         Vec3 coneEnd = origin.add(look.scale(FLAME_LENGTH));
         AABB bounds = new AABB(
                 Math.min(origin.x, coneEnd.x) - FLAME_MAX_RADIUS,
@@ -138,7 +148,7 @@ public class DeathFlameAbility extends Ability {
                 .filter(e -> isInCone(e.getEyePosition(), origin, look))
                 .forEach(e -> {
                     e.invulnerableTime = 0;
-                    e.hurt(ModDamageTypes.source(level, ModDamageTypes.BEYONDER_GENERIC, source), (float) DamageLookup.lookupDps(2, .8, 1, 30) * multiplier(source));
+                    e.hurt(ModDamageTypes.source(level, ModDamageTypes.BEYONDER_GENERIC, source), damage);
                     e.setRemainingFireTicks(e.getRemainingFireTicks() + 30);
                 });
     }

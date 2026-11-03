@@ -3,7 +3,6 @@ package de.jakob.lotm.beyonders.abilities.mother;
 import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.damage.ModDamageTypes;
 import de.jakob.lotm.util.helper.AbilityUtil;
-import de.jakob.lotm.util.helper.DamageLookup;
 import de.jakob.lotm.util.helper.ParticleUtil;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.BlockPos;
@@ -35,6 +34,8 @@ public class UndergroundTravelAbility extends Ability {
 
         hasDynamicSpirituality = true;
         dynamicSpirituality = new LinkedList<>(List.of(3000f, 1300f, 1000f, 625f, 550f, 380f));
+
+        baseDamage = 14.5f;
     }
 
     @Override
@@ -73,6 +74,7 @@ public class UndergroundTravelAbility extends Ability {
         }
 
         BlockPos finalGround = ground;
+        float damage = baseDamage;
         ServerScheduler.scheduleDelayed(12, () -> {
             Vec3 emergePos = finalGround.getCenter();
             entity.teleportTo(emergePos.x, emergePos.y, emergePos.z);
@@ -82,7 +84,7 @@ public class UndergroundTravelAbility extends Ability {
             ParticleUtil.spawnCircleParticles((ServerLevel) level, dirt, emergePos, 2.2, 50);
             ParticleUtil.spawnParticles((ServerLevel) level, ParticleTypes.CRIT, emergePos.add(0, .5, 0), 20, .8, .4, .8, .05);
 
-            AbilityUtil.damageNearbyEntities((ServerLevel) level, entity, 2.5, DamageLookup.lookupDamage(5, .7) * multiplier(entity), emergePos, true, true,
+            AbilityUtil.damageNearbyEntities((ServerLevel) level, entity, 2.5, damage, emergePos, true, true,
                     ModDamageTypes.source(level, ModDamageTypes.BEYONDER_GENERIC, entity));
 
             for(LivingEntity e : AbilityUtil.getNearbyEntities(entity, (ServerLevel) level, emergePos, 2.5)) {

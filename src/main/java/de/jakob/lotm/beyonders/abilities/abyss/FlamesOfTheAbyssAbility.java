@@ -10,7 +10,6 @@ import de.jakob.lotm.network.packets.toClient.PlayPhotonBlockEffectPacket;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.helper.AbilityUtil;
-import de.jakob.lotm.util.helper.DamageLookup;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -25,6 +24,7 @@ import net.neoforged.neoforge.common.NeoForge;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +32,14 @@ public class FlamesOfTheAbyssAbility extends SelectableAbility {
 
     public FlamesOfTheAbyssAbility(String id) {
         super(id, 10);
+
+        hasDynamicCooldown = true;
+        dynamicCooldown = new LinkedList<>(List.of(8, 10));
+
+        hasDynamicSpirituality = true;
+        dynamicSpirituality = new LinkedList<>(List.of(1400f, 800f));
+
+        baseDamage = 64f;
     }
 
     @Override
@@ -67,7 +75,7 @@ public class FlamesOfTheAbyssAbility extends SelectableAbility {
 
         Vec3 targetPos = AbilityUtil.getTargetLocation(entity, 80, 1.5f);
         boolean griefing = BeyonderData.isGriefingEnabled(entity);
-        float damage = (float) (DamageLookup.lookupDamage(1, 0.85) * multiplier(entity) * BloodlineFilthFlameSpiritAbility.getFireDamageMultiplier(entity));
+        float damage = baseDamage * BloodlineFilthFlameSpiritAbility.getFireDamageMultiplier(entity);
 
         level.playSound(null, BlockPos.containing(entity.position()),
                 SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 3f, 0.6f);
@@ -103,7 +111,7 @@ public class FlamesOfTheAbyssAbility extends SelectableAbility {
         if (level.isClientSide) return;
         ServerLevel serverLevel = (ServerLevel) level;
         level.playSound(null, BlockPos.containing(entity.position()), SoundEvents.BLAZE_SHOOT, SoundSource.BLOCKS, 3f, 0.5f);
-        float damage = (float) (DamageLookup.lookupDamage(1, 0.4) * multiplier(entity) * BloodlineFilthFlameSpiritAbility.getFireDamageMultiplier(entity));
+        float damage = baseDamage * .75f * BloodlineFilthFlameSpiritAbility.getFireDamageMultiplier(entity);
         List<Vec3> pillarPositions = new ArrayList<>();
         double angleOffset = random.nextDouble() * Math.PI * 2;
         for (int i = 0; i < RING_PILLAR_COUNT; i++) {

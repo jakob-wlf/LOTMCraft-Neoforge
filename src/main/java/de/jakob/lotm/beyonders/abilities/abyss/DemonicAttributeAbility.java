@@ -10,7 +10,6 @@ import de.jakob.lotm.network.packets.toServer.AbilitySelectionPacket;
 import de.jakob.lotm.particle.ModParticles;
 import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.helper.AbilityUtil;
-import de.jakob.lotm.util.helper.DamageLookup;
 import de.jakob.lotm.util.helper.FxHandler;
 import de.jakob.lotm.util.helper.ParticleUtil;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
@@ -45,6 +44,14 @@ public class DemonicAttributeAbility extends SelectableAbility {
     public DemonicAttributeAbility(String id) {
         super(id, 7);
         postsUsedAbilityEventManually = true;
+
+        hasDynamicCooldown = true;
+        dynamicCooldown = new LinkedList<>(List.of(2, 2, 3, 3, 4, 4, 5, 6, 7));
+
+        hasDynamicSpirituality = true;
+        dynamicSpirituality = new LinkedList<>(List.of(290f, 170f, 120f, 85f, 75f, 50f, 40f, 35f, 17f));
+
+        baseDamage = 8.5f;
     }
     @Override
     public Map<String, Integer> getRequirements() {
@@ -149,12 +156,13 @@ public class DemonicAttributeAbility extends SelectableAbility {
     //1: Toxic Smoke
     private void toxicSmoke(Level level, LivingEntity entity) {
         Vec3 pos = entity.getEyePosition();
+        float damage = baseDamage;
         final UUID[] taskIdHolder = new UUID[1];
         taskIdHolder[0] = ServerScheduler.scheduleForDuration(0, 6, (int) (20 * 5 * multiplier(entity)), () -> {
             Location smokeLoc = new Location(pos, level);
             int seq = AbilityUtil.getSeqWithArt(entity, this);
             if (InteractionHandler.isInteractionPossible(smokeLoc, "burning", seq)) {
-                AbilityUtil.damageNearbyEntities((ServerLevel) level, null, 9, DamageLookup.lookupDamage(8, 1.2) * multiplier(entity), pos, true, false, true, 0, ModDamageTypes.source(level, ModDamageTypes.PLAGUE, entity));
+                AbilityUtil.damageNearbyEntities((ServerLevel) level, null, 9, damage * 1.15f, pos, true, false, true, 0, ModDamageTypes.source(level, ModDamageTypes.PLAGUE, entity));
                 ParticleUtil.spawnParticles((ServerLevel) level, ParticleTypes.EXPLOSION_EMITTER, pos, 50, 7, .02);
                 ParticleUtil.spawnParticles((ServerLevel) level, ParticleTypes.LARGE_SMOKE, pos, 175, 7, .02);
                 ParticleUtil.spawnParticles((ServerLevel) level, ParticleTypes.FLAME, pos, 250, 7, .02);
@@ -166,7 +174,7 @@ public class DemonicAttributeAbility extends SelectableAbility {
                 if (taskIdHolder[0] != null) ServerScheduler.cancel(taskIdHolder[0]);
                 return;
             }
-            AbilityUtil.damageNearbyEntities((ServerLevel) level, entity, 6.5 * multiplier(entity), DamageLookup.lookupDps(8, .8, 6, 20) * multiplier(entity)*getPoisonDamageMultiplier(entity), pos, true, false, true, 0, ModDamageTypes.source(level, ModDamageTypes.PLAGUE, entity));
+            AbilityUtil.damageNearbyEntities((ServerLevel) level, entity, 6.5 * multiplier(entity), damage * .3f * getPoisonDamageMultiplier(entity), pos, true, false, true, 0, ModDamageTypes.source(level, ModDamageTypes.PLAGUE, entity));
             ParticleUtil.spawnParticles((ServerLevel) level, ModParticles.TOXIC_SMOKE.get(), pos, 25, 3, .01);
             ParticleUtil.spawnParticles((ServerLevel) level, SMOKE_DUST, pos, 25, 3, .01);
             ParticleUtil.spawnParticles((ServerLevel) level, ParticleTypes.SMOKE, pos, 25, 3, .01);
@@ -196,7 +204,7 @@ public class DemonicAttributeAbility extends SelectableAbility {
         Location flameLoc = new Location(startPos, level);
         int seq = AbilityUtil.getSeqWithArt(entity, this);
         boolean purified = InteractionHandler.isInteractionPossible(flameLoc, "purification", seq);
-        AbilityUtil.damageNearbyEntities((ServerLevel) level, entity, 2.75 * multiplier(entity), DamageLookup.lookupDamage(8, .9) * multiplier(entity)*getPoisonDamageMultiplier(entity), startPos, true, false, true, 0, 20 * 3, ModDamageTypes.source(level, ModDamageTypes.PLAGUE, entity));
+        AbilityUtil.damageNearbyEntities((ServerLevel) level, entity, 2.75 * multiplier(entity), baseDamage * getPoisonDamageMultiplier(entity), startPos, true, false, true, 0, 20 * 3, ModDamageTypes.source(level, ModDamageTypes.PLAGUE, entity));
         if (!purified) {
             AbilityUtil.addPotionEffectToNearbyEntities((ServerLevel) level, entity, 3, startPos, new MobEffectInstance(MobEffects.POISON, 20 * 8 * (int) Math.max(multiplier(entity) / 2, 1), 2, false, true));
         }
@@ -225,14 +233,14 @@ public class DemonicAttributeAbility extends SelectableAbility {
         boolean hasSingleTarget = target != null;
         Set<LivingEntity> targets = hasSingleTarget ? Set.of(target) : new HashSet<>(AbilityUtil.getNearbyEntities(entity, serverLevel, entity.position(), 20, false, true));
         int drainDuration = 20 * 10;
-        double dps = DamageLookup.lookupDps(3, hasSingleTarget ? .85 : .6, 10, 30) * multiplier(entity);
+        float damage = hasSingleTarget ? baseDamage : baseDamage * .85f;
         serverLevel.playSound(null, BlockPos.containing(entity.position()), SoundEvents.WITHER_SPAWN, entity.getSoundSource(), 1f, 1f);
         for (LivingEntity e : targets) BeyonderData.addModifierWithTimeLimit(e, "sink_into_ground", .8, drainDuration * 500);
         AtomicInteger tickCounter = new AtomicInteger(0);
         ServerScheduler.scheduleForDuration(0, 1, drainDuration, () -> {
             for (LivingEntity e : targets) {
                 if (tickCounter.get() % 10 == 0) {
-                    e.hurt(ModDamageTypes.source(serverLevel, ModDamageTypes.RETURN_TO_EARTH, entity), (float) dps);
+                    e.hurt(ModDamageTypes.source(serverLevel, ModDamageTypes.RETURN_TO_EARTH, entity), damage);
                     serverLevel.playSound(null, BlockPos.containing(e.position()), SoundEvents.WITHER_SHOOT, e.getSoundSource(), .5f, .5f);
                     if (tickCounter.get() % 20 == 0) {
                         // Original pulled -.001 per 20 ticks (10 pulls, ~negligible). This pulls -.1 per 20 ticks

@@ -7,7 +7,6 @@ import de.jakob.lotm.rendering.effectRendering.EffectIds;
 import de.jakob.lotm.rendering.effectRendering.EffectManager;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.helper.AbilityUtil;
-import de.jakob.lotm.util.helper.DamageLookup;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -86,7 +85,7 @@ public class RoarOfTheThunderGodAbility extends Ability {
 
             String targetPathway = BeyonderData.getPathway(e);
 
-            if (targetPathway != null && PURIFIED_PATHWAYS.contains(targetPathway)) {e.hurt(ModDamageTypes.source(level, ModDamageTypes.PURIFICATION, entity), (float) (DamageLookup.lookupDamage(1, 0.5) * multiplier(entity)));}
+            if (targetPathway != null && PURIFIED_PATHWAYS.contains(targetPathway)) {e.hurt(ModDamageTypes.source(level, ModDamageTypes.PURIFICATION, entity), damage * 2);}
             //unsure if Darkness beyonders should be immuine to horror
             //int targetSeq = BeyonderData.getSequence(e);
             //if ("darkness".equals(targetPathway) && targetSeq <= 3) return;

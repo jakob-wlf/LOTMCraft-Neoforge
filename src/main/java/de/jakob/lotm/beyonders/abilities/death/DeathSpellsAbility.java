@@ -5,7 +5,6 @@ import de.jakob.lotm.damage.ModDamageTypes;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.helper.AbilityUtil;
-import de.jakob.lotm.util.helper.DamageLookup;
 import de.jakob.lotm.util.helper.ParticleUtil;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.particles.ParticleTypes;
@@ -18,6 +17,7 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -26,6 +26,14 @@ public class DeathSpellsAbility extends SelectableAbility {
 
     public DeathSpellsAbility(String id) {
         super(id, 3);
+
+        hasDynamicCooldown = true;
+        dynamicCooldown = new LinkedList<>(List.of(2, 2, 2, 3, 3));
+
+        hasDynamicSpirituality = true;
+        dynamicSpirituality = new LinkedList<>(List.of(2950f, 1700f, 1200f, 850f, 750f));
+
+        baseDamage = 22f;
     }
 
     @Override
@@ -62,6 +70,7 @@ public class DeathSpellsAbility extends SelectableAbility {
 
         Vec3[] pos = { caster.getEyePosition().add(flatLook.scale(2.0)) };
         List<Vec3> trail = new ArrayList<>();
+        float damage = baseDamage;
 
         ServerScheduler.scheduleForDuration(0, 1, 80, () -> {
             trail.add(pos[0].add(0, 0, 0));
@@ -88,7 +97,7 @@ public class DeathSpellsAbility extends SelectableAbility {
                 }
             }
 
-            AbilityUtil.damageNearbyEntities(level, caster, 9, DamageLookup.lookupDamage(4, .8) * multiplier(caster), pos[0], true, false);
+            AbilityUtil.damageNearbyEntities(level, caster, 9, damage, pos[0], true, false);
 
             pos[0] = pos[0].add(flatLook.scale(0.5));
             if(BeyonderData.isGriefingEnabled(caster)) {
@@ -116,6 +125,7 @@ public class DeathSpellsAbility extends SelectableAbility {
         if (target == null) return;
 
         AtomicInteger tick = new AtomicInteger(0);
+        float damage = baseDamage * .9f;
 
         ServerScheduler.scheduleForDuration(0, 1, 60, () -> {
             int t = tick.getAndIncrement();
@@ -151,7 +161,7 @@ public class DeathSpellsAbility extends SelectableAbility {
 
             if (t % 4 == 0) {
                 if (!AbilityUtil.mayTarget(caster, target)) return;
-                boolean hit = target.hurt(ModDamageTypes.source(level, ModDamageTypes.BEYONDER_GENERIC, caster), (float) (DamageLookup.lookupDamage(4, .6) * multiplier(caster)));
+                boolean hit = target.hurt(ModDamageTypes.source(level, ModDamageTypes.BEYONDER_GENERIC, caster), damage);
                 if (hit) {
                     caster.setHealth(Math.min(caster.getHealth() + 2.5f * 0.6f, caster.getMaxHealth()));
                     ParticleUtil.spawnSphereParticles(level, ParticleTypes.SOUL_FIRE_FLAME, caster.getEyePosition(), 0.8, 8);

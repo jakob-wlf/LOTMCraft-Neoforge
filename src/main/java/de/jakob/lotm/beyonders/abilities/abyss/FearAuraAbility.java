@@ -12,7 +12,6 @@ import de.jakob.lotm.rendering.effectRendering.EffectParams;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.helper.AbilityUtil;
-import de.jakob.lotm.util.helper.DamageLookup;
 import de.jakob.lotm.util.helper.ParticleUtil;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.particles.ParticleTypes;
@@ -24,6 +23,8 @@ import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.common.NeoForge;
 
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -36,6 +37,14 @@ public class FearAuraAbility extends Ability {
         postsUsedAbilityEventManually = true;
         interactionRadius = 20;
         interactionCacheTicks = 5;
+
+        hasDynamicCooldown = true;
+        dynamicCooldown = new LinkedList<>(List.of(22, 26, 30));
+
+        hasDynamicSpirituality = true;
+        dynamicSpirituality = new LinkedList<>(List.of(2450f, 1400f, 1000f));
+
+        baseDamage = 11f;
     }
 
     @Override
@@ -56,6 +65,7 @@ public class FearAuraAbility extends Ability {
         UUID effectID = EffectManager.playMovableEffect(EffectIds.FEAR_AURA, serverLevel, entity, EffectParams.ofDuration(20 * 16));
 
         AtomicInteger ticks = new AtomicInteger(0);
+        float damage = baseDamage;
 
         ServerScheduler.scheduleForDuration(0, 1, 20 * 16, () -> {
             loc.setPosition(entity.position());
@@ -85,8 +95,7 @@ public class FearAuraAbility extends Ability {
                 int targetSeq = BeyonderData.getSequence(e);
 
                 if (AbilityUtil.isTargetSignificantlyWeaker(entitySeq, targetSeq) && ticks.get() % 10 == 0) {
-                    e.hurt(ModDamageTypes.source(serverLevel, ModDamageTypes.HORROR, entity), (float) (DamageLookup.lookupDps(3, 0.6, 10, 20) *
-                           multiplier(entity)));
+                    e.hurt(ModDamageTypes.source(serverLevel, ModDamageTypes.HORROR, entity), damage);
                 }
 
                 SanityComponent sanityComponent = e.getData(ModAttachments.SANITY_COMPONENT);
