@@ -12,6 +12,7 @@ import de.jakob.lotm.item.ModItems;
 import de.jakob.lotm.beyonders.quest.QuestManager;
 import de.jakob.lotm.beyonders.quest.QuestRegistry;
 import de.jakob.lotm.util.BeyonderData;
+import de.jakob.lotm.util.Config;
 import de.jakob.lotm.util.helper.AbilityUtil;
 import de.jakob.lotm.attachments.MarionetteComponent;
 import de.jakob.lotm.beyonders.abilities.fool.marionettes.MarionetteUtils;
@@ -204,7 +205,7 @@ public class BeyonderNPCEntity extends PathfinderMob {
                     if (randomQuestId != null) {
                         setQuestId(randomQuestId);
                     }
-                } else if((random.nextFloat() < TRADE_SPAWN_CHANCE || this._hasTrade == Boolean.TRUE) && this._hasTrade != Boolean.FALSE) {
+                } else if((random.nextFloat() < TRADE_SPAWN_CHANCE * Config.BEYONDER_TRADE_CHANCE_MULTIPLIER.get() || this._hasTrade == Boolean.TRUE) && this._hasTrade != Boolean.FALSE) {
                     ListTag trades = new ListTag();
                     for(int i = 0; i < random.nextInt(2, 5); i++) {
                         TradeEntry entry = generateRandomTrade(random);

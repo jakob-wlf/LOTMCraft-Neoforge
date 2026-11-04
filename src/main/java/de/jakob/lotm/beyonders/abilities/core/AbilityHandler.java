@@ -236,6 +236,7 @@ public class AbilityHandler {
         abilities.add(new PlagueAbility("plague_ability"));
         abilities.add(new MirrorWorldTraversalAbility("mirror_world_traversal_ability"));
         abilities.add(new CurseAbility("curse_ability"));
+        abilities.add(new BloodLossAbility("blood_loss_ability"));
         abilities.add(new PetrificationAbility("petrification_ability"));
         abilities.add(new DisasterManifestationAbility("disaster_manifestation_ability"));
         abilities.add(new StructuralCollapseAbility("structural_collapse_ability"));

@@ -1664,8 +1664,8 @@
   "ability.lotmcraft.inextinguishable_light_ability.description": "Light can never be extinguished. When you are about to die, your body turns into light and escapes to a faraway place. Can only happen once every 30 minutes",
 
   "ability.lotmcraft.feather_fall_ability": "Feather Fall",
-  "ability.lotmcraft.blood_loss_ability": "Blood Loss",
-  "ability.lotmcraft.blood_loss_ability.description": "Targets you hit have a chance to loose their blood when attacked. You can use the blood for curses or rituals.",
+  "lotmcraft.blood_loss_ability": "Blood Loss",
+  "lotmcraft.blood_loss_ability.description": "While active, targets you hit up close have a chance to lose their blood. You can use the blood for curses or rituals.",
   "ability.lotmcraft.mirror_revival_ability": "Mirror Revival",
   "ability.lotmcraft.mirror_revival_ability.description": "If there is glass near you, you will resurrect after death",
 

@@ -47,6 +47,16 @@ public class Config
 
     static {
         BUILDER.pop();
+        BUILDER.push("beyonder_npcs");
+    }
+
+    public static final ModConfigSpec.DoubleValue BEYONDER_TRADE_CHANCE_MULTIPLIER = BUILDER
+            .comment("Multiplier for the chance that a newly spawned rogue Beyonder offers trades (1.0 = default 7.5% base chance, 0 = never).",
+                    "Only Beyonders that didn't roll a quest can get trades.")
+            .defineInRange("beyonder_trade_chance_multiplier", 1.0, 0.0, 100.0);
+
+    static {
+        BUILDER.pop();
         BUILDER.comment("Law of Beyonder Characteristics Convergence.",
                 "Time (in seconds) a Beyonder has to spend in the overworld before convergence can start attracting other Beyonders.").push("convergence");
     }

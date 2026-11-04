@@ -26,7 +26,6 @@ import de.jakob.lotm.beyonders.abilities.death.passives.SolarSensitivityAbility;
 import de.jakob.lotm.beyonders.abilities.death.passives.AbsoluteDeathAbility;
 import de.jakob.lotm.beyonders.abilities.death.passives.UndeadIgnoranceAbility;
 import de.jakob.lotm.beyonders.abilities.twilight_giant.passives.*;
-import de.jakob.lotm.beyonders.abilities.demoness.passives.BloodLossAbility;
 import de.jakob.lotm.beyonders.abilities.demoness.passives.FeatherFallAbility;
 import de.jakob.lotm.beyonders.abilities.demoness.passives.MirrorRevivalAbility;
 import de.jakob.lotm.beyonders.abilities.demoness.passives.PhysicalEnhancementsDemonessAbility;
@@ -153,7 +152,6 @@ public class PassiveAbilityHandler {
 
         // Demoness
         passiveAbilities.add(new FeatherFallAbility("feather_fall_ability"));
-        passiveAbilities.add(new BloodLossAbility("blood_loss_ability"));
         passiveAbilities.add(new MirrorRevivalAbility("mirror_revival_ability"));
 
         // Tyrant
