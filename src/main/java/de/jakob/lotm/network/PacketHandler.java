@@ -249,6 +249,12 @@ public class PacketHandler {
         );
 
         registrar.playToClient(
+                ReplicationAnalysisPacket.TYPE,
+                ReplicationAnalysisPacket.STREAM_CODEC,
+                ReplicationAnalysisPacket::handle
+        );
+
+        registrar.playToClient(
                 StartStopDiscernmentPacket.TYPE,
                 StartStopDiscernmentPacket.STREAM_CODEC,
                 StartStopDiscernmentPacket::handle

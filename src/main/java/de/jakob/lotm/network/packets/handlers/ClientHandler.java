@@ -426,6 +426,10 @@ public class ClientHandler {
         VFXRenderer.cancelEffectsNear(x, y, z, radius);
     }
 
+    public static void handleReplicationAnalysis(ReplicationAnalysisPacket packet) {
+        ReplicationOverlayRenderer.update(packet);
+    }
+
     public static void syncDecryptionAbility(SyncDecryptionLookedAtEntitiesAbilityPacket packet, Player player) {
         if(packet.active()) {
             DecryptionRenderLayer.activeDecryption.add(player.getUUID());

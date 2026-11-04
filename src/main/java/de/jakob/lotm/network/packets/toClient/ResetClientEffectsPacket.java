@@ -29,6 +29,7 @@ public record ResetClientEffectsPacket() implements CustomPacketPayload {
             StatusPanelRenderer.clearCache();
             CullOverlay.clearCache();
             DecryptionOverlayRenderer.clearCache();
+            ReplicationOverlayRenderer.clearCache();
             EyeOfDeathOverlayRenderer.clearCache();
             MarionettePanelRenderer.clearCache();
             SpectatingOverlayRenderer.clearCache();

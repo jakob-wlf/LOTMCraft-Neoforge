@@ -6,11 +6,12 @@ import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.beyonders.abilities.core.AbilityUsedEvent;
 import de.jakob.lotm.beyonders.abilities.core.ToggleAbility;
 import de.jakob.lotm.effect.ModEffects;
+import de.jakob.lotm.network.PacketHandler;
+import de.jakob.lotm.network.packets.toClient.ReplicationAnalysisPacket;
 import de.jakob.lotm.util.helper.AbilityUtil;
 import de.jakob.lotm.util.helper.CopiedAbilityHelper;
 import de.jakob.lotm.util.helper.ParticleUtil;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -26,7 +27,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @EventBusSubscriber(modid = LOTMCraft.MOD_ID)
 public class ReplicatingAbility extends ToggleAbility {
 
-    private static final int COLOR = 0xFF8ff4ff;
     private static final double RADIUS = 20;
     private static final int REPEAT_TICKS = 40;
 
@@ -113,7 +113,7 @@ public class ReplicatingAbility extends ToggleAbility {
     private void observe(ServerLevel level, ServerPlayer observer, LivingEntity user, Ability used) {
         if (CopiedAbilityHelper.hasCopiedAbility(observer, used.getId())) return;
         if (!used.canBeReplicated) {
-            AbilityUtil.sendActionBar(observer, Component.translatable("ability.lotmcraft.replicating.cannot_copy").withColor(COLOR));
+            sendAnalysis(observer, used, 0, 0, ReplicationAnalysisPacket.SEALED);
             return;
         }
 
@@ -132,16 +132,18 @@ public class ReplicatingAbility extends ToggleAbility {
 
         if (current.uses() < current.needed()) {
             known.put(used.getId(), current);
-            int percent = current.uses() * 100 / current.needed();
-            AbilityUtil.sendActionBar(observer, Component.translatable("ability.lotmcraft.replicating.understanding",
-                    used.getNameFormatted(observer), percent).withColor(COLOR));
+            sendAnalysis(observer, used, current.uses(), current.needed(), ReplicationAnalysisPacket.ANALYZING);
             return;
         }
 
         known.remove(used.getId());
         CopiedAbilityHelper.addAbility(observer, new CopiedAbilityComponent.CopiedAbilityData(used.getId(), "replicated", -1, null));
-        AbilityUtil.sendActionBar(observer, Component.translatable("ability.lotmcraft.replicating.success", used.getNameFormatted(observer)).withColor(COLOR));
+        sendAnalysis(observer, used, current.needed(), current.needed(), ReplicationAnalysisPacket.REPLICATED);
         level.playSound(null, observer.blockPosition(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 1, 1.4f);
         ParticleUtil.spawnParticles(level, ParticleTypes.END_ROD, observer.getEyePosition(), 30, .4, .08);
+    }
+
+    private static void sendAnalysis(ServerPlayer observer, Ability used, int uses, int needed, int state) {
+        PacketHandler.sendToPlayer(observer, new ReplicationAnalysisPacket(used.getId(), uses, needed, state));
     }
 }
