@@ -1,6 +1,7 @@
 package de.jakob.lotm.beyonders.abilities.fool.marionettes;
 
 import de.jakob.lotm.LOTMCraft;
+import de.jakob.lotm.attachments.AbilityWheelComponent;
 import de.jakob.lotm.attachments.EntityControllingComponent;
 import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.beyonders.abilities.abyss.MaliceSeed.MaliceSeedAbility;
@@ -85,12 +86,14 @@ public class ControllingUtils {
         component.setActiveToggles(ToggleAbility.getActiveAbilitiesForEntity(player));
         ToggleAbility.cleanUp(player.serverLevel(), player);
 
-        component.setAbilityWheelAbilities(player.getData(ModAttachments.ABILITY_WHEEL_COMPONENT).getAbilities());
-        component.setSelectedAbilityInWheel(player.getData(ModAttachments.ABILITY_WHEEL_COMPONENT).getSelectedAbility());
+        AbilityWheelComponent ownWheel = player.getData(ModAttachments.ABILITY_WHEEL_COMPONENT);
+        component.setSavedWheel(ownWheel.copy());
+        component.setAbilityWheelAbilities(ownWheel.getAbilities());
+        component.setSelectedAbilityInWheel(ownWheel.getSelectedAbility());
         component.setAbilityBarAbilities(player.getData(ModAttachments.ABILITY_BAR_COMPONENT).getAbilities());
 
-        AbilityWheelHelper.setAbilities(player, target.getData(ModAttachments.ABILITY_WHEEL_COMPONENT).getAbilities());
-        AbilityWheelHelper.setSelectedAbility(player, target.getData(ModAttachments.ABILITY_WHEEL_COMPONENT).getSelectedAbility());
+        ownWheel.copyFrom(target.getData(ModAttachments.ABILITY_WHEEL_COMPONENT));
+        AbilityWheelHelper.syncToClient(player);
         AbilityBarHelper.setAbilities(player, target.getData(ModAttachments.ABILITY_BAR_COMPONENT).getAbilities());
 
         syncControllingData(player);
@@ -198,7 +201,7 @@ public class ControllingUtils {
                     if (killPreviousEntity) {controlled.hurt(controlled.damageSources().generic(), Float.MAX_VALUE);}
                 }
                 MaliceSeedAbility.cleanupTakeover(player);
-                AbilityWheelHelper.setAbilitiesForEntity(player, controlled, player.getData(ModAttachments.ABILITY_WHEEL_COMPONENT).getAbilities());
+                controlled.getData(ModAttachments.ABILITY_WHEEL_COMPONENT).copyFrom(player.getData(ModAttachments.ABILITY_WHEEL_COMPONENT));
                 AbilityBarHelper.setAbilities(controlled, player.getData(ModAttachments.ABILITY_BAR_COMPONENT).getAbilities());
             }
         }
@@ -229,8 +232,14 @@ public class ControllingUtils {
         }
 
         AbilityBarHelper.setAbilities(player, component.getAbilityBarAbilities());
-        AbilityWheelHelper.setAbilities(player, component.getAbilityWheelAbilities());
-        AbilityWheelHelper.setSelectedAbility(player, component.getSelectedAbilityInWheel());
+        AbilityWheelComponent savedWheel = component.getSavedWheel();
+        if (savedWheel != null) {
+            player.getData(ModAttachments.ABILITY_WHEEL_COMPONENT).copyFrom(savedWheel);
+            AbilityWheelHelper.syncToClient(player);
+        } else {
+            AbilityWheelHelper.setAbilities(player, component.getAbilityWheelAbilities());
+            AbilityWheelHelper.setSelectedAbility(player, component.getSelectedAbilityInWheel());
+        }
 
         component.getActiveToggles().forEach(toggle -> toggle.useAbility(level, player));
 

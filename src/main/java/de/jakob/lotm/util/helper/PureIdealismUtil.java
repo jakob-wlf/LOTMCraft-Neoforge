@@ -65,7 +65,7 @@ public class PureIdealismUtil {
         }
         component.setDiscerning(true);
 
-        wheelData.setAbilities(savedWheelData.getAbilities());
+        wheelData.copyFrom(savedWheelData);
         AbilityWheelHelper.syncToClient(player);
 
         barData.setAbilities(savedBarData.getAbilities());
@@ -107,7 +107,7 @@ public class PureIdealismUtil {
         }
         component.setDiscerning(false);
 
-        wheelData.setAbilities(component.getPreviousWheel().getAbilities());
+        wheelData.copyFrom(component.getPreviousWheel());
         AbilityWheelHelper.syncToClient(player);
         barData.setAbilities(component.getPreviousBar().getAbilities());
 

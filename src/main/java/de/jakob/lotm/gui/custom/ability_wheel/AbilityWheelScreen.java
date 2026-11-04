@@ -7,6 +7,7 @@ import de.jakob.lotm.beyonders.abilities.core.SelectableAbility;
 import de.jakob.lotm.events.KeyInputHandler;
 import de.jakob.lotm.network.PacketHandler;
 import de.jakob.lotm.network.packets.handlers.ClientHandler;
+import de.jakob.lotm.network.packets.toServer.SelectAbilityWheelPacket;
 import de.jakob.lotm.network.packets.toServer.UpdateSelectedAbilityPacket;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.data.AbilityWheelClientData;
@@ -133,6 +134,29 @@ public class AbilityWheelScreen extends BaseAbilityWheelScreen<AbilityWheelMenu>
                         pos.x() - textWidth / 2, pos.y() - size / 2 - 12, 0xFFFFFF, true);
             }
         }
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (!AbilityWheelClientData.sharedAbilityMode && AbilityWheelClientData.getWheelCount() > 1 && scrollY != 0) {
+            int next = Math.floorMod(AbilityWheelClientData.getActiveWheel() + (scrollY < 0 ? 1 : -1), AbilityWheelClientData.getWheelCount());
+            AbilityWheelClientData.setActiveWheel(next);
+            hoveredSlot = -1;
+            PacketHandler.sendToServer(new SelectAbilityWheelPacket(next));
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+    }
+
+    @Override
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        if (AbilityWheelClientData.sharedAbilityMode || AbilityWheelClientData.getWheelCount() <= 1) {
+            return;
+        }
+        String label = (AbilityWheelClientData.getActiveWheel() + 1) + "/" + AbilityWheelClientData.getWheelCount();
+        var font = net.minecraft.client.Minecraft.getInstance().font;
+        guiGraphics.drawString(font, label, leftPos + imageWidth / 2 - font.width(label) / 2, topPos + imageHeight + 24, 0xFFFFFF, true);
     }
 
     @Override

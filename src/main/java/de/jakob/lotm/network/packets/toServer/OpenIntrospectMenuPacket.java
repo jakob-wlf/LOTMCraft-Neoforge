@@ -61,7 +61,11 @@ public record OpenIntrospectMenuPacket(int sequence, String pathway) implements 
                 });
 
                 PacketHandler.sendToPlayer(player, new SyncIntrospectMenuPacket(sequence, pathway, sanity, TwilightAging.years(player)));
-                PacketHandler.sendToPlayer(player, new SyncAbilityWheelDataToIntrospectPacket(abilityWheelComponent.getAbilities()));
+                PacketHandler.sendToPlayer(player, new SyncAbilityWheelDataToIntrospectPacket(
+                        new java.util.ArrayList<>(abilityWheelComponent.getAbilities()),
+                        abilityWheelComponent.getActiveWheel(),
+                        abilityWheelComponent.getWheelCount()
+                ));
                 PacketHandler.sendToPlayer(player, new SyncKillCountPacket(player.getData(ModAttachments.KILL_COUNT_COMPONENT).getKillCount()));
                 PacketHandler.syncUniquenessToPlayer(player);
             }

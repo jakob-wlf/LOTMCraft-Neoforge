@@ -907,6 +907,18 @@ public class PacketHandler {
         );
 
         registrar.playToServer(
+                SwitchAbilityWheelPacket.TYPE,
+                SwitchAbilityWheelPacket.STREAM_CODEC,
+                SwitchAbilityWheelPacket::handle
+        );
+
+        registrar.playToServer(
+                SelectAbilityWheelPacket.TYPE,
+                SelectAbilityWheelPacket.STREAM_CODEC,
+                SelectAbilityWheelPacket::handle
+        );
+
+        registrar.playToServer(
                 SyncSharedAbilitiesPacket.TYPE,
                 SyncSharedAbilitiesPacket.STREAM_CODEC,
                 SyncSharedAbilitiesPacket::handle

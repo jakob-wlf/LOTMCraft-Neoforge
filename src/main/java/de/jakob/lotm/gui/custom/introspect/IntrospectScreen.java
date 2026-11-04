@@ -4,6 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import de.jakob.lotm.LOTMCraft;
+import de.jakob.lotm.attachments.AbilityWheelComponent;
 import de.jakob.lotm.attachments.AllyComponent;
 import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.beyonders.abilities.core.PassiveAbility;
@@ -198,6 +199,8 @@ public class IntrospectScreen extends AbstractContainerScreen<IntrospectMenu> {
     private final List<Boolean> abilityBarIsCopied = new ArrayList<>();
     private final List<Integer> abilityBarSubIndexes = new ArrayList<>();
     private final List<String> sharedWheelSlots = new ArrayList<>();
+    private int abilityWheelIndex;
+    private int abilityWheelCount = 1;
     private int draggedFromSharedWheelIndex = -1;
     private int draggedFromSharedPoolIndex = -1;
     private Ability draggedAbility = null;
@@ -563,6 +566,16 @@ public class IntrospectScreen extends AbstractContainerScreen<IntrospectMenu> {
         maxCompletedQuestsScroll = Math.max(0, questsCount - visibleLines);
     }
 
+    public void setWheelPage(int index, int count) {
+        this.abilityWheelIndex = index;
+        this.abilityWheelCount = Math.max(1, count);
+        draggedAbility = null;
+        draggedFromWheelIndex = -1;
+        if (allyNameInput != null) {
+            updateButtonPositions();
+        }
+    }
+
     public void setAbilityWheelSlots(ArrayList<String> abilityIds) {
         this.abilityWheelSlots.clear();
         this.abilityWheelSubIndexes.clear();
@@ -864,7 +877,8 @@ public class IntrospectScreen extends AbstractContainerScreen<IntrospectMenu> {
 
         if (currentTab == Tab.ABILITY_WHEEL) {
             clearButtonY = this.topPos + 15 + ABILITIES_PANEL_HEIGHT + 5 + ABILITY_WHEEL_HEIGHT + 5;
-            this.addRenderableWidget(new BrassButton(clearButtonX, clearButtonY, ABILITIES_PANEL_WIDTH, 20,
+            addWheelSwitchButtons(clearButtonX, clearButtonY);
+            this.addRenderableWidget(new BrassButton(clearButtonX, clearButtonY + 22, ABILITIES_PANEL_WIDTH, 20,
                     Component.literal("Clear Wheel").withStyle(ChatFormatting.RED), null,
                     button -> {
                         abilityWheelSlots.clear();
@@ -886,6 +900,8 @@ public class IntrospectScreen extends AbstractContainerScreen<IntrospectMenu> {
         // Copied tabs: clear button for the wheel drop zone
         else if (isCopiedTab(currentTab)) {
             clearButtonY = this.topPos + 15 + COPIED_PANEL_HEIGHT + 5 + ABILITY_WHEEL_HEIGHT + 5;
+            addWheelSwitchButtons(clearButtonX, clearButtonY);
+            clearButtonY += 22;
             this.addRenderableWidget(new BrassButton(clearButtonX, clearButtonY, ABILITIES_PANEL_WIDTH / 2 - 1, 20,
                     Component.literal("Clear Wheel").withStyle(ChatFormatting.RED), null,
                     button -> {
@@ -895,6 +911,23 @@ public class IntrospectScreen extends AbstractContainerScreen<IntrospectMenu> {
                         PacketHandler.sendToServer(new SyncAbilityWheelAbilitiesPacket(new ArrayList<>()));
                     }));
         }
+    }
+
+    private void addWheelSwitchButtons(int x, int y) {
+        int mini = 18;
+        this.addRenderableWidget(new BrassButton(x, y, ABILITIES_PANEL_WIDTH - mini * 2 - 4, 20,
+                Component.literal("Wheel " + (abilityWheelIndex + 1) + "/" + abilityWheelCount), null,
+                button -> PacketHandler.sendToServer(new SwitchAbilityWheelPacket(0))));
+        BrassButton remove = new BrassButton(x + ABILITIES_PANEL_WIDTH - mini * 2 - 2, y, mini, 20,
+                Component.literal("−").withStyle(ChatFormatting.RED), null,
+                button -> PacketHandler.sendToServer(new SwitchAbilityWheelPacket(2)));
+        remove.active = abilityWheelCount > 1;
+        this.addRenderableWidget(remove);
+        BrassButton add = new BrassButton(x + ABILITIES_PANEL_WIDTH - mini, y, mini, 20,
+                Component.literal("+"), null,
+                button -> PacketHandler.sendToServer(new SwitchAbilityWheelPacket(1)));
+        add.active = abilityWheelCount < AbilityWheelComponent.MAX_WHEELS;
+        this.addRenderableWidget(add);
     }
 
     private void addQuestButtons(int baseLeftPos) {
@@ -1966,7 +1999,7 @@ public class IntrospectScreen extends AbstractContainerScreen<IntrospectMenu> {
 
     private void renderAbilityWheelSection(GuiGraphics guiGraphics, int panelX, int wheelY, int mouseX, int mouseY) {
         drawDrawer(guiGraphics, panelX, wheelY, ABILITIES_PANEL_WIDTH, ABILITY_WHEEL_HEIGHT);
-        heading(guiGraphics, Component.literal("Ability Wheel"), panelX + 5, wheelY + 5);
+        heading(guiGraphics, Component.literal("Wheel " + (abilityWheelIndex + 1)), panelX + 5, wheelY + 5);
 
         renderAbilityWheel(guiGraphics, panelX, wheelY + 15, mouseX, mouseY);
     }

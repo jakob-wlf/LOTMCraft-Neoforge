@@ -38,6 +38,7 @@ public class EntityControllingComponent implements INBTSerializable<CompoundTag>
 
     private ArrayList<String> abilityWheelAbilities = new ArrayList<>();
     private int selectedAbilityInWheel = 0;
+    private AbilityWheelComponent savedWheel;
 
     private ArrayList<String> abilityBarAbilities = new ArrayList<>();
 
@@ -112,6 +113,14 @@ public class EntityControllingComponent implements INBTSerializable<CompoundTag>
         this.selectedAbilityInWheel = selectedAbilityInWheel;
     }
 
+    public AbilityWheelComponent getSavedWheel() {
+        return savedWheel;
+    }
+
+    public void setSavedWheel(AbilityWheelComponent savedWheel) {
+        this.savedWheel = savedWheel;
+    }
+
     public ArrayList<String> getAbilityBarAbilities() {
         return abilityBarAbilities;
     }
@@ -174,6 +183,7 @@ public class EntityControllingComponent implements INBTSerializable<CompoundTag>
         controlledEntity = null;
         bodyDouble = null;
         canUseOwnAbilities = true;
+        savedWheel = null;
     }
 
     private static class AttributeSnapshot {

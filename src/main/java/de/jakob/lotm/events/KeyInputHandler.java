@@ -420,7 +420,7 @@ public class KeyInputHandler {
 
     private static void openAbilityWheel() {
         Minecraft mc = Minecraft.getInstance();
-        if (AbilityWheelClientData.getAbilityWheelAbilities().isEmpty()) {
+        if (!AbilityWheelClientData.hasAnyAbilities()) {
             mc.player.displayClientMessage(Component.translatable("lotm.ability_wheel.no_abilities"), true);
         } else {
             PacketHandler.sendToServer(new OpenAbilityWheelPacket());

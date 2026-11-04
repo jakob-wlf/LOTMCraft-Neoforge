@@ -273,8 +273,7 @@ public class PositionFlickerAbility extends PositionAuthorityAbility {
             AbilityUtil.sendActionBar(player, Component.translatable("ability.lotmcraft.position_flicker.other_dimension").withColor(color));
             return;
         }
-        clone.getData(ModAttachments.ABILITY_WHEEL_COMPONENT).setAbilities(new ArrayList<>(player.getData(ModAttachments.ABILITY_WHEEL_COMPONENT).getAbilities()));
-        clone.getData(ModAttachments.ABILITY_WHEEL_COMPONENT).setSelectedAbility(player.getData(ModAttachments.ABILITY_WHEEL_COMPONENT).getSelectedAbility());
+        clone.getData(ModAttachments.ABILITY_WHEEL_COMPONENT).copyFrom(player.getData(ModAttachments.ABILITY_WHEEL_COMPONENT));
         AbilityBarHelper.setAbilities(clone, new ArrayList<>(player.getData(ModAttachments.ABILITY_BAR_COMPONENT).getAbilities()));
         if (!ControllingUtils.startControlling(player, clone, true, true)) return;
         ShapeShiftingUtil.resetShape(player);

@@ -3,6 +3,7 @@ package de.jakob.lotm.util.helper;
 import de.jakob.lotm.attachments.AbilityWheelComponent;
 import de.jakob.lotm.attachments.ModAttachments;
 import de.jakob.lotm.network.PacketHandler;
+import de.jakob.lotm.network.packets.toClient.SyncAbilityWheelDataToIntrospectPacket;
 import de.jakob.lotm.network.packets.toClient.SyncAbilityWheelPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
@@ -97,19 +98,46 @@ public class AbilityWheelHelper {
 
     public static void removeUnusableAbilities(ServerPlayer player) {
         AbilityWheelComponent component = player.getData(ModAttachments.ABILITY_WHEEL_COMPONENT);
-        for (String raw : new ArrayList<>(component.getAbilities())) {
-            AbilityId id = AbilityId.parse(raw);
-            if (!id.isUsableBy(player) && (!id.copied() || !CopiedAbilityHelper.hasCopiedAbility(player, id.baseId()))) {
-                component.getAbilities().remove(raw);
+        for (int wheel = 0; wheel < component.getWheelCount(); wheel++) {
+            ArrayList<String> abilities = component.wheel(wheel);
+            for (String raw : new ArrayList<>(abilities)) {
+                AbilityId id = AbilityId.parse(raw);
+                if (!id.isUsableBy(player) && (!id.copied() || !CopiedAbilityHelper.hasCopiedAbility(player, id.baseId()))) {
+                    abilities.remove(raw);
+                }
             }
+            component.clampSelected(wheel);
         }
-
-        int selected = component.getSelectedAbility();
-        if (selected >= component.getAbilities().size()) {
-            component.setSelectedAbility(Math.max(0, component.getAbilities().size() - 1));
-        }
-
         syncToClient(player);
+    }
+
+    public static void switchWheel(ServerPlayer player, int action) {
+        AbilityWheelComponent component = player.getData(ModAttachments.ABILITY_WHEEL_COMPONENT);
+        boolean changed = switch (action) {
+            case 1 -> component.addWheel();
+            case 2 -> component.removeWheel();
+            default -> {
+                if (component.getWheelCount() <= 1) {
+                    yield false;
+                }
+                component.nextWheel();
+                yield true;
+            }
+        };
+        if (!changed) {
+            return;
+        }
+        syncToClient(player);
+        syncIntrospect(player);
+    }
+
+    public static void syncIntrospect(ServerPlayer player) {
+        AbilityWheelComponent component = player.getData(ModAttachments.ABILITY_WHEEL_COMPONENT);
+        PacketHandler.sendToPlayer(player, new SyncAbilityWheelDataToIntrospectPacket(
+                new ArrayList<>(component.getAbilities()),
+                component.getActiveWheel(),
+                component.getWheelCount()
+        ));
     }
 
     /**
@@ -137,10 +165,13 @@ public class AbilityWheelHelper {
 
     public static void syncToClient(ServerPlayer player, LivingEntity entity) {
         AbilityWheelComponent component = entity.getData(ModAttachments.ABILITY_WHEEL_COMPONENT);
-        PacketHandler.sendToPlayer(
-                player,
-                new SyncAbilityWheelPacket(component.getAbilities(), component.getSelectedAbility())
-        );
+        java.util.List<java.util.List<String>> wheels = new java.util.ArrayList<>();
+        java.util.List<Integer> selected = new java.util.ArrayList<>();
+        for (int i = 0; i < component.getWheelCount(); i++) {
+            wheels.add(new java.util.ArrayList<>(component.wheel(i)));
+            selected.add(component.selectedAt(i));
+        }
+        PacketHandler.sendToPlayer(player, new SyncAbilityWheelPacket(wheels, component.getActiveWheel(), selected));
     }
 
     /**

@@ -10,7 +10,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.ArrayList;
 
-public record SyncAbilityWheelDataToIntrospectPacket(ArrayList<String> abilityIds) implements CustomPacketPayload {
+public record SyncAbilityWheelDataToIntrospectPacket(ArrayList<String> abilityIds, int activeWheel, int wheelCount) implements CustomPacketPayload {
     
     public static final Type<SyncAbilityWheelDataToIntrospectPacket> TYPE =
         new Type<>(ResourceLocation.fromNamespaceAndPath("lotm", "sync_ability_wheel_data"));
@@ -19,6 +19,10 @@ public record SyncAbilityWheelDataToIntrospectPacket(ArrayList<String> abilityId
         StreamCodec.composite(
             ByteBufCodecs.collection(ArrayList::new, ByteBufCodecs.STRING_UTF8),
             SyncAbilityWheelDataToIntrospectPacket::abilityIds,
+            ByteBufCodecs.VAR_INT,
+            SyncAbilityWheelDataToIntrospectPacket::activeWheel,
+            ByteBufCodecs.VAR_INT,
+            SyncAbilityWheelDataToIntrospectPacket::wheelCount,
             SyncAbilityWheelDataToIntrospectPacket::new
         );
 

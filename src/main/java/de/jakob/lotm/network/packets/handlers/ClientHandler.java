@@ -563,6 +563,7 @@ public class ClientHandler {
         Minecraft mc = Minecraft.getInstance();
         if (mc.screen instanceof IntrospectScreen screen) {
             screen.setAbilityWheelSlots(packet.abilityIds());
+            screen.setWheelPage(packet.activeWheel(), packet.wheelCount());
         }
     }
 
