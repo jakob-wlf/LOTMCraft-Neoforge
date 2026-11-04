@@ -124,7 +124,7 @@ public class PlayerEvents {
             if(!component.isHasReceivedNewPlayerPerks() && player.serverLevel().getGameRules().getBoolean(ModGameRules.SPAWN_WITH_STARTING_CHARACTERISTIC)) {
                 if(!component.isHasReceivedGuidingBook()) {
                     ItemStack guidingBook = new ItemStack(ModItems.GUIDING_BOOK.get());
-                    if(!player.getInventory().contains(guidingBook)) {
+                    if(!player.getInventory().add(guidingBook)) {
                         player.drop(guidingBook, false);
                     }
                     component.setHasReceivedGuidingBook(true);

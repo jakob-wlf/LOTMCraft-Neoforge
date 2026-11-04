@@ -50,6 +50,11 @@ public class Config
         BUILDER.push("beyonder_npcs");
     }
 
+    public static final ModConfigSpec.DoubleValue BEYONDER_QUEST_CHANCE_MULTIPLIER = BUILDER
+            .comment("Multiplier for the chance that a newly spawned rogue Beyonder offers a quest (1.0 = default 55% base chance, 0 = never).",
+                    "Quests are rolled before trades, so raising this also lowers how many Beyonders can get trades.")
+            .defineInRange("beyonder_quest_chance_multiplier", 1.0, 0.0, 100.0);
+
     public static final ModConfigSpec.DoubleValue BEYONDER_TRADE_CHANCE_MULTIPLIER = BUILDER
             .comment("Multiplier for the chance that a newly spawned rogue Beyonder offers trades (1.0 = default 7.5% base chance, 0 = never).",
                     "Only Beyonders that didn't roll a quest can get trades.")
