@@ -121,7 +121,7 @@ public class HorrorAuraAbility extends ToggleAbility {
         for (LivingEntity target : AbilityUtil.getNearbyEntities(entity, serverLevel, entity.position(), RADIUS)) {
             Location targetLoc = new Location(target.position(), serverLevel);
             int targetSeq = BeyonderData.getSequence(target);
-            if (targetSeq < casterSeq) continue;
+            if ("darkness".equals(BeyonderData.getPathway(target)) && targetSeq <= casterSeq) continue;
             boolean hasMorale = InteractionHandler.isInteractionPossibleForEntity(targetLoc, "morale_boost", seq, target);
             if (!hasMorale) {
                 hasMorale = ToggleAbility.getActiveAbilitiesForEntity(target).stream().anyMatch(a -> a instanceof HolyOathAbility) && targetSeq <= seq;
@@ -155,7 +155,7 @@ public class HorrorAuraAbility extends ToggleAbility {
                 target.hurt(ModDamageTypes.source(level, ModDamageTypes.LOOSING_CONTROL, entity), 2f + seconds * 0.25f);
             }
             if (seconds >= 8 && target.getRandom().nextInt(60) == 0) {
-                target.hurt(ModDamageTypes.source(level, ModDamageTypes.LOOSING_CONTROL, entity), Float.MAX_VALUE);
+                target.hurt(ModDamageTypes.source(level, ModDamageTypes.HORROR, entity), targetSeq < casterSeq ? 10f : Float.MAX_VALUE);
             }
             if (BeyonderData.getSequence(entity) == 0 && seconds / 16f > 0.75f) {
                 AbilityUtil.sealAllTargetAbilities(entity, target, "horror_authority", Math.min(20 * 8, seconds * 10));
