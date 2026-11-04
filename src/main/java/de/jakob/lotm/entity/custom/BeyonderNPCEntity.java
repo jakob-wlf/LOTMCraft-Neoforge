@@ -200,7 +200,7 @@ public class BeyonderNPCEntity extends PathfinderMob {
             if (!this.getPersistentData().getBoolean("Initialized")) {
                 this.getPersistentData().putBoolean("Initialized", true);
 
-                if ((random.nextFloat() < QUEST_SPAWN_CHANCE || this._hasQuest == Boolean.TRUE) && this._hasQuest != Boolean.FALSE) {
+                if ((random.nextFloat() < QUEST_SPAWN_CHANCE * Config.BEYONDER_QUEST_CHANCE_MULTIPLIER.get() || this._hasQuest == Boolean.TRUE) && this._hasQuest != Boolean.FALSE) {
                     String randomQuestId = QuestRegistry.getRandomMatchingQuest(this);
                     if (randomQuestId != null) {
                         setQuestId(randomQuestId);
