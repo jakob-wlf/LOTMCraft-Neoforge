@@ -135,7 +135,6 @@ public class SpiritCommandingAbility extends SelectableAbility {
     }
 
     public static boolean allows(String typeId, int slot) {
-        if (slot >= 6) return true;
         boolean arms = slot == 2 || slot == 3;
         boolean legs = slot == 4 || slot == 5;
         return switch (ResourceLocation.parse(typeId).getPath()) {
@@ -312,13 +311,12 @@ public class SpiritCommandingAbility extends SelectableAbility {
                     : "ability.lotmcraft.spirit_commanding.no_powers").withColor(0xff124d));
             return;
         }
-        housing.releaseFromSlots = fromSlots;
         if (looked == null) {
-            housing.releaseArmed = true;
-            AbilityUtil.sendActionBar(player, Component.translatable("ability.lotmcraft.spirit_commanding.release_armed").withColor(0xa0e2fa));
+            refund(player);
+            AbilityUtil.sendActionBar(player, Component.translatable("ability.lotmcraft.spirit_commanding.need_target").withColor(0xff124d));
             return;
         }
-        spawnAll(level, player, looked);
+        spawnAll(level, player, looked, fromSlots);
     }
 
     private static boolean housed(SpiritHousingComponent housing) {
@@ -349,17 +347,6 @@ public class SpiritCommandingAbility extends SelectableAbility {
         if (!player.getData(ModAttachments.SPIRIT_HOUSING).slots[1].isEmpty()) return true;
         player.getPersistentData().putBoolean(WARD, false);
         return false;
-    }
-
-    @SubscribeEvent
-    public static void onHit(LivingIncomingDamageEvent event) {
-        if (!(event.getSource().getEntity() instanceof ServerPlayer player)) return;
-        if (event.getSource().getDirectEntity() != player) return;
-        if (event.isCanceled()) return;
-        SpiritHousingComponent housing = player.getData(ModAttachments.SPIRIT_HOUSING);
-        if (!housing.releaseArmed) return;
-        if (!(player.level() instanceof ServerLevel level)) return;
-        spawnAll(level, player, event.getEntity());
     }
 
     private static boolean recall(ServerLevel level, ServerPlayer player) {
@@ -413,16 +400,12 @@ public class SpiritCommandingAbility extends SelectableAbility {
             Entity entity = other.getEntity(id);
             if (entity != null) return entity;
         }
-        if (!(player.level() instanceof ServerLevel level)) return null;
-        for (Mob mob : level.getEntitiesOfClass(Mob.class, player.getBoundingBox().inflate(96), found -> found.getUUID().equals(id))) {
-            return mob;
-        }
         return null;
     }
 
-    private static void spawnAll(ServerLevel level, ServerPlayer player, LivingEntity victim) {
+    private static void spawnAll(ServerLevel level, ServerPlayer player, LivingEntity victim, boolean fromSlots) {
         SpiritHousingComponent housing = player.getData(ModAttachments.SPIRIT_HOUSING);
-        List<String> types = housing.takeForRelease(housing.releaseFromSlots);
+        List<String> types = housing.takeForRelease(fromSlots);
         if (types.isEmpty()) return;
         List<Mob> spawned = new ArrayList<>();
         int count = types.size();

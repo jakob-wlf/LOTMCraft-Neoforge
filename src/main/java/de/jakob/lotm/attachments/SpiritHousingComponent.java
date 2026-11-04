@@ -13,8 +13,6 @@ import java.util.List;
 
 public class SpiritHousingComponent implements INBTSerializable<CompoundTag> {
     public int fails;
-    public boolean releaseArmed;
-    public boolean releaseFromSlots;
     public final List<String> stored = new ArrayList<>();
     public final List<String> released = new ArrayList<>();
     public final String[] slots = new String[]{"", "", "", "", "", ""};
@@ -45,8 +43,6 @@ public class SpiritHousingComponent implements INBTSerializable<CompoundTag> {
             for (String spirit : stored) taken.add(spirit + "|-1");
             stored.clear();
         }
-        releaseArmed = false;
-        releaseFromSlots = false;
         return taken;
     }
 
@@ -54,8 +50,6 @@ public class SpiritHousingComponent implements INBTSerializable<CompoundTag> {
     public @UnknownNullability CompoundTag serializeNBT(HolderLookup.Provider provider) {
         CompoundTag tag = new CompoundTag();
         tag.putInt("fails", fails);
-        tag.putBoolean("armed", releaseArmed);
-        tag.putBoolean("releaseSlots", releaseFromSlots);
         tag.putString("head", slots[0]);
         tag.putString("torso", slots[1]);
         tag.putString("armLeft", slots[2]);
@@ -74,8 +68,6 @@ public class SpiritHousingComponent implements INBTSerializable<CompoundTag> {
     @Override
     public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
         fails = tag.getInt("fails");
-        releaseArmed = tag.getBoolean("armed");
-        releaseFromSlots = tag.getBoolean("releaseSlots");
         slots[0] = tag.getString("head");
         slots[1] = tag.getString("torso");
         if (tag.contains("armLeft")) {
