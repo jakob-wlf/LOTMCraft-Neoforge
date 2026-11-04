@@ -43,6 +43,7 @@ public final class HudTheme {
     public static final ResourceLocation FRAME = tex("frame_9slice");
     public static final ResourceLocation GLYPH_TILE = tex("glyph_tile");
     public static final ResourceLocation TUBE_FRAME = tex("tube_frame");
+    public static final ResourceLocation TUBE_FRAME_BG = tex("tube_frame");
     public static final ResourceLocation TUBE_GLASS = tex("tube_glass");
     public static final ResourceLocation MEDALLION = tex("medallion");
     public static final ResourceLocation MEDALLION_COG = tex("medallion_cog");

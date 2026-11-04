@@ -16,12 +16,13 @@ import de.jakob.lotm.network.packets.toClient.PlayPhotonBlockEffectPacket;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.helper.AbilityUtil;
+import de.jakob.lotm.util.helper.FxHandler;
 import de.jakob.lotm.util.helper.ParticleUtil;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
@@ -33,6 +34,7 @@ import net.neoforged.neoforge.common.NeoForge;
 import org.joml.Vector3f;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class CalamityCreationAbility extends SelectableAbility {
     public CalamityCreationAbility(String id) {
@@ -145,8 +147,6 @@ public class CalamityCreationAbility extends SelectableAbility {
         }, null, serverLevel, () -> AbilityUtil.getTimeInArea(entity, new Location(entity.position(), serverLevel)));
     }
 
-    private final DustParticleOptions droughtDust = new DustParticleOptions(new Vector3f(217 / 255f, 121 / 255f, 65 / 255f), 10.0f);
-
     private void createDrought(ServerLevel serverLevel, LivingEntity entity) {
         Vec3 startPos = entity.position();
         boolean griefing = BeyonderData.isGriefingEnabled(entity);
@@ -171,6 +171,9 @@ public class CalamityCreationAbility extends SelectableAbility {
         double multiplier = multiplier(entity);
         float damage = baseDamage/3;
 
+        UUID droughtFx = FxHandler.playCancellable(serverLevel, "drought", startPos, Math.clamp(multiplier, .75, 2));
+        AtomicInteger pulses = new AtomicInteger();
+
         ServerScheduler.scheduleForDuration(0, 4, (int) (20 * 30), () -> {
             // Damage and Effects
             AbilityUtil.damageNearbyEntities(serverLevel, entity, 60* multiplier, ModDamageTypes.FIRE ,damage/2, startPos, true, false);
@@ -181,23 +184,16 @@ public class CalamityCreationAbility extends SelectableAbility {
                     new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20 * 5, 4, false, false, false));
 
             // Particles and shader
+            boolean localFx = pulses.getAndIncrement() % 5 == 0;
             for(Player player : AbilityUtil.getNearbyEntities(null, serverLevel, startPos, 90, true)
                     .stream()
                     .filter(e -> e instanceof Player)
                     .map(e -> (Player)e)
                     .toList()) {
 
-                FogComponent fogComponent = player.getData(ModAttachments.FOG_COMPONENT);
-                fogComponent.setActiveAndSync(true, player);
-                fogComponent.setFogIndexAndSync(FogComponent.FOG_TYPE.DROUGHT, player);
-                fogComponent.setFogColorAndSync(new Vec3f(209 / 255f, 130 / 255f, 69 / 255f), player);
-
-                ParticleUtil.spawnParticles(serverLevel, ParticleTypes.FLAME, player.position(), 90, 6, 3, 6, .05);
-                ParticleUtil.spawnParticles(serverLevel, droughtDust, player.position(), 200, 8, 3, 8, .05);
-
-                ActiveShaderComponent component = player.getData(ModAttachments.SHADER_COMPONENT);
-                component.setShaderActiveAndSync(true, player);
-                component.setShaderIndexAndSync(ActiveShaderComponent.SHADERTYPE.DROUGHT, player);
+                if(localFx && player instanceof ServerPlayer serverPlayer) {
+                    FxHandler.playFor(serverPlayer, "drought_local", player.position(), 1);
+                }
             }
 
             // Weather Change
@@ -228,7 +224,10 @@ public class CalamityCreationAbility extends SelectableAbility {
                     }
                 }
             }
-        }, null, serverLevel, () -> AbilityUtil.getTimeInArea(entity, new Location(entity.position(), serverLevel)));
+        }, () -> {
+            FxHandler.cancel(serverLevel, droughtFx);
+            FxHandler.play(serverLevel, "drought_end", startPos, Math.clamp(multiplier, .75, 2));
+        }, serverLevel, () -> AbilityUtil.getTimeInArea(entity, new Location(entity.position(), serverLevel)));
     }
 
     private void createTornados(ServerLevel serverLevel, LivingEntity entity) {

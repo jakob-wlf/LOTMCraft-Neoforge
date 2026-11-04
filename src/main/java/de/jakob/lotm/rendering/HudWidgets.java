@@ -128,11 +128,19 @@ public final class HudWidgets {
         int ih = h - 2 * HudTheme.TUBE_INSET_Y;
         fill = HudTheme.clamp01(fill);
 
+        int fw = Math.round(iw * fill);
+
         g.fill(ix, iy, ix + iw, iy + ih, 0xCC0B0A0D);
+
+        int cutX = ix + fw;
+        if (cutX < x + w) {
+            g.enableScissor(cutX, y, x + w, y + h);
+            blitFull(g, HudTheme.TUBE_FRAME_BG, x, y, w, h);
+            g.disableScissor();
+        }
 
         blitFull(g, HudTheme.TUBE_FRAME, x, y, w, h);
 
-        int fw = Math.round(iw * fill);
         float a = 1f;
         if (flicker) {
             a = 0.65f + 0.35f * (float) Math.abs(Math.sin(time * 0.9f) * Math.sin(time * 2.3f + 1f));

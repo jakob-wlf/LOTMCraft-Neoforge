@@ -8,6 +8,7 @@ import de.jakob.lotm.network.packets.toClient.PlayPhotonBlockEffectPacket;
 import de.jakob.lotm.network.packets.toClient.PlayPhotonEntityEffectPacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
@@ -44,6 +45,14 @@ public final class FxHandler {
                 .rotateY((float) Math.toRadians(-entity.getYRot()))
                 .rotateX((float) Math.toRadians(entity.getXRot()))
                 .rotateY((float) Math.toRadians(extraYawDegrees));
+    }
+
+    /** Plays an effect for a single player only, e.g. weather close around them. */
+    public static void playFor(ServerPlayer player, String fx, Vec3 pos, double scale) {
+        BlockPos blockPos = BlockPos.containing(pos);
+        PacketHandler.sendToPlayer(player, new PlayPhotonBlockEffectPacket(fx, blockPos,
+                pos.x - blockPos.getX() - 0.5, pos.y - blockPos.getY() - 0.5, pos.z - blockPos.getZ() - 0.5,
+                scale, null, -1, false, true, null));
     }
 
     public static UUID playCancellable(ServerLevel level, String fx, Vec3 pos, double scale) {

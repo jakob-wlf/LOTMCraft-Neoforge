@@ -22,12 +22,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-/**
- * HUD cards shown while the Replicating ability analyzes abilities used nearby.
- * Each analyzed ability gets a card on the right edge of the screen: a medallion whose ring fills
- * as understanding grows while the ability's icon is traced in from the bottom, plus one node per
- * observation needed.
- */
 @OnlyIn(Dist.CLIENT)
 @EventBusSubscriber(modid = LOTMCraft.MOD_ID, value = Dist.CLIENT)
 public class ReplicationOverlayRenderer {
