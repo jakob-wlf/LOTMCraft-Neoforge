@@ -5,140 +5,110 @@ import de.jakob.lotm.beyonders.abilities.core.AbilityUsedEvent;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.helper.AbilityUtil;
 import de.jakob.lotm.util.helper.ParticleUtil;
-import de.jakob.lotm.util.helper.RingEffectManager;
-import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
+import org.joml.Vector3f;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 public class IndividualBalanceAbility extends Ability {
-
-    public static final Map<UUID, Long> INDIVIDUALLY_BALANCED = new ConcurrentHashMap<>();
+    private static final Map<UUID, Balance> BALANCES = new HashMap<>();
+    private static final DustParticleOptions GOLD = new DustParticleOptions(new Vector3f(1f,.8f,.3f),1.2f);
 
     public IndividualBalanceAbility(String id) {
         super(id, 40f);
-        interactionRadius = 20;
+        interactionRadius = 48;
         hasOptimalDistance = true;
-        optimalDistance = 10f;
+        optimalDistance = 16f;
         postsUsedAbilityEventManually = true;
         canBeShared = false;
     }
 
     @Override
-    public Map<String, Integer> getRequirements() {
-        return new HashMap<>(Map.of("justiciar", 2));
-    }
+    public Map<String, Integer> getRequirements() { return Map.of("justiciar", 2); }
+    @Override
+    protected float getSpiritualityCost() { return 2000; }
 
     @Override
-    protected float getSpiritualityCost() {
-        return 2000;
-    }
-
-    @Override
-    public void onAbilityUse(Level level, LivingEntity entity) {
-        if (level.isClientSide) return;
-        ServerLevel serverLevel = (ServerLevel) level;
-
-        LivingEntity target = AbilityUtil.getTargetEntity(entity, 20, 1.5f);
-        if (target == null) return;
-
-        if (!BeyonderData.isBeyonder(target)) {
-            if (entity instanceof ServerPlayer sp) {
-                sp.sendSystemMessage(Component.translatable("ability.lotmcraft.individual_balance.not_beyonder")
-                        .withStyle(ChatFormatting.RED));
-            }
+    public void onAbilityUse(Level level, LivingEntity caster) {
+        if (!(level instanceof ServerLevel serverLevel)) return;
+        LivingEntity target = AbilityUtil.getTargetEntity(caster, 48, 1.5f, true);
+        if (target == null || !BeyonderData.isBeyonder(target)) {
+            AbilityUtil.sendActionBar(caster, Component.translatable("ability.lotmcraft.individual_balance.not_beyonder").withStyle(ChatFormatting.RED));
             return;
         }
-
-        int DURATION = (int) (3600 * multiplier(entity));
-        UUID targetId = target.getUUID();
-        INDIVIDUALLY_BALANCED.put(targetId, serverLevel.getGameTime() + DURATION);
-        ServerScheduler.scheduleDelayed(DURATION, () -> INDIVIDUALLY_BALANCED.remove(targetId));
-
-        playJudgementEffect(serverLevel, entity, target, DURATION);
-
-        Component broadcast = Component.translatable("ability.lotmcraft.individual_balance.applied_prefix")
-                .withStyle(ChatFormatting.GOLD)
-                .append(Component.literal(target.getDisplayName().getString())
-                        .withStyle(ChatFormatting.WHITE));
-        serverLevel.getServer().getPlayerList().getPlayers().forEach(p -> {
-            if (p.level().equals(serverLevel) && p.distanceTo(entity) <= 60) {
-                p.sendSystemMessage(broadcast);
-            }
-        });
-
-        if (target instanceof ServerPlayer sp) {
-            sp.sendSystemMessage(Component.translatable("ability.lotmcraft.individual_balance.sealed")
-                    .withStyle(ChatFormatting.RED));
-        }
-
-        NeoForge.EVENT_BUS.post(new AbilityUsedEvent(serverLevel, target.position(), entity, this, interactionFlags, 3, 20 * 2));
+        int casterSequence = AbilityUtil.getSeqWithArt(caster, this);
+        int targetSequence = BeyonderData.getSequence(target);
+        int duration = durationTicks(casterSequence, targetSequence);
+        double power = BeyonderData.getMultiplier(caster);
+        Balance balance = new Balance(caster, target, serverLevel,
+                serverLevel.getServer().overworld().getGameTime() + duration, power);
+        BALANCES.put(target.getUUID(), balance);
+        Component notice = Component.translatable("ability.lotmcraft.individual_balance.equalized", target.getDisplayName(),
+                String.format(java.util.Locale.ROOT,"%.1f",duration / 20.0)).withStyle(ChatFormatting.GOLD);
+        Component received = Component.translatable("ability.lotmcraft.individual_balance.received", caster.getDisplayName(),
+                String.format(java.util.Locale.ROOT,"%.1f",duration / 20.0)).withStyle(ChatFormatting.GOLD);
+        caster.sendSystemMessage(notice);
+        target.sendSystemMessage(received);
+        AbilityUtil.sendActionBar(target, received);
+        serverLevel.playSound(null, target.blockPosition(), SoundEvents.BELL_BLOCK, SoundSource.PLAYERS, 1f,.65f);
+        ParticleUtil.drawParticleLine(serverLevel, GOLD, caster.getEyePosition(), target.getEyePosition(), .25,1);
+        ServerScheduler.scheduleForDuration(0, 10, duration, () -> {
+            if (BALANCES.get(target.getUUID()) != balance || !balance.active()) return;
+            ParticleUtil.spawnCircleParticles(serverLevel, GOLD, target.position().add(0,1,0), 1.1, 20);
+        }, () -> {
+            if (BALANCES.get(target.getUUID()) != balance) return;
+            BALANCES.remove(target.getUUID());
+            announceEnd(balance);
+        }, serverLevel);
+        NeoForge.EVENT_BUS.post(new AbilityUsedEvent(serverLevel,target.position(),caster,this,interactionFlags,3,40));
     }
 
-    private void playJudgementEffect(ServerLevel serverLevel, LivingEntity caster, LivingEntity target, int duration) {
-        Vec3 targetPos = target.position().add(0, 1, 0);
-        Vec3 casterPos = caster.position().add(0, 1, 0);
-        Location targetLocation = new Location(target.position(), serverLevel);
+    public static int durationTicks(int casterSequence, int targetSequence) {
+        return de.jakob.lotm.beyonders.abilities.justiciar.balancing.BalanceRules.individualDurationTicks(casterSequence, targetSequence);
+    }
 
-        serverLevel.playSound(null, target.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.2f, 0.6f);
+    public static double balancedMultiplier(LivingEntity entity, double original) {
+        if (entity.level().isClientSide) return original;
+        Balance balance = BALANCES.get(entity.getUUID());
+        if (balance == null) return original;
+        if (!balance.active() || balance.target != entity) {
+            BALANCES.remove(entity.getUUID()); announceEnd(balance); return original;
+        }
+        return balance.power;
+    }
 
-        // Ascending dust rings that collapse into target — cast-on animation
-        ServerScheduler.scheduleForDuration(0, 2, 40, () -> {
-            Vec3 pos = targetLocation.getPosition().add(0, 1, 0);
-            ParticleUtil.spawnCircleParticles(serverLevel, ParticleTypes.END_ROD, pos, 3.5, 24);
-            ParticleUtil.spawnCircleParticles(serverLevel, ParticleTypes.DUST_PLUME, pos.add(0, 0.3, 0), 2.5, 18);
-            ParticleUtil.spawnSphereParticles(serverLevel, ParticleTypes.DUST_PLUME, pos, 3.2, 6);
-        }, null, serverLevel, () -> AbilityUtil.getTimeInArea(caster, targetLocation));
+    public static void expireBalances() {
+        BALANCES.values().removeIf(balance -> {
+            if (balance.active()) return false;
+            announceEnd(balance); return true;
+        });
+    }
+    public static void clearBalances() { BALANCES.clear(); }
 
-        // Implosion ring at moment of sealing
-        ServerScheduler.scheduleDelayed(38, () -> {
-            Vec3 pos = targetLocation.getPosition().add(0, 1, 0);
-            serverLevel.playSound(null, target.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 1.5f, 0.5f);
-            RingEffectManager.createRingForAll(target.position(), 4f, 60,
-                    1.0f, 0.92f, 0.6f, 1.0f, 2f, 6f, serverLevel);
-            ParticleUtil.spawnSphereParticles(serverLevel, ParticleTypes.END_ROD, pos, 2.5, 40);
-            ParticleUtil.spawnSphereParticles(serverLevel, ParticleTypes.DUST_PLUME, pos, 3.0, 30);
-        }, serverLevel);
+    private static void announceEnd(Balance balance) {
+        LivingEntity target = balance.target;
+        if (target.isAlive() && !target.isRemoved() && target.level() instanceof ServerLevel level) {
+            level.playSound(null,target.blockPosition(),SoundEvents.BEACON_DEACTIVATE,SoundSource.PLAYERS,.7f,1.2f);
+            target.sendSystemMessage(Component.translatable("ability.lotmcraft.individual_balance.ended").withStyle(ChatFormatting.GOLD));
+        }
+    }
 
-        // Persistent golden halo and dust — active indicator on target
-        ParticleUtil.createParticleSpirals(
-                serverLevel, ParticleTypes.END_ROD, target.position().add(0, 0.1, 0),
-                1.2, 1.2, 2.5, 0.6, 1.5, duration, 2, 80
-        );
-
-        Location persistentLocation = new Location(target.position(), serverLevel);
-        ServerScheduler.scheduleForDuration(0, 8, duration, () -> {
-            Vec3 pos = target.position().add(0, 1.0, 0);
-            persistentLocation.setPosition(target.position());
-            ParticleUtil.spawnCircleParticles(serverLevel, ParticleTypes.DUST_PLUME, pos, 1.0, 10);
-            ParticleUtil.spawnParticles(serverLevel, ParticleTypes.END_ROD, pos.add(0, 0.5, 0), 2, 0.3, 0.0);
-        }, null, serverLevel, () -> AbilityUtil.getTimeInArea(caster, persistentLocation));
-
-        // Particle beam from caster to target at moment of cast
-        ServerScheduler.scheduleDelayed(5, () ->
-                        ParticleUtil.drawParticleLine(serverLevel, ParticleTypes.END_ROD, casterPos, targetPos, 0.4, 2, 0.05),
-                serverLevel);
-
-        // Expiry burst when balance lifts
-        ServerScheduler.scheduleDelayed(duration - 1, () -> {
-            Vec3 pos = targetLocation.getPosition().add(0, 1, 0);
-            serverLevel.playSound(null, target.blockPosition(), SoundEvents.BEACON_DEACTIVATE, SoundSource.PLAYERS, 1.0f, 0.8f);
-            ParticleUtil.spawnSphereParticles(serverLevel, ParticleTypes.END_ROD, pos, 2.0, 50);
-            ParticleUtil.spawnSphereParticles(serverLevel, ParticleTypes.DUST_PLUME, pos, 2.5, 40);
-            RingEffectManager.createRingForAll(target.position(), 3f, 50,
-                    1.0f, 0.92f, 0.6f, 0.6f, 1.5f, 5f, serverLevel);
-        }, serverLevel);
+    private record Balance(LivingEntity caster, LivingEntity target, ServerLevel level, long expiry, double power) {
+        boolean active() {
+            return caster.isAlive() && target.isAlive() && !caster.isRemoved() && !target.isRemoved()
+                    && caster.level() == level && target.level() == level
+                    && level.getServer().overworld().getGameTime() < expiry;
+        }
     }
 }

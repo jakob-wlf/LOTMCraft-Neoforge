@@ -41,17 +41,17 @@ public class AuthorityAbility extends SelectableAbility {
         hasOptimalDistance = false;
 
         hasDynamicCooldown = true;
-        dynamicCooldown = new LinkedList<>(List.of(2, 3, 3, 4, 4, 5, 6));
+        dynamicCooldown = new LinkedList<>(List.of(2, 3, 3, 4, 4, 5, 6, 6, 6, 6));
 
         hasDynamicSpirituality = true;
-        dynamicSpirituality = new LinkedList<>(List.of(1500f, 800f, 600f, 600f, 550f, 310f, 240f));
+        dynamicSpirituality = new LinkedList<>(List.of(1500f, 800f, 600f, 600f, 550f, 310f, 240f, 25f, 20f, 15f));
     }
 
     private static final DustParticleOptions GOLD_DUST = new DustParticleOptions(new Vector3f(1.0f, 0.78f, 0.0f), 1.4f);
 
     @Override
     public Map<String, Integer> getRequirements() {
-        return new HashMap<>(Map.of("justiciar", 6));
+        return new HashMap<>(Map.of("justiciar", 9));
     }
 
     @Override
@@ -68,7 +68,14 @@ public class AuthorityAbility extends SelectableAbility {
     }
 
     @Override
+    public String[] getSequenceDependantAbilityNames(int sequence) {
+        String[] names = getAllAbilityNames();
+        return sequence >= 7 ? new String[]{names[0]} : names;
+    }
+
+    @Override
     protected void castSelectedAbility(Level level, LivingEntity entity, int abilityIndex) {
+        if (abilityIndex < 0 || abilityIndex >= getSequenceDependantAbilityNames(BeyonderData.getSequence(entity)).length) return;
         switch (abilityIndex) {
             case 0 -> slow(level, entity);
             case 1 -> armorRemove(level, entity);
@@ -92,8 +99,12 @@ public class AuthorityAbility extends SelectableAbility {
         spawnAuthorityPulse(serverLevel, center, 10);
         serverLevel.playSound(null, entity.blockPosition(), SoundEvents.ELDER_GUARDIAN_CURSE, SoundSource.PLAYERS, 0.9f, 0.6f);
 
-        target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20 * 2, 1));
-        target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 20 * 2, 0));
+        int sequence = BeyonderData.getSequence(entity);
+        target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN,
+                sequence >= 7 ? 20 : 20 * 2, sequence >= 7 ? 0 : 1));
+        if (sequence <= 6) {
+            target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 20 * 2, 0));
+        }
         applyStunIfEnhanced(entity, target);
 
         Location targetLoc = new Location(target.position().add(0, 0.1, 0), serverLevel);

@@ -82,7 +82,7 @@ Act as a proxy of Order, invoking permanent prohibitions and laws or sacrificing
 
 | Variant | Effect |
 |---|---|
-| Order Sacrifice | Grants a 3.0× ability multiplier boost and full damage immunity for 15 sec; caster is killed after the 15 sec expire |
+| Order Sacrifice | Grants a 3.0× ability multiplier boost and full damage immunity for 15 sec; normally kills the beneficiary on expiry. If their current location is protected by Prohibition: Dying, they survive at one health instead. |
 | Prohibition: Resurrecting | Places a **permanent** zone (radius 50) prohibiting resurrection; max 3 zones |
 | Prohibition: Dying | Places a **permanent** zone (radius 50) prohibiting death; max 3 zones |
 | Prohibition: Demigods | Places a **permanent** zone (radius 50) prohibiting demigod-tier entities; max 3 zones |
@@ -91,16 +91,20 @@ Act as a proxy of Order, invoking permanent prohibitions and laws or sacrificing
 
 Re-casting while standing inside an existing zone of the same type removes it. Prohibition zones broadcast to players within 50 blocks. Order Sacrifice also removes all Losing Control effects during the active window.
 
+Dying protection depends on the beneficiary remaining within an active protected area when the sacrifice ends. The boost and immunity then expire normally.
+
 ---
 
 ### Individual Balance
 - **Sequence Required:** 2
 - **Spirituality Cost:** 2,000
 - **Cooldown:** 40 seconds
-- **Interaction Radius:** 20 blocks (optimal: 10 blocks)
-- **Duration:** 60 sec (1200 ticks)
+- **Target Range:** 48 blocks
+- **Duration:** Up to 60 seconds; reduced against superior Sequences
 
-Impose individual balance on a single Beyonder target. The target's abilities are sealed for the duration. Broadcasts a message to players within 60 blocks upon activation. Cannot target non-Beyonders.
+Temporarily balance a Beyonder target's ability potency against the caster's potency at activation. The target retains their powers and Sequence. Equal or weaker targets last 60 seconds. A Sequence 2 caster affects a Sequence 1 target for 20 seconds and a deity for 3 seconds; equal Sequence 0 actors retain the 60-second duration.
+
+The effect ends on expiry, death, disconnection, or separation into different dimensions. Recasting replaces the previous application.
 
 ---
 
@@ -142,15 +146,29 @@ Teleport instantly to the entity that has resisted your Prohibition abilities th
 - **Sequence Required:** 3
 - **Spirituality Cost:** 1,600
 - **Cooldown:** 30 seconds
-- **Zone Radius:** 120 blocks | **Duration:** 3 minutes
+- **Type:** Selectable; the first two modes remain available through Sequence 0
 
-Declare Balance over the lands. Within the zone, all Beyonders' ability multipliers are equalized toward the target value of 2.625 every 5 ticks — both buffs and penalties are neutralized. Broadcasts a message to all nearby players when declared.
+Establish order on the battlefield. Select one mode:
+
+| Mode | Unlocked At | Effect |
+|---|---|---|
+| Ordered Confrontation | Seq 3 | Bind an enemy and the caster to a fixed battlefield, admitting both sides' allies present at activation and repelling third-party interference. Withdrawal meets boundary resistance. |
+| Battlefield Order | Seq 3 | Establish a fixed area for the caster and allies present at activation without requiring an enemy target. Outsiders are repelled; the caster is not bound against leaving. |
+| Balancing | Seq 2 | Divide combatants into separate confrontations, preserving allied groups and matching factions by approximate strength. Unmatched groups wait for an opening. |
+
+The first two modes last 20 seconds with a 48-block radius; Ordered Confrontation requires an enemy within 64 blocks and centers the field between both opponents. Their preliminary restrictions do not bind angels of Sequence 2 or above.
+
+The third mode divides eligible combatants within 120 blocks for at most 60 seconds. Separate confrontations cannot target or damage one another; bound participants cannot leave by teleportation. The division ends when contested fights finish, the caster dies or leaves, or time expires. Terrain and weather remain shared between confrontations.
+
+All modes contribute to the Balancing acting task when activated.
+
+Allied groups remain together throughout the division. Factions are paired by approximate strength, with the caster's faction matched first. Unmatched factions wait; survivors whose confrontation ends are released but cannot interfere in remaining fights.
 
 ---
 
 ### Law
 - **Sequence Required:** 4
-- **Spirituality Cost:** 400
+- **Spirituality Cost:** 800
 - **Cooldown:** 5 seconds
 - **Interaction Radius:** 40 blocks
 - **Type:** Selectable (choose one variant per cast)
@@ -161,8 +179,24 @@ Declare a Law that reshapes the rules of engagement. Choose one effect:
 |---|---|
 | Weaken Mysticism, Enhance Reality | All Beyonders' (including caster's) ability multiplier reduced to 0.25× for 30 sec |
 | Weaken Reality, Enhance Mysticism | All Beyonders' (including caster's) ability multiplier increased to 2.5× for 60 sec |
-| Solace | Instantly kills all undead entities within 40 blocks (bypasses revival) |
-| Law of Sealing | Seals the target's last used ability for 2 minutes (scales with multiplier) |
+| Solace | Available from Sequence 3; instantly kills undead entities within the affected area (bypasses revival) |
+
+Temporary power denial is provided separately by Deprivation.
+
+---
+
+### Deprivation
+- **Sequence Required:** 4
+- **Spirituality Cost:** 800
+- **Cooldown:** 15 seconds
+- **Target Range:** 48 blocks
+- **Duration:** 30 seconds at Sequence 4; 60 seconds from Sequence 3, reduced by Sequence resistance
+
+Temporarily deny one randomly selected eligible active Beyonder power. Selectable modes are considered individually, so other modes remain usable. Passives, always-usable powers, powers already disabled or deprived, and powers marked as protected against theft or replication are excluded. The restriction cannot transfer abilities or characteristics.
+
+An affected active toggle is stopped. Previously launched attacks and placed areas are not retroactively removed. Corroder characteristics can resist the decree; superior Sequences reduce its duration. The restriction retains its remaining duration after reconnecting; time pauses while the server is stopped.
+
+The caster and target are informed which power has been denied.
 
 ---
 
@@ -209,8 +243,10 @@ Mark a target for Punishment (caster gains Glowing while active). Re-cast to can
 - **Sequence Required:** 6
 - **Spirituality Cost:** 800
 - **Cooldown:** 15 seconds
-- **Interaction Radius:** 40 blocks
-- **Zone Radius:** 40 blocks | **Zone Duration:** 3 minutes | **Max Zones:** 3 per type
+- **Zone Radius:** Seq 6: 40; Seq 5: 50; Seq 4: 60; Seq 3: 70; Seq 2–0: 80 blocks
+- **Zone Duration:** 3 minutes × multiplier | **Max Zones:** Integer part of 3 × multiplier per type
+
+The visible boundary uses the enforced zone radius and appears at full size immediately.
 
 Declare a type of activity Prohibited within a zone. Beyonders of the same or higher rank can resist:
 - Sequence ≤ 4 caster: 15% resist chance per resister
@@ -225,11 +261,16 @@ The available variants are gated by sequence rank. Higher-rank Justiciars (lower
 | Prohibit Beyonder Abilities | Blocks ability usage | Seq 6 |
 | Prohibit Combat | Disables combat | Seq 6 |
 | Prohibit Flying | Prevents flight | Seq 6 |
-| Prohibit Item Use | Blocks item usage | Seq 6 |
-| Prohibit Players | Restricts player interaction | Seq 6 |
-| Prohibit Outside World | Prevents leaving the zone | Seq 6 |
-| Law: Prohibit Stand-ins | Blocks stand-in mechanics | Seq > 6 only (restricted) |
-| Law: Prohibit Marionette Interchange | Blocks marionette swapping | Seq > 4 only (restricted) |
+| Prohibit Item Use | Blocks item usage | Seq 4 |
+| Prohibit Players | Restricts players within the zone | Seq 3 |
+| Prohibit Outside World | Restricts crossing the zone boundary | Seq 3 |
+| Law: Prohibit Stand-ins | Blocks stand-in mechanics | Seq 3 |
+| Law: Prohibit Marionette Interchange | Blocks marionette swapping | Seq 3 |
+| Law: Prohibit Acts of Theft | Blocks theft | Seq 3 |
+| Law: Prohibit Marionettes | Suspends marionette movement and actions; returns first-person control to the original body without breaking the bond | Seq 3 |
+| Law: Prohibit Concealment | Reveals supported invisibility and concealment effects and prevents their reuse within the zone | Seq 3 |
+
+Marionette control and swaps remain blocked while suspended. A Sequence 3 caster can affect a Sequence 2 controller's puppets; controllers more than one Sequence above the caster resist. Concealment follows Sequence protection and does not dismantle superior concealed domains. Flying restrictions are lifted when the entity leaves the area or the zone expires.
 
 ---
 
@@ -241,6 +282,8 @@ The available variants are gated by sequence rank. Higher-rank Justiciars (lower
 
 Freeze a single target completely in place. While active, the caster continuously drains spirituality. Re-cast to release the target early.
 
+Each caster maintains an independent hold. Death, disconnection, or dimension changes release the affected prison.
+
 ---
 
 ### Confinement
@@ -248,9 +291,11 @@ Freeze a single target completely in place. While active, the caster continuousl
 - **Spirituality Cost:** 600
 - **Cooldown:** 30 seconds
 - **Interaction Radius:** 15 blocks
-- **Cage Radius:** 6 blocks (hollow cube) | **Duration:** 60 sec
+- **Cage Radius:** 6 blocks (hollow cube) | **Duration:** 60 sec × multiplier
 
-Erect invisible barrier walls forming a hollow cage around a targeted location. Targets inside cannot teleport out. Only one confinement can be active per caster; casting again removes the previous cage.
+Erect invisible barrier walls forming a hollow cubic cage around a targeted location. Entry and exit teleports are blocked across the actual cubic boundary, including corners and dimensional travel. Teleports within the cage and moves between two outside points remain permitted. Only one confinement can be active per caster; casting again removes the previous cage.
+
+Removing a cage preserves walls shared with other active cages. Owner death or disconnection removes the cage.
 
 ---
 
@@ -293,8 +338,8 @@ Employ illusionary torture instruments to punish and weaken targets. Choose one 
 |---|---|
 | Branding Iron | Places a Branding Iron (iron sword) in the caster's hand. On a fully-charged swing within `4×multiplier` blocks, deals `DamageLookup(7, 0.6)×multiplier` damage + Weakness I (10 sec) + 0.12 sanity drain. Lasts 3–15 sec depending on sequence (seq 7→3s, scales down to seq 0→15s), then vanishes. |
 | Psychic Lashing | Enchants the held weapon with Sharpness V (seq ≤ 4) or Sharpness III (seq > 4). |
-| Psychic Piercing | Ranged attack within `18×multiplier` blocks. Deals `DamageLookup(7, 0.8)` + up to 0.1% of target's max HP (scales with multiplier). Applies Slowness II + Weakness II (6 sec) and Confusion (5 sec). Drains 0.20 sanity. |
-| Whip of Pain | Ranged attack within `12×multiplier` blocks. Deals `DamageLookup(7, 0.6)×multiplier` damage + Weakness I (4 sec). Drains 0.15 sanity. |
+| Psychic Piercing | Deals spiritual damage briefly applies Slowness, and drains sanity on a successful hit. Superior Sequences reduce the slowing duration. Spiritual defenses apply. |
+| Whip of Pain | Deals mental Torture damage applies Slowness and Weakness, and drains sanity on a successful hit. Superior Sequences reduce debuff duration; mental defenses apply. |
 
 ---
 
@@ -345,8 +390,8 @@ Entities are also made visible (invisibility stripped). Gold, red, and black dus
 
 ### Authority
 - **Sequence Required:** 9
-- **Spirituality Cost:** 30
-- **Cooldown:** 3 seconds
+- **Spirituality Cost:** 15 at Seq 9, 20 at Seq 8, 25 at Seq 7; scales upward with advancement
+- **Cooldown:** 6 seconds at Seq 9–6; decreases at higher ranks
 - **Interaction Radius:** 15 blocks
 - **Type:** Selectable (choose one variant per cast)
 
@@ -354,11 +399,10 @@ Exert the authority of an Arbiter over nearby entities. Choose one effect:
 
 | Variant | Effect |
 |---|---|
-| Strip Defense | Removes all beneficial effects; applies Confusion for 8 sec |
-| Slow | Applies Slowness II (20 sec) and Confusion (8 sec) |
-| Armor Remove | 40% chance to drop 2 random armor pieces from target |
+| Slow | Seq 9–7: Slowness I for 1 second, without Nausea. From Seq 6: Slowness II and Nausea for 2 seconds. |
+| Armor Remove | Available from Seq 6; 40% chance to drop up to 2 equipped armor pieces from the target. |
 
-**Sequence 4+ Enhancement:** All variants additionally apply a stun (Movement Slowdown 127 for 2 sec).
+**Sequence 4 and above:** Slow additionally roots the target for 2 seconds.
 
 ---
 
@@ -418,13 +462,14 @@ Several abilities interact with shared state:
 | Mechanic | Set By | Read By |
 |---|---|---|
 | Prohibition Resistance Count | Prohibition (target resists) | Sword of Judgment (+10% success per count), Delivering Judgment (selects highest-count target) |
-| Last Used Ability | Any ability use | Law: Law of Sealing |
+| Deprived Powers | Deprivation | Ability execution and selectable-mode checks; persistent expiry and protected-power exclusions |
 | Solace / Execution Death Flag | Law: Solace, Execution | Revival prevention systems |
-| Individually Balanced | Individual Balance | Ability use prevention systems |
+| Individual Potency Override | Individual Balance | BeyonderData multiplier calculation; abilities remain available |
 | Exiled Entities | Exile of Balance | Ability use / combat systems |
 | World Judgment Tier | World Judgment | WorldJudgmentHandler (escalates on Prohibition violations) |
-| Balancing Zones | Balancing | Prohibition (blocks effect application inside zone) |
-| Confinement Zones | Confinement | Teleport event handler |
+| Preliminary Battlefields | Balancing: Ordered Confrontation / Battlefield Order | Admission, boundary resistance, interference checks and visual feedback |
+| Divided Confrontations | Balancing (Seq 2+) | Targeting, damage, supported effects, scheduled caster context and movement checks |
+| Confinement Zones | Confinement | Teleport event handler and direct teleport/dimension mixins |
 | Ancient Court Zones | Ancient Court of Judgment | Court enforcement tick |
 | Order Proxy Zones | Order Proxy | Resurrection / death / combat event handlers |
 | Flog State | Justice Language: Flog | LivingDamageEvent (triggers bleeding on next hit) |
@@ -437,9 +482,9 @@ Several abilities interact with shared state:
 |---|---|
 | 0 | Ancient Court of Judgment, World Judgment |
 | 1 | Order Proxy |
-| 2 | Individual Balance, Exile of Balance |
-| 3 | Sword of Judgment, Delivering Judgment, Balancing, Chaos Hunting |
-| 4 | Law, Execution |
+| 2 | Individual Balance, Exile of Balance; Balancing confrontation-division mode |
+| 3 | Sword of Judgment, Delivering Judgment, Balancing, Chaos Hunting; Solace and advanced Prohibition modes |
+| 4 | Law, Deprivation, Execution; Prohibit Item Use |
 | 5 | Punishment, Enhanced Mental Attributes |
 | 6 | Prohibition, Imprison, Confinement, Justice Language, Verdict: Exile |
 | 7 | Illusionary Torture Devices |

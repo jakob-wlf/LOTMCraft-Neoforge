@@ -203,6 +203,7 @@ public class AbilityUtil {
      */
     public static boolean mayDamage(LivingEntity source, LivingEntity target) {
         if (source == null || target == null) return true;
+        if (!de.jakob.lotm.beyonders.abilities.justiciar.balancing.BalanceBattlefields.canInteract(source, target)) return false;
         if (source == target) return false;
         if (target instanceof Player player && player.isCreative()) return false;
         if (!source.canAttack(target)) return false;
@@ -252,6 +253,7 @@ public class AbilityUtil {
      */
     public static boolean mayTarget(LivingEntity source, LivingEntity target, boolean allowAllies, boolean targetMarionettes) {
         if (source == null || target == null) return true;
+        if (!de.jakob.lotm.beyonders.abilities.justiciar.balancing.BalanceBattlefields.canInteract(source, target)) return false;
 
         if(source == target) return false;
 

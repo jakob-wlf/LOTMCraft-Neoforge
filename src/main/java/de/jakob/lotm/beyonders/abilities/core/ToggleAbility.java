@@ -56,6 +56,10 @@ public abstract class ToggleAbility extends Ability {
         PacketHandler.sendToAllPlayersInSameLevel(new SyncToggleAbilityPacket(entity.getId(), getId(), SyncToggleAbilityPacket.Action.STOP.getValue()), level);
     }
 
+    public void stopForEntity(LivingEntity entity) {
+        if (entity.level() instanceof ServerLevel level && isActiveForEntity(entity)) cancel(level, entity);
+    }
+
     public static void cleanUp(ServerLevel serverLevel, LivingEntity entity) {
         if(!activeAbilities.containsKey(entity.getUUID())) {
             return;
@@ -82,7 +86,7 @@ public abstract class ToggleAbility extends Ability {
             return;
         }
 
-        tick(level, entity);
+        de.jakob.lotm.beyonders.abilities.justiciar.balancing.BalanceContext.run(entity, () -> tick(level, entity));
         if(level instanceof ServerLevel serverLevel) NeoForge.EVENT_BUS.post(new AbilityUsedEvent(serverLevel, entity.position(), entity, this, interactionFlags, interactionRadius, interactionCacheTicks));
     }
 

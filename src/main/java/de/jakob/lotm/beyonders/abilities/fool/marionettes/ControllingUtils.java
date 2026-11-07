@@ -53,6 +53,14 @@ public class ControllingUtils {
 
     public static boolean startControlling(ServerPlayer player, LivingEntity target, boolean keepOwnAbilities, boolean spawnOriginalBody) {
         if(target == null || !target.isAlive()) return false;
+        if (!de.jakob.lotm.beyonders.abilities.justiciar.balancing.BalanceBattlefields.canInteract(player, target)) {
+            de.jakob.lotm.beyonders.abilities.justiciar.balancing.BalanceBattlefields.notice(player);
+            return false;
+        }
+        if (de.jakob.lotm.events.AdvancedProhibitionHandler.isMarionetteProhibited(target)) {
+            de.jakob.lotm.events.AdvancedProhibitionHandler.notice(player, "ability.lotmcraft.prohibition.marionette_suspended");
+            return false;
+        }
 
         if(target.level() != player.level()) {
             return false;

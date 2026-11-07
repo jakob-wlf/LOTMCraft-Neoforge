@@ -5,6 +5,7 @@ import de.jakob.lotm.beyonders.abilities.justiciar.OrderProxyAbility;
 import de.jakob.lotm.effect.ModEffects;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
+import de.jakob.lotm.util.helper.AbilityUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
@@ -16,6 +17,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
@@ -26,12 +28,15 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 @EventBusSubscriber(modid = LOTMCraft.MOD_ID)
 public class OrderLawHandler {
 
     private static final Random RANDOM = new Random();
     private static int tickCounter = 0;
+    private static final Map<LivingEntity, Long> LAST_DYING_NOTICE = new WeakHashMap<>();
 
     private static final List<Holder<MobEffect>> PUNISHMENT_EFFECTS = List.of(
             MobEffects.BLINDNESS,
@@ -49,28 +54,43 @@ public class OrderLawHandler {
 
     // ── Prohibition: Dying — floor health at 1 ────────────────────────────────
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onLivingDamageDyingProhibition(LivingDamageEvent.Pre event) {
         LivingEntity entity = event.getEntity();
-        if (!(entity.level() instanceof ServerLevel serverLevel)) return;
-        if (OrderProxyAbility.PERMANENT_PROHIBITION_ZONES.isEmpty()) return;
-
-        Vec3 pos = entity.position();
-        boolean inDyingZone = OrderProxyAbility.PERMANENT_PROHIBITION_ZONES.stream()
-                .anyMatch(z -> z.type() == OrderProxyAbility.OrderProhibitionType.DYING && z.isInZone(pos, serverLevel));
-        if (!inDyingZone) return;
-
-        if(event.getNewDamage() == Float.MAX_VALUE) return;
+        if (!isDyingProhibited(entity)) return;
 
         float currentHealth = entity.getHealth();
         if (event.getNewDamage() >= currentHealth) {
-            event.setNewDamage(currentHealth - 1f);
-
-            if (entity instanceof ServerPlayer sp) {
-                sp.sendSystemMessage(Component.translatable("lotmcraft.order_law.dying_prohibited")
-                        .withStyle(ChatFormatting.GOLD));
-            }
+            event.setNewDamage(de.jakob.lotm.beyonders.abilities.justiciar.OrderDeathRules.protectedDamage(currentHealth,event.getNewDamage()));
+            notifyDyingProhibited(entity);
         }
+    }
+
+    public static boolean isDyingProhibited(LivingEntity entity) {
+        if (!(entity.level() instanceof ServerLevel level)) return false;
+        return OrderProxyAbility.PERMANENT_PROHIBITION_ZONES.stream()
+                .anyMatch(zone -> zone.type() == OrderProxyAbility.OrderProhibitionType.DYING
+                        && zone.isInZone(entity.position(), level));
+    }
+
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void preventProhibitedDeath(LivingDeathEvent event) {
+        LivingEntity entity = event.getEntity();
+        if (!isDyingProhibited(entity)) return;
+        entity.setHealth(Math.max(1f, entity.getHealth()));
+        entity.deathTime = 0;
+        event.setCanceled(true);
+        notifyDyingProhibited(entity);
+    }
+
+    private static void notifyDyingProhibited(LivingEntity entity) {
+        if (!(entity instanceof ServerPlayer player)) return;
+        long now = player.serverLevel().getServer().overworld().getGameTime();
+        if (now - LAST_DYING_NOTICE.getOrDefault(entity,-100L) < 40) return;
+        LAST_DYING_NOTICE.put(entity,now);
+        Component message = Component.translatable("lotmcraft.order_law.dying_prohibited").withStyle(ChatFormatting.GOLD);
+        player.sendSystemMessage(message);
+        AbilityUtil.sendActionBar(player,message);
     }
 
     // ── Prohibition: Resurrecting — block revivals ────────────────────────────

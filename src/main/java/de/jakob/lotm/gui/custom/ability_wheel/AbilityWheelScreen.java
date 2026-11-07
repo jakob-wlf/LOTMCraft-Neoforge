@@ -118,7 +118,7 @@ public class AbilityWheelScreen extends BaseAbilityWheelScreen<AbilityWheelMenu>
             if (ability != null) {
                 Component name;
                 if (subIndex >= 0 && ability instanceof SelectableAbility sa) {
-                    String[] names = sa.getAbilityNamesCopy();
+                    String[] names = sa.getSequenceDependantAbilityNames(BeyonderData.getSequence(ClientHandler.getPlayer()));
                     if (subIndex < names.length) {
                         String pathway = BeyonderData.getPathway(ClientHandler.getPlayer());
                         int color = BeyonderData.pathwayInfos.containsKey(pathway) ? BeyonderData.pathwayInfos.get(pathway).color() : 0xFFFFFF;

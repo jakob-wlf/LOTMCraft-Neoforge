@@ -1,5 +1,6 @@
 package de.jakob.lotm.beyonders.abilities.justiciar;
 
+import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.beyonders.abilities.abyss.TheCorroderAbility;
 import de.jakob.lotm.beyonders.abilities.core.Ability;
 import de.jakob.lotm.beyonders.abilities.core.AbilityUsedEvent;
@@ -22,15 +23,24 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import org.joml.Vector3f;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+@EventBusSubscriber(modid = LOTMCraft.MOD_ID)
 public class ImprisonAbility extends Ability {
 
     public static final Set<UUID> IMPRISONED = ConcurrentHashMap.newKeySet();
     private static final Map<UUID, UUID[]> IMPRISON_DATA = new ConcurrentHashMap<>();
+    private static final Map<UUID, ServerLevel> PRISON_LEVELS = new ConcurrentHashMap<>();
+    private static final Map<UUID, UUID> PRISON_GENERATIONS = new ConcurrentHashMap<>();
 
     private static final DustParticleOptions DUST_GOLD = new DustParticleOptions(new Vector3f(1.0f, 0.75f, 0.0f), 1.3f);
     private static final DustParticleOptions DUST_PALE = new DustParticleOptions(new Vector3f(1.0f, 0.95f, 0.6f), 0.8f);
@@ -78,6 +88,7 @@ public class ImprisonAbility extends Ability {
 
         final UUID targetId = target.getUUID();
         final UUID casterId = caster.getUUID();
+        final UUID generation = UUID.randomUUID();
         IMPRISONED.add(targetId);
 
         target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 127, false, false));
@@ -97,7 +108,7 @@ public class ImprisonAbility extends Ability {
             Vec3 pos = t.position();
             t.hurtMarked = true;
             t.teleportTo(pos.x, pos.y, pos.z);
-        }, serverLevel, () -> IMPRISONED.contains(targetId));
+        }, serverLevel, () -> ownsPrison(casterId, targetId, generation));
 
         UUID vfxTaskId = ServerScheduler.scheduleRepeating(0, 8, duration, () -> {
             Entity e = serverLevel.getEntity(targetId);
@@ -109,16 +120,16 @@ public class ImprisonAbility extends Ability {
                 ParticleUtil.spawnSphereParticles(serverLevel, DUST_GOLD, pos, 1.0, 10);
                 ParticleUtil.spawnParticles(serverLevel, ParticleTypes.END_ROD, pos, 4, 0.5, 0.3);
             }
-        }, serverLevel, () -> IMPRISONED.contains(targetId));
+        }, serverLevel, () -> ownsPrison(casterId, targetId, generation));
 
         UUID effectTaskId = ServerScheduler.scheduleRepeating(0, 100, duration, () -> {
             Entity e = serverLevel.getEntity(targetId);
             if (!(e instanceof LivingEntity t) || !t.isAlive()) return;
             EffectManager.playEffect(EffectIds.IMPRISON, t.getX(), t.getY() + .3, t.getZ(), serverLevel);
-        }, serverLevel, () -> IMPRISONED.contains(targetId));
+        }, serverLevel, () -> ownsPrison(casterId, targetId, generation));
 
         UUID drainTaskId = ServerScheduler.scheduleRepeating(80, 80, duration, () -> {
-            if (!IMPRISONED.contains(targetId) || !caster.isAlive()) {
+            if (!ownsPrison(casterId, targetId, generation) || !caster.isAlive()) {
                 cancelImprisonment(caster.getUUID());
                 return;
             }
@@ -131,20 +142,19 @@ public class ImprisonAbility extends Ability {
                 return;
             }
             BeyonderData.incrementSpirituality(caster, -300);
-        }, serverLevel, () -> IMPRISONED.contains(targetId) && caster.isAlive());
+        }, serverLevel, () -> ownsPrison(casterId, targetId, generation) && caster.isAlive());
 
         UUID expiryTaskId = ServerScheduler.scheduleDelayed(duration, () -> {
-            IMPRISON_DATA.computeIfPresent(casterId, (k, data) -> {
-                if (data[0].equals(targetId)) {
-                    cancelImprisonment(casterId);
-                    spawnReleaseEffect(serverLevel, caster.position());
-                    AbilityUtil.sendActionBar(caster, Component.literal("§6⚖ §eImprisonment §7has ended §6⚖"));
-                }
-                return IMPRISON_DATA.get(casterId);
-            });
+            if (ownsPrison(casterId, targetId, generation)) {
+                cancelImprisonment(casterId);
+                spawnReleaseEffect(serverLevel, caster.position());
+                AbilityUtil.sendActionBar(caster, Component.literal("§6⚖ §eImprisonment §7has ended §6⚖"));
+            }
         }, serverLevel);
 
-        IMPRISON_DATA.put(caster.getUUID(), new UUID[]{targetId, velTaskId, vfxTaskId, effectTaskId, drainTaskId});
+        IMPRISON_DATA.put(casterId, new UUID[]{targetId, velTaskId, vfxTaskId, effectTaskId, drainTaskId, expiryTaskId});
+        PRISON_LEVELS.put(casterId, serverLevel);
+        PRISON_GENERATIONS.put(casterId, generation);
 
         EffectManager.playEffect(EffectIds.IMPRISON, target.getX(), target.getY(), target.getZ(), serverLevel);
         NeoForge.EVENT_BUS.post(new AbilityUsedEvent(serverLevel, caster.position(), caster, this, interactionFlags, 15, 0));
@@ -175,8 +185,11 @@ public class ImprisonAbility extends Ability {
 
     private static void cancelImprisonment(UUID casterUUID) {
         UUID[] data = IMPRISON_DATA.remove(casterUUID);
+        PRISON_LEVELS.remove(casterUUID);
+        PRISON_GENERATIONS.remove(casterUUID);
         if (data == null) return;
-        IMPRISONED.remove(data[0]);
+        // A different Justiciar may still be maintaining an independent prison on this target.
+        if (IMPRISON_DATA.values().stream().noneMatch(other -> other[0].equals(data[0]))) IMPRISONED.remove(data[0]);
         for (int i = 1; i < data.length; i++) {
             if (data[i] != null) ServerScheduler.cancel(data[i]);
         }
@@ -185,6 +198,47 @@ public class ImprisonAbility extends Ability {
         for (Map.Entry<UUID, UUID[]> e : new ArrayList<>(IMPRISON_DATA.entrySet())) {
             if (e.getValue()[0].equals(targetId)) cancelImprisonment(e.getKey());
         }
+    }
+
+    private static boolean ownsPrison(UUID caster, UUID target, UUID generation) {
+        UUID[] data = IMPRISON_DATA.get(caster);
+        return data != null && data[0].equals(target) && generation.equals(PRISON_GENERATIONS.get(caster));
+    }
+
+    private static void releaseEntity(UUID entity) {
+        cancelImprisonment(entity);
+        releaseTarget(entity);
+    }
+
+    @SubscribeEvent
+    public static void onDeath(LivingDeathEvent event) {
+        if (!event.getEntity().level().isClientSide) releaseEntity(event.getEntity().getUUID());
+    }
+
+    @SubscribeEvent
+    public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) { releaseEntity(event.getEntity().getUUID()); }
+
+    @SubscribeEvent
+    public static void onDimension(PlayerEvent.PlayerChangedDimensionEvent event) { releaseEntity(event.getEntity().getUUID()); }
+
+    @SubscribeEvent
+    public static void onServerTick(ServerTickEvent.Post event) {
+        // Covers unloaded mobs and non-player dimension transfers as well as players.
+        for (var entry : new ArrayList<>(IMPRISON_DATA.entrySet())) {
+            ServerLevel level = PRISON_LEVELS.get(entry.getKey());
+            Entity caster = level == null ? null : level.getEntity(entry.getKey());
+            Entity target = level == null ? null : level.getEntity(entry.getValue()[0]);
+            if (!(caster instanceof LivingEntity owner) || !owner.isAlive()
+                    || !(target instanceof LivingEntity prisoner) || !prisoner.isAlive()) cancelImprisonment(entry.getKey());
+        }
+    }
+
+    @SubscribeEvent
+    public static void onServerStopped(ServerStoppedEvent event) {
+        for (UUID caster : new ArrayList<>(IMPRISON_DATA.keySet())) cancelImprisonment(caster);
+        IMPRISONED.clear();
+        PRISON_LEVELS.clear();
+        PRISON_GENERATIONS.clear();
     }
 
     private static int getDuration(int seq){

@@ -12,6 +12,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -23,6 +26,7 @@ import net.neoforged.neoforge.event.entity.EntityTeleportEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import org.joml.Vector3f;
 
 import java.util.*;
@@ -32,6 +36,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ConfinementAbility extends Ability {
 
     public static final List<ConfinementZone> ACTIVE_ZONES = new CopyOnWriteArrayList<>();
+    private static final Map<ServerLevel, Map<BlockPos, Integer>> BARRIER_REFERENCES = new HashMap<>();
+    private static final Map<LivingEntity, Long> LAST_NOTICE = new WeakHashMap<>();
 
     private static final DustParticleOptions GOLD_DUST      = new DustParticleOptions(new Vector3f(1.0f, 0.80f, 0.0f), 1.3f);
     private static final DustParticleOptions PALE_GOLD_DUST = new DustParticleOptions(new Vector3f(1.0f, 0.92f, 0.45f), 0.85f);
@@ -62,20 +68,24 @@ public class ConfinementAbility extends Ability {
         ACTIVE_ZONES.stream()
                 .filter(z -> z.ownerId.equals(entity.getUUID()))
                 .findFirst()
-                .ifPresent(existing -> removeZone(existing, serverLevel));
+                .ifPresent(ConfinementAbility::removeZone);
 
         int radius   = 6;
         int duration = (int) (1200 * multiplier(entity));
         Vec3 center  = AbilityUtil.getTargetLocation(entity, 12, 2f);
+        if (center == null) return;
 
         List<BlockPos> placed = new ArrayList<>();
+        Map<BlockPos, Integer> references = BARRIER_REFERENCES.computeIfAbsent(serverLevel, ignored -> new HashMap<>());
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dy = -radius; dy <= radius; dy++) {
                 for (int dz = -radius; dz <= radius; dz++) {
                     if (Math.abs(dx) != radius && Math.abs(dy) != radius && Math.abs(dz) != radius) continue;
                     BlockPos pos = BlockPos.containing(center.x + dx, center.y + dy, center.z + dz);
-                    if (!serverLevel.getBlockState(pos).isAir()) continue;
-                    serverLevel.setBlock(pos, Blocks.BARRIER.defaultBlockState(), 3);
+                    boolean shared = serverLevel.getBlockState(pos).is(Blocks.BARRIER) && references.containsKey(pos);
+                    if (!serverLevel.getBlockState(pos).isAir() && !shared) continue;
+                    if (!shared) serverLevel.setBlock(pos, Blocks.BARRIER.defaultBlockState(), 3);
+                    references.merge(pos, 1, Integer::sum);
                     placed.add(pos);
                 }
             }
@@ -88,11 +98,11 @@ public class ConfinementAbility extends Ability {
 
         Location centerLoc = new Location(center, serverLevel);
 
-        ServerScheduler.scheduleForDuration(0, 8, duration, () -> {
+        zone.taskId = ServerScheduler.scheduleForDuration(0, 8, duration, () -> {
                     if (!zone.isActive()) return;
                     spawnEdgeParticles(serverLevel, center, radius);
                     spawnCornerFlares(serverLevel, center, radius);
-                }, () -> removeZone(zone, serverLevel), serverLevel,
+                }, () -> removeZone(zone), serverLevel,
                 () -> AbilityUtil.getTimeInArea(entity, centerLoc));
 
         NeoForge.EVENT_BUS.post(new AbilityUsedEvent(serverLevel, center, entity, this, interactionFlags, radius, 20 * 2));
@@ -162,14 +172,45 @@ public class ConfinementAbility extends Ability {
         }
     }
 
-    private static void removeZone(ConfinementZone zone, ServerLevel level) {
-        for (BlockPos pos : zone.barriers) {
-            if (level.getBlockState(pos).is(Blocks.BARRIER)) {
-                level.removeBlock(pos, false);
-            }
-        }
+    private static void removeZone(ConfinementZone zone) {
+        if (!zone.isActive()) return;
         zone.deactivate();
         ACTIVE_ZONES.remove(zone);
+        if (zone.taskId != null) ServerScheduler.cancel(zone.taskId);
+        ServerLevel level = zone.level;
+        Map<BlockPos, Integer> references = BARRIER_REFERENCES.get(level);
+        if (references == null) return;
+        for (BlockPos pos : zone.claimed) {
+            int remaining = references.getOrDefault(pos, 0) - 1;
+            if (remaining > 0) { references.put(pos, remaining); continue; }
+            references.remove(pos);
+            if (level.getBlockState(pos).is(Blocks.BARRIER)) level.removeBlock(pos, false);
+        }
+        if (references.isEmpty()) BARRIER_REFERENCES.remove(level);
+    }
+
+    /** Used by teleport events and direct teleport entry points before any world/position mutation. */
+    public static boolean canTeleport(LivingEntity entity, ServerLevel destinationLevel, Vec3 destination) {
+        if (!(entity.level() instanceof ServerLevel sourceLevel)) return true;
+        // Login, respawn and newly constructed replacement bodies are not teleporting out of a cell.
+        if (!entity.isAlive() || entity.isRemoved() || sourceLevel.getEntity(entity.getId()) != entity) return true;
+        for (ConfinementZone zone : ACTIVE_ZONES) {
+            if (!zone.isActive()) continue;
+            Vec3 source = entity.position();
+            if (zone.bounds.blocks(sourceLevel == zone.level, source.x,source.y,source.z,
+                    destinationLevel == zone.level,destination.x,destination.y,destination.z)) {
+                if (entity instanceof ServerPlayer player) {
+                    long now = sourceLevel.getServer().overworld().getGameTime();
+                    if (now - LAST_NOTICE.getOrDefault(entity,-100L) >= 40) {
+                        LAST_NOTICE.put(entity,now);
+                        AbilityUtil.sendActionBar(player,Component.translatable("ability.lotmcraft.confinement.crossing_prohibited")
+                                .withStyle(ChatFormatting.RED));
+                    }
+                }
+                return false;
+            }
+        }
+        return true;
     }
 
     @SubscribeEvent
@@ -180,15 +221,7 @@ public class ConfinementAbility extends Ability {
 
         Vec3 destination = new Vec3(event.getTargetX(), event.getTargetY(), event.getTargetZ());
 
-        for (ConfinementZone zone : ACTIVE_ZONES) {
-            if (!zone.level.equals(serverLevel) || !zone.isActive()) continue;
-            boolean insideNow  = entity.position().distanceTo(zone.center) <= zone.radius + 1.0;
-            boolean outsideDest = destination.distanceTo(zone.center) > zone.radius;
-            if (insideNow && outsideDest) {
-                event.setCanceled(true);
-                return;
-            }
-        }
+        if (!canTeleport(entity,serverLevel,destination)) event.setCanceled(true);
     }
 
     @SubscribeEvent
@@ -199,7 +232,7 @@ public class ConfinementAbility extends Ability {
         ACTIVE_ZONES.stream()
                 .filter(z -> z.ownerId.equals(id))
                 .findFirst()
-                .ifPresent(z -> removeZone(z, serverLevel));
+                .ifPresent(ConfinementAbility::removeZone);
     }
 
     @SubscribeEvent
@@ -210,16 +243,23 @@ public class ConfinementAbility extends Ability {
         ACTIVE_ZONES.stream()
                 .filter(z -> z.ownerId.equals(id))
                 .findFirst()
-                .ifPresent(z -> removeZone(z, serverLevel));
+                .ifPresent(ConfinementAbility::removeZone);
     }
     @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Post event) {
         for (ConfinementZone zone : ACTIVE_ZONES) {
-            if (!zone.isActive() || zone.barriers.isEmpty()) continue;
+            if (!zone.isActive()) continue;
+            if (zone.level.getGameTime() % 10 == 0) zone.barriers.removeIf(pos -> !zone.level.getBlockState(pos).is(Blocks.BARRIER));
             TheCorroderAbility.corrodeBlocks(zone.level, zone.barriers);
             // Once the wall is fully eaten the zone ends and its teleport block lifts
-            if (zone.barriers.isEmpty()) removeZone(zone, zone.level);
+            if (zone.barriers.isEmpty()) removeZone(zone);
         }
+    }
+
+    @SubscribeEvent
+    public static void onServerStopping(ServerStoppingEvent event) {
+        for (ConfinementZone zone : ACTIVE_ZONES) removeZone(zone);
+        BARRIER_REFERENCES.clear(); LAST_NOTICE.clear();
     }
 
     public static class ConfinementZone {
@@ -228,7 +268,10 @@ public class ConfinementAbility extends Ability {
         public final double radius;
         public final ServerLevel level;
         public final List<BlockPos> barriers;
+        public final Set<BlockPos> claimed;
+        public final ConfinementBounds bounds;
         private boolean active = true;
+        private UUID taskId;
 
         public ConfinementZone(UUID ownerId, Vec3 center, double radius, ServerLevel level, List<BlockPos> barriers) {
             this.ownerId  = ownerId;
@@ -236,6 +279,8 @@ public class ConfinementAbility extends Ability {
             this.radius   = radius;
             this.level    = level;
             this.barriers = barriers;
+            this.claimed = Set.copyOf(barriers);
+            this.bounds = ConfinementBounds.around(center.x,center.y,center.z,(int) radius);
         }
 
         public boolean isActive() { return active; }

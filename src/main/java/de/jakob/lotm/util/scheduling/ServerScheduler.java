@@ -281,7 +281,7 @@ public class ServerScheduler {
                              int maxExecutions, ServerLevel level,
                              Supplier<Boolean> condition, Supplier<Double> timeMultiplier) {
             this.id = id;
-            this.task = task;
+            this.task = de.jakob.lotm.beyonders.abilities.justiciar.balancing.BalanceContext.capture(task);
             this.interval = interval;
             this.maxExecutions = maxExecutions;
             this.level = level;

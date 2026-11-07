@@ -162,6 +162,10 @@ public class PsychologicalInvisibilityAbility extends ToggleAbility {
         }
     }
 
+    public static void revealByProhibition(LivingEntity entity) {
+        if (!entity.level().isClientSide) remove(entity);
+    }
+
     public static int getHitsBySeq(int seq) {
         return switch (seq) {
             case 6 -> 1;

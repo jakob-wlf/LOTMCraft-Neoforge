@@ -192,15 +192,12 @@ public class IllusionaryTortureDevicesAbility extends SelectableAbility {
         LivingEntity target = AbilityUtil.getTargetEntity(entity, scaledRange(entity, 18), 1.3f);
         if (target == null || target == entity) return;
 
-        target.hurt(ModDamageTypes.source(level, ModDamageTypes.BEYONDER_GENERIC, entity),
-                baseDamage);
-        float percentDamage = (float) Math.min(multiplier(entity) / 100, 0.1);
-        target.setHealth(target.getHealth() - (target.getMaxHealth() * percentDamage));
-
-        target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 120, 1));
-        target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 120, 1));
-        target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 100, 0));
-        applySanity(entity, target, 0.1f);
+        // Soul damage uses the normal combat pipeline and the target's spiritual resistances.
+        if (target.hurt(ModDamageTypes.source(level, ModDamageTypes.SPIRITUAL, entity), baseDamage)) {
+            int duration = resistedPainDuration(entity, target, 20);
+            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, 0));
+            applySanity(entity, target, 0.1f);
+        }
 
         serverLevel.playSound(null, entity.blockPosition(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 1.5f, 0.6f);
         serverLevel.playSound(null, target.blockPosition(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 1.0f, 1.4f);
@@ -235,9 +232,13 @@ public class IllusionaryTortureDevicesAbility extends SelectableAbility {
         LivingEntity target = AbilityUtil.getTargetEntity(entity, scaledRange(entity, 12), 1.3f);
         if (target == null || target == entity) return;
 
-        target.hurt(ModDamageTypes.source(level, ModDamageTypes.BEYONDER_GENERIC, entity), baseDamage);
-        target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 80, 0));
-        applySanity(entity, target, 0.05f);
+        // Torture belongs to Mind: prolonged pain impairs action without sealing abilities.
+        if (target.hurt(ModDamageTypes.source(level, ModDamageTypes.TORTURE, entity), baseDamage)) {
+            int duration = resistedPainDuration(entity, target, 20 * 3);
+            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, 0));
+            target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, 0));
+            applySanity(entity, target, 0.05f);
+        }
 
         serverLevel.playSound(null, entity.blockPosition(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 1.2f, 0.5f);
         serverLevel.playSound(null, target.blockPosition(), SoundEvents.PLAYER_HURT, SoundSource.PLAYERS, 1.0f, 0.6f);
@@ -255,5 +256,11 @@ public class IllusionaryTortureDevicesAbility extends SelectableAbility {
         ParticleUtil.spawnSphereParticles(serverLevel, GOLD_DUST,  impact, 0.65, 20);
         ParticleUtil.spawnSphereParticles(serverLevel, EMBER_DUST, impact, 0.45, 12);
         serverLevel.sendParticles(ParticleTypes.CRIT, impact.x, impact.y, impact.z, 14, 0.3, 0.3, 0.3, 0.12);
+    }
+    private int resistedPainDuration(LivingEntity caster, LivingEntity target, int duration) {
+        int casterSequence = AbilityUtil.getSeqWithArt(caster, this);
+        int targetSequence = BeyonderData.isBeyonder(target) ? BeyonderData.getSequence(target) : 10;
+        double resistance = AbilityUtil.getSequenceResistanceFactor(casterSequence, targetSequence);
+        return Math.max(1, (int) Math.round(duration * (1 - resistance)));
     }
 }
