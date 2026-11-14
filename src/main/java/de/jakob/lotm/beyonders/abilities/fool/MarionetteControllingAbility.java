@@ -131,6 +131,10 @@ public class MarionetteControllingAbility extends SelectableAbility {
     }
 
     private static void swapWithMarionette(ServerLevel level, ServerPlayer player, LivingEntity marionette) {
+        if (de.jakob.lotm.events.AdvancedProhibitionHandler.isMarionetteProhibited(marionette)) {
+            de.jakob.lotm.events.AdvancedProhibitionHandler.notice(player, "ability.lotmcraft.prohibition.marionette_suspended");
+            return;
+        }
         Vec3 playerPos = player.position();
 
         Level marionetteLevel = marionette.level();
@@ -199,6 +203,8 @@ public class MarionetteControllingAbility extends SelectableAbility {
         LivingEntity marionette = getSelectedMarionette(player);
         if(marionette == null)
             return;
+
+        if (de.jakob.lotm.events.AdvancedProhibitionHandler.isMarionetteProhibited(marionette)) return;
 
         // skip damage canceling if the damage was lower than 10% of the player's max health, or if the attack was not fatal
         if (!(event.getAmount() / player.getMaxHealth() >= 0.1)

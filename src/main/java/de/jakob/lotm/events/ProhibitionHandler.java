@@ -2,9 +2,7 @@ package de.jakob.lotm.events;
 
 import de.jakob.lotm.LOTMCraft;
 import de.jakob.lotm.beyonders.abilities.core.AbilityUseEvent;
-import de.jakob.lotm.beyonders.abilities.justiciar.BalancingAbility;
 import de.jakob.lotm.beyonders.abilities.justiciar.ExileOfBalanceAbility;
-import de.jakob.lotm.beyonders.abilities.justiciar.IndividualBalanceAbility;
 import de.jakob.lotm.beyonders.abilities.justiciar.ProhibitionAbility;
 import de.jakob.lotm.util.BeyonderData;
 import net.minecraft.ChatFormatting;
@@ -16,7 +14,6 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
-import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
@@ -30,7 +27,7 @@ public class ProhibitionHandler {
         LivingEntity entity = event.getEntity();
         if (!(entity.level() instanceof ServerLevel serverLevel)) return;
 
-        if (isInZone(entity.position(), serverLevel, ProhibitionAbility.ProhibitionType.BEYONDER_ABILITIES, BeyonderData.getSequence(entity))) {
+        if (isInZone(entity.position(), serverLevel, ProhibitionAbility.ProhibitionType.BEYONDER_ABILITIES, BeyonderData.getSequence(entity), entity)) {
             event.setCanceled(true);
             WorldJudgmentHandler.escalate(entity);
             if (!ProhibitionAbility.ProhibitionZone.appliesTo(entity, ProhibitionAbility.ProhibitionType.BEYONDER_ABILITIES)){
@@ -51,7 +48,7 @@ public class ProhibitionHandler {
             if (!zone.level.equals(serverLevel)) continue;
             if (zone.expiryTick < now) continue;
             double dist = entity.position().distanceTo(zone.center);
-            if (dist > 40.0 && dist <= 50.0) {
+            if (dist > zone.radius && dist <= zone.radius + 10.0) {
                 event.setCanceled(true);
                 WorldJudgmentHandler.escalate(entity);
                 if (entity instanceof ServerPlayer sp) {
@@ -68,7 +65,7 @@ public class ProhibitionHandler {
         if (!(event.getSource().getEntity() instanceof LivingEntity attacker)) return;
         if (!(attacker.level() instanceof ServerLevel serverLevel)) return;
 
-        if (isInZone(attacker.position(), serverLevel, ProhibitionAbility.ProhibitionType.COMBAT, BeyonderData.getSequence(attacker))) {
+        if (isInZone(attacker.position(), serverLevel, ProhibitionAbility.ProhibitionType.COMBAT, BeyonderData.getSequence(attacker), attacker)) {
             event.setNewDamage(0);
             WorldJudgmentHandler.escalate(attacker);
             if (attacker instanceof ServerPlayer sp) {
@@ -88,7 +85,7 @@ public class ProhibitionHandler {
 
         Vec3 pos = player.position();
 
-        if (isInZone(pos, serverLevel, ProhibitionAbility.ProhibitionType.FLYING, BeyonderData.getSequence(player))) {
+        if (isInZone(pos, serverLevel, ProhibitionAbility.ProhibitionType.FLYING, BeyonderData.getSequence(player), player)) {
             if (player.getAbilities().flying) {
                 player.getAbilities().flying = false;
                 player.getAbilities().mayfly = false;
@@ -106,8 +103,7 @@ public class ProhibitionHandler {
             if (zone.ownerId.equals(player.getUUID())) continue;
             if (!ProhibitionAbility.ProhibitionZone.appliesTo(player, zone.type)) continue;
 
-            double dist = pos.distanceTo(zone.center);
-            if (dist <= 40.0) {
+            if (zone.isInZone(pos, serverLevel)) {
                 Vec3 direction = pos.subtract(zone.center).normalize();
                 if (direction.lengthSqr() < 0.001) {
                     direction = new Vec3(1, 0, 0);
@@ -127,7 +123,7 @@ public class ProhibitionHandler {
             if (!ProhibitionAbility.ProhibitionZone.appliesTo(player, zone.type)) continue;
 
             double dist = pos.distanceTo(zone.center);
-            if (dist > 40.0 && dist <= 43.0) {
+            if (dist > zone.radius && dist <= zone.radius + 3.0) {
                 Vec3 direction = pos.subtract(zone.center).normalize();
                 if (direction.lengthSqr() < 0.001) direction = new Vec3(1, 0, 0);
                 player.setDeltaMovement(direction.scale(1.5));
@@ -143,22 +139,12 @@ public class ProhibitionHandler {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         if (!(player.level() instanceof ServerLevel serverLevel)) return;
 
-        if (isInZone(player.position(), serverLevel, ProhibitionAbility.ProhibitionType.ITEM_USE, BeyonderData.getSequence(player))) {
+        if (isInZone(player.position(), serverLevel, ProhibitionAbility.ProhibitionType.ITEM_USE, BeyonderData.getSequence(player), player)) {
             event.setCanceled(true);
             WorldJudgmentHandler.escalate(player);
             player.sendSystemMessage(Component.translatable("lotmcraft.prohibition.item_use")
                     .withStyle(ChatFormatting.RED));
         }
-    }
-
-    @SubscribeEvent
-    public static void onEffectApplicable(MobEffectEvent.Applicable event) {
-        if (!(event.getEntity() instanceof LivingEntity le)) return;
-        if (!(le.level() instanceof ServerLevel sl)) return;
-        Vec3 pos = le.position();
-        boolean inZone = BalancingAbility.ACTIVE_ZONES.stream()
-                .anyMatch(z -> z.isActive() && z.isInZone(pos, sl));
-        if (inZone) event.setResult(MobEffectEvent.Applicable.Result.DO_NOT_APPLY);
     }
 
     public static boolean isInStandInsZone(Vec3 pos, ServerLevel level, int targetSequence) {
@@ -197,26 +183,12 @@ public class ProhibitionHandler {
         }
     }
 
-    @SubscribeEvent
-    public static void onAbilityUseIndividualBalance(AbilityUseEvent event) {
-        LivingEntity entity = event.getEntity();
-        if (!(entity.level() instanceof ServerLevel sl)) return;
-        Long expiry = IndividualBalanceAbility.INDIVIDUALLY_BALANCED.get(entity.getUUID());
-        if (expiry == null || sl.getGameTime() >= expiry) return;
-
-        String pathway = BeyonderData.getPathway(entity);
-        Map<String, Integer> reqs = event.getAbility().getRequirements();
-        Integer reqSeq = reqs.get(pathway);
-        if (reqSeq != null && reqSeq <= 1) {
-            event.setCanceled(true);
-            if (entity instanceof ServerPlayer sp) {
-                sp.sendSystemMessage(Component.translatable("lotmcraft.prohibition.individual_balance_sealed")
-                        .withStyle(ChatFormatting.RED));
-            }
-        }
+    private static boolean isInZone(Vec3 pos, ServerLevel level, ProhibitionAbility.ProhibitionType type, int targetSequence) {
+        return isInZone(pos, level, type, targetSequence,
+                null);
     }
 
-    private static boolean isInZone(Vec3 pos, ServerLevel level, ProhibitionAbility.ProhibitionType type, int targetSequence) {
+    private static boolean isInZone(Vec3 pos, ServerLevel level, ProhibitionAbility.ProhibitionType type, int targetSequence, LivingEntity target) {
         long now = level.getGameTime();
         for (ProhibitionAbility.ProhibitionZone zone : ProhibitionAbility.ACTIVE_ZONES) {
             if (de.jakob.lotm.beyonders.abilities.error.DeceitAbility.isReversed(zone)) continue;
@@ -224,7 +196,7 @@ public class ProhibitionHandler {
             if (!zone.level.equals(level)) continue;
             if (zone.expiryTick < now) continue;
             if (isTargetTooStrong(zone.casterSequence, targetSequence)) continue;
-            if (pos.distanceTo(zone.center) <= 40.0) return true;
+            if (zone.isInZone(pos, level)) return true;
         }
         return false;
     }

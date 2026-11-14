@@ -32,7 +32,6 @@ import de.jakob.lotm.entity.client.ability_entities.wheel_of_fortune_pathway.cyc
 import de.jakob.lotm.entity.client.ability_entities.mother_pathway.desolate_area.DesolateAreaModel;
 import de.jakob.lotm.entity.client.ability_entities.door_pathway.exile_doors.ExileDoorsModel;
 import de.jakob.lotm.entity.client.ability_entities.door_pathway.return_portal.HighSequenceDoorsModel;
-import de.jakob.lotm.entity.client.ability_entities.justiciar_pathway.judgment_sword.JudgmentSwordModel;
 import de.jakob.lotm.entity.client.ability_entities.sun_pathway.justice_sword.JusticeSwordModel;
 import de.jakob.lotm.entity.client.projectiles.fireball.FireballModel;
 import de.jakob.lotm.entity.client.projectiles.flaming_spear.FlamingSpearProjectileModel;
@@ -145,7 +144,6 @@ public class ModEvents {
         event.registerLayerDefinition(ExileDoorsModel.LAYER_LOCATION, ExileDoorsModel::createBodyLayer);
         event.registerLayerDefinition(WarBannerModel.LAYER_LOCATION, WarBannerModel::createBodyLayer);
         event.registerLayerDefinition(MeteorModel.LAYER_LOCATION, MeteorModel::createBodyLayer);
-        event.registerLayerDefinition(JudgmentSwordModel.LAYER_LOCATION, JudgmentSwordModel::createBodyLayer);
         event.registerLayerDefinition(JusticeSwordModel.LAYER_LOCATION, JusticeSwordModel::createBodyLayer);
         event.registerLayerDefinition(SpearOfLightProjectileModel.LAYER_LOCATION, SpearOfLightProjectileModel::createBodyLayer);
         event.registerLayerDefinition(VolcanoModel.LAYER_LOCATION, VolcanoModel::createBodyLayer);

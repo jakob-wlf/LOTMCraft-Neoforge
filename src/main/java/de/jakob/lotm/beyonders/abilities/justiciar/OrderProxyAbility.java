@@ -136,17 +136,35 @@ public class OrderProxyAbility extends SelectableAbility {
 
         ServerScheduler.scheduleDelayed(300, () -> {
             IMMUNE_ENTITIES.remove(uuid);
-            LivingEntity target = (LivingEntity) serverLevel.getEntity(uuid);
+            LivingEntity target = findSacrificeTarget(serverLevel, uuid);
             if (target == null || !target.isAlive()) return;
+            ServerLevel targetLevel = (ServerLevel) target.level();
 
-            serverLevel.playSound(null, target.blockPosition(), SoundEvents.BEACON_DEACTIVATE, SoundSource.PLAYERS, 1.5f, 0.4f);
-            ParticleUtil.spawnSphereParticles(serverLevel, ParticleTypes.END_ROD, target.position().add(0, 1, 0), 4.0, 80);
-            ParticleUtil.spawnSphereParticles(serverLevel, ParticleTypes.DUST_PLUME, target.position().add(0, 1, 0), 5.0, 60);
+            targetLevel.playSound(null, target.blockPosition(), SoundEvents.BEACON_DEACTIVATE, SoundSource.PLAYERS, 1.5f, 0.4f);
+            ParticleUtil.spawnSphereParticles(targetLevel, ParticleTypes.END_ROD, target.position().add(0, 1, 0), 4.0, 80);
+            ParticleUtil.spawnSphereParticles(targetLevel, ParticleTypes.DUST_PLUME, target.position().add(0, 1, 0), 5.0, 60);
             RingEffectManager.createRingForAll(target.position(), 6f, 70,
-                    1.0f, 0.75f, 0.2f, 1.0f, 3f, 8f, serverLevel);
+                    1.0f, 0.75f, 0.2f, 1.0f, 3f, 8f, targetLevel);
 
+            if (de.jakob.lotm.events.OrderLawHandler.isDyingProhibited(target)) {
+                target.setHealth(1f);
+                target.sendSystemMessage(Component.translatable("ability.lotmcraft.order_proxy.sacrifice_survived")
+                        .withStyle(ChatFormatting.GOLD));
+                AbilityUtil.sendActionBar(target, Component.translatable("ability.lotmcraft.order_proxy.sacrifice_survived")
+                        .withStyle(ChatFormatting.GOLD));
+                return;
+            }
             target.kill();
         });
+    }
+
+    private static LivingEntity findSacrificeTarget(ServerLevel origin, UUID id) {
+        ServerPlayer player = origin.getServer().getPlayerList().getPlayer(id);
+        if (player != null) return player;
+        for (ServerLevel world : origin.getServer().getAllLevels()) {
+            if (world.getEntity(id) instanceof LivingEntity living) return living;
+        }
+        return null;
     }
 
     private void orderProhibition(ServerLevel serverLevel, LivingEntity entity, OrderProhibitionType type) {

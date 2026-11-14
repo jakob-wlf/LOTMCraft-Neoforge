@@ -36,7 +36,10 @@ public abstract class SelectableAbility extends Ability {
     @Override
     public void onAbilityUse(Level level, LivingEntity entity) {
         if(!(entity instanceof Player)) {
-            castSelectedAbility(level, entity, getNPCSelectedAbility(entity, level));
+            int selected = getNPCSelectedAbility(entity, level);
+            if (selected >= 0 && !de.jakob.lotm.util.helper.DeprivationHelper.isModeDisabled(entity, this, selected)) {
+                castSelectedAbility(level, entity, selected);
+            }
             return;
         }
 
@@ -51,6 +54,10 @@ public abstract class SelectableAbility extends Ability {
         }
 
         if(selectedAbility >= getSequenceDependantAbilityNames(BeyonderData.getSequence(entity)).length) {
+            return;
+        }
+        if (de.jakob.lotm.util.helper.DeprivationHelper.isModeDisabled(entity, this, selectedAbility)) {
+            de.jakob.lotm.util.helper.DeprivationHelper.notifyBlocked(entity);
             return;
         }
 
@@ -93,6 +100,10 @@ public abstract class SelectableAbility extends Ability {
 
     public void addSubAbilityOverride(LivingEntity entity, int selectedAbility) {
         castedSubAbility.put(entity.getUUID(), selectedAbility);
+    }
+
+    public void clearSubAbilityOverride(LivingEntity entity) {
+        castedSubAbility.remove(entity.getUUID());
     }
 
     public void nextAbility(LivingEntity entity) {
@@ -166,6 +177,10 @@ public abstract class SelectableAbility extends Ability {
     }
 
     public int getNPCSelectedAbility(LivingEntity entity, Level level) {
-        return random.nextInt(getSequenceDependantAbilityNames(BeyonderData.getSequence(entity)).length);
+        int[] available = java.util.stream.IntStream.range(0,
+                        getSequenceDependantAbilityNames(BeyonderData.getSequence(entity)).length)
+                .filter(index -> !de.jakob.lotm.util.helper.DeprivationHelper.isModeDisabled(entity, this, index))
+                .toArray();
+        return available.length == 0 ? -1 : available[random.nextInt(available.length)];
     }
 }

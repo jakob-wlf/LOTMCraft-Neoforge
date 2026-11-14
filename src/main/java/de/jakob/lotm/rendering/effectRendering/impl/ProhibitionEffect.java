@@ -3,6 +3,7 @@ package de.jakob.lotm.rendering.effectRendering.impl;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import de.jakob.lotm.rendering.effectRendering.ActiveEffect;
+import de.jakob.lotm.beyonders.abilities.justiciar.ProhibitionAbility;
 import de.jakob.lotm.util.data.Location;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -12,7 +13,6 @@ import org.joml.Matrix4f;
 
 public class ProhibitionEffect extends ActiveEffect {
 
-    private static final float MAX_RADIUS = 40f;
     private static final float HEIGHT = 6f;
 
     public ProhibitionEffect(Location location, int duration, boolean infinite) {
@@ -25,6 +25,9 @@ public class ProhibitionEffect extends ActiveEffect {
         if (mc.level == null) return;
 
         float progress = getProgress();
+        // Parameter 0 is the radius of this particular server-side zone, including its Sequence.
+        float maxRadius = params[0] > 0 ? Math.min(params[0], (float) ProhibitionAbility.ZONE_RADIUS)
+                : (float) ProhibitionAbility.getRadiusForSequence(6);
 
 
 
@@ -34,15 +37,16 @@ public class ProhibitionEffect extends ActiveEffect {
 
         if (progress < 0.25f) {
             float phase = progress / 0.25f;
-            radius = phase * MAX_RADIUS;
+            // The rule is already active: its visible boundary must never suggest a smaller area.
+            radius = maxRadius;
             alpha = 0.5f + 0.4f * phase;
         } else if (progress < 0.75f) {
             float phase = (progress - 0.25f) / 0.5f;
-            radius = MAX_RADIUS;
+            radius = maxRadius;
             alpha = 0.65f + 0.25f * Mth.sin(phase * Mth.TWO_PI * 2.5f);
         } else {
             float phase = (progress - 0.75f) / 0.25f;
-            radius = MAX_RADIUS;
+            radius = maxRadius;
             alpha = 0.9f * (1.0f - phase);
         }
 
@@ -56,7 +60,7 @@ public class ProhibitionEffect extends ActiveEffect {
         Matrix4f matrix = poseStack.last().pose();
 
         float r = 1.0f, g = 0.85f, b = 0.1f;
-        int segments = 48;
+        int segments = 96;
 
         renderRing(consumer, matrix, radius, 0.0f, r, g, b, alpha, segments);
         renderRing(consumer, matrix, radius, HEIGHT, r, g, b, alpha, segments);

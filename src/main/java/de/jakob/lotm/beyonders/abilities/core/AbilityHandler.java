@@ -359,6 +359,7 @@ public class AbilityHandler {
         abilities.add(new ConfinementAbility("confinement_ability"));
         abilities.add(new PunishmentAbility("punishment_ability"));
         abilities.add(new LawAbility("law_ability"));
+        abilities.add(new DeprivationAbility("deprivation_ability"));
         abilities.add(new ExecutionAbility("execution_ability"));
         abilities.add(new BalancingAbility("balancing_ability"));
         abilities.add(new SwordOfJudgmentAbility("sword_of_judgment_ability"));

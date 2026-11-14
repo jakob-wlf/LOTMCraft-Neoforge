@@ -56,6 +56,10 @@ public abstract class ToggleAbility extends Ability {
         PacketHandler.sendToAllPlayersInSameLevel(new SyncToggleAbilityPacket(entity.getId(), getId(), SyncToggleAbilityPacket.Action.STOP.getValue()), level);
     }
 
+    public void stopForEntity(LivingEntity entity) {
+        if (entity.level() instanceof ServerLevel level && isActiveForEntity(entity)) cancel(level, entity);
+    }
+
     public static void cleanUp(ServerLevel serverLevel, LivingEntity entity) {
         if(!activeAbilities.containsKey(entity.getUUID())) {
             return;

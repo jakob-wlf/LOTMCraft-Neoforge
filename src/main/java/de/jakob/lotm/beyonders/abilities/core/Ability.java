@@ -387,6 +387,11 @@ public abstract class Ability {
 
         DisabledAbilitiesComponent disabledComponent = entity.getData(ModAttachments.DISABLED_ABILITIES_COMPONENT);
         if((disabledComponent.isAbilityUsageDisabled() || disabledComponent.isSpecificAbilityDisabled(this.getId())) && !this.canAlwaysBeUsed) return false;
+        if (de.jakob.lotm.util.helper.DeprivationHelper.blocksUse(entity, this)) {
+            if (this instanceof SelectableAbility selectable) selectable.clearSubAbilityOverride(entity);
+            de.jakob.lotm.util.helper.DeprivationHelper.notifyBlocked(entity);
+            return false;
+        }
 
         if(LOTMCraft.abilityHandler.isDisabled(this)) return false;
 

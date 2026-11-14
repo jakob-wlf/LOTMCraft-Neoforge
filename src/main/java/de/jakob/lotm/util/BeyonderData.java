@@ -533,7 +533,7 @@ public class BeyonderData {
             }
         }
 
-        return damageMultiplier;
+        return de.jakob.lotm.beyonders.abilities.justiciar.IndividualBalanceAbility.balancedMultiplier(entity, damageMultiplier);
     }
 
 

@@ -7,6 +7,7 @@ import de.jakob.lotm.network.PacketHandler;
 import de.jakob.lotm.network.packets.toServer.AbilitySelectionPacket;
 import de.jakob.lotm.rendering.effectRendering.EffectIds;
 import de.jakob.lotm.rendering.effectRendering.EffectManager;
+import de.jakob.lotm.rendering.effectRendering.EffectParams;
 import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.helper.AbilityUtil;
 import de.jakob.lotm.util.helper.ParticleUtil;
@@ -35,7 +36,17 @@ public class ProhibitionAbility extends SelectableAbility {
     public static final List<ProhibitionZone> ACTIVE_ZONES = new CopyOnWriteArrayList<>();
     public static final Map<UUID, Integer> FAIL_COUNT_BY_ENTITY = new ConcurrentHashMap<>();
 
-    private static final double ZONE_RADIUS = 80.0;
+    public static final double ZONE_RADIUS = 80.0;
+
+    public static double getRadiusForSequence(int sequence) {
+        if (sequence <= 2) return ZONE_RADIUS;
+        return switch (sequence) {
+            case 3 -> 70;
+            case 4 -> 60;
+            case 5 -> 50;
+            default -> 40;
+        };
+    }
 
     private static final DustParticleOptions DUST_GOLD = new DustParticleOptions(new Vector3f(1.0f, 0.75f, 0.0f), 1.4f);
     private static final DustParticleOptions DUST_PALE = new DustParticleOptions(new Vector3f(1.0f, 0.95f, 0.6f), 0.9f);
@@ -43,7 +54,7 @@ public class ProhibitionAbility extends SelectableAbility {
 
     public ProhibitionAbility(String id) {
         super(id, 15f, "prohibition");
-        interactionRadius = 40;
+        interactionRadius = ZONE_RADIUS;
         hasOptimalDistance = false;
         postsUsedAbilityEventManually = true;
     }
@@ -69,7 +80,9 @@ public class ProhibitionAbility extends SelectableAbility {
                 "ability.lotmcraft.prohibition.outside_world",
                 "ability.lotmcraft.prohibition.stand_ins",
                 "ability.lotmcraft.prohibition.marionette_interchange",
-                "ability.lotmcraft.prohibition.theft"
+                "ability.lotmcraft.prohibition.theft",
+                "ability.lotmcraft.prohibition.marionettes",
+                "ability.lotmcraft.prohibition.concealment"
         };
     }
 
@@ -94,14 +107,16 @@ public class ProhibitionAbility extends SelectableAbility {
     @Override
     protected void castSelectedAbility(Level level, LivingEntity entity, int abilityIndex) {
         if (level.isClientSide) return;
+        if (abilityIndex < 0 || abilityIndex >= getSequenceDependantAbilityNames(BeyonderData.getSequence(entity)).length) return;
         ServerLevel serverLevel = (ServerLevel) level;
 
-        int casterSeq = BeyonderData.getSequence(entity);
+        int casterSeq = AbilityUtil.getSeqWithArt(entity, this);
+        double radius = getRadiusForSequence(casterSeq);
         int zoneDuration = (int) (3600 * multiplier(entity));
         int maxZonesPerType = (int) (3 * multiplier(entity));
         double failChance = casterSeq <= 4 ? 0.15 : 0.4;
 
-        Optional<LivingEntity> resistor = AbilityUtil.getNearbyEntities(entity, serverLevel, entity.position(), (int) ZONE_RADIUS)
+        Optional<LivingEntity> resistor = AbilityUtil.getNearbyEntities(entity, serverLevel, entity.position(), (int) radius)
                 .stream()
                 .filter(e -> e != entity && BeyonderData.isBeyonder(e))
                 .filter(target -> BeyonderData.getSequence(target) <= casterSeq && random.nextDouble() < failChance)
@@ -132,30 +147,37 @@ public class ProhibitionAbility extends SelectableAbility {
         long now = serverLevel.getGameTime();
         ACTIVE_ZONES.removeIf(z -> z.expiryTick < now);
 
-        ProhibitionZone newZone = new ProhibitionZone(entity.getUUID(), type, entity.position(), serverLevel, expiryTick, AbilityUtil.getSeqWithArt(entity, this));
+        ProhibitionZone newZone = new ProhibitionZone(entity.getUUID(), type, entity.position(), serverLevel, expiryTick, casterSeq);
         ACTIVE_ZONES.add(newZone);
 
         spawnProhibitionCastEffect(serverLevel, entity);
 
         final double px = entity.getX(), py = entity.getY(), pz = entity.getZ();
-        EffectManager.playEffect(EffectIds.PROHIBITION, px, py, pz, serverLevel);
+        EffectManager.playEffect(EffectIds.PROHIBITION, px, py, pz, serverLevel,
+                EffectParams.of(Math.min(160, zoneDuration), (float) newZone.radius));
         ServerScheduler.scheduleForDuration(140, 140, zoneDuration, () -> {
-            if (!newZone.isActive()) return;
-            EffectManager.playEffect(EffectIds.PROHIBITION, px, py, pz, serverLevel);
+            if (!newZone.isActive() || !ACTIVE_ZONES.contains(newZone)) return;
+            int remaining = (int) Math.min(160, newZone.expiryTick - serverLevel.getGameTime());
+            if (remaining > 0) EffectManager.playEffect(EffectIds.PROHIBITION, px, py, pz, serverLevel,
+                    EffectParams.of(remaining, (float) newZone.radius));
         }, null, serverLevel);
 
         String typeName = type.displayName;
-        Component message = Component.literal("§6⚖ §fProhibition declared: §e" + typeName + " §6⚖")
-                .withStyle(ChatFormatting.WHITE);
+        Component message = switch (type) {
+            case MARIONETTES -> Component.translatable("ability.lotmcraft.prohibition.marionettes_declared").withStyle(ChatFormatting.GOLD);
+            case CONCEALMENT -> Component.translatable("ability.lotmcraft.prohibition.concealment_declared").withStyle(ChatFormatting.GOLD);
+            default -> Component.literal("§6⚖ §fProhibition declared: §e" + typeName + " §6⚖").withStyle(ChatFormatting.WHITE);
+        };
 
         serverLevel.getServer().getPlayerList().getPlayers().forEach(p -> {
-            if (p.level().equals(serverLevel) && p.distanceTo(entity) <= ZONE_RADIUS) {
+            if (p.level().equals(serverLevel) && p.distanceTo(entity) <= radius) {
                 p.sendSystemMessage(message);
                 p.playNotifySound(SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 0.7f, 0.45f);
             }
         });
 
-        NeoForge.EVENT_BUS.post(new AbilityUsedEvent(serverLevel, entity.position(), entity, this, interactionFlags, ZONE_RADIUS, 20 * 2));
+        de.jakob.lotm.events.AdvancedProhibitionHandler.applyToZone(newZone);
+        NeoForge.EVENT_BUS.post(new AbilityUsedEvent(serverLevel, entity.position(), entity, this, interactionFlags, radius, 20 * 2));
     }
 
     @Override
@@ -163,17 +185,16 @@ public class ProhibitionAbility extends SelectableAbility {
         if (level.isClientSide) return;
         if (!(entity instanceof ServerPlayer player)) return;
 
-        Vec3 pos = entity.position();
-        double y = pos.y;
-
         for (ProhibitionZone zone : ACTIVE_ZONES) {
             if (!zone.ownerId.equals(entity.getUUID())) continue;
             if (!zone.level.equals(level)) continue;
+            if (!zone.isActive()) continue;
+            double y = zone.center.y;
 
             for (int deg = 0; deg < 360; deg += 4) {
                 double rad = Math.toRadians(deg);
-                double x = zone.center.x + ZONE_RADIUS * Math.cos(rad);
-                double z = zone.center.z + ZONE_RADIUS * Math.sin(rad);
+                double x = zone.center.x + zone.radius * Math.cos(rad);
+                double z = zone.center.z + zone.radius * Math.sin(rad);
 
                 player.connection.send(new ClientboundLevelParticlesPacket(
                         DUST_GOLD, true, x, y, z, 0, 0.2f, 0, 0, 1
@@ -234,7 +255,9 @@ public class ProhibitionAbility extends SelectableAbility {
         OUTSIDE_WORLD("Outside World"),
         STAND_INS("Stand-ins"),
         MARIONETTE_INTERCHANGE("Marionette Interchange"),
-        THEFT("Theft");
+        THEFT("Theft"),
+        MARIONETTES("Marionettes"),
+        CONCEALMENT("Concealment");
 
         public final String displayName;
 
@@ -249,6 +272,7 @@ public class ProhibitionAbility extends SelectableAbility {
         public final Vec3 center;
         public final ServerLevel level;
         public final int casterSequence;
+        public final double radius;
         public final long expiryTick;
 
         public ProhibitionZone(UUID ownerId, ProhibitionType type, Vec3 center, ServerLevel level, long expiryTick, int casterSequence) {
@@ -258,6 +282,7 @@ public class ProhibitionAbility extends SelectableAbility {
             this.level = level;
             this.expiryTick = expiryTick;
             this.casterSequence = casterSequence;
+            this.radius = getRadiusForSequence(casterSequence);
         }
 
         public boolean isActive() {
@@ -265,7 +290,7 @@ public class ProhibitionAbility extends SelectableAbility {
         }
 
         public boolean isInZone(Vec3 pos, ServerLevel lvl) {
-            return lvl.equals(level) && pos.distanceTo(center) <= ZONE_RADIUS;
+            return lvl.equals(level) && pos.distanceTo(center) <= radius;
         }
         public static boolean appliesTo(LivingEntity entity, ProhibitionType type) {
             if (type != ProhibitionType.BEYONDER_ABILITIES && type != ProhibitionType.PLAYERS) {

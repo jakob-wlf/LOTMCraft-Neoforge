@@ -7,6 +7,7 @@ import de.jakob.lotm.util.BeyonderData;
 import de.jakob.lotm.util.data.Location;
 import de.jakob.lotm.util.helper.AbilityUtil;
 import de.jakob.lotm.util.helper.ParticleUtil;
+import de.jakob.lotm.util.helper.PunishmentRapierVisuals;
 import de.jakob.lotm.util.scheduling.ServerScheduler;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -95,20 +96,28 @@ public class PunishmentAbility extends Ability {
         UUID targetUUID = target.getUUID();
         CASTER_TO_TARGET.put(casterUUID, targetUUID);
         TARGET_TO_CASTER.put(targetUUID, casterUUID);
-        PUNISHMENT_EXPIRY.put(casterUUID, serverLevel.getGameTime() + DURATION);
+        long expiry = serverLevel.getGameTime() + DURATION;
+        PUNISHMENT_EXPIRY.put(casterUUID, expiry);
+        PunishmentRapierVisuals.start(entity, target, serverLevel);
 
         ServerScheduler.scheduleForDuration(0, 5, DURATION, () -> {
-            if(target.isAlive())
+            if (target.isAlive() && entity.isAlive()
+                    && Objects.equals(PUNISHMENT_EXPIRY.get(casterUUID), expiry)
+                    && targetUUID.equals(CASTER_TO_TARGET.get(casterUUID)))
                 entity.addEffect(new MobEffectInstance(MobEffects.GLOWING, 10, 0, false, false));
         });
 
         spawnMarkingEffect(serverLevel, entity, target);
 
+        int sequence = BeyonderData.getSequence(entity);
+        String rank = sequence == 0 ? "deity" : sequence <= 2 ? "angel" : "seq" + Math.min(5, sequence);
         if (entity instanceof ServerPlayer player) {
-            player.sendSystemMessage(Component.translatable("ability.lotmcraft.punishment.marked_prefix")
-                    .withStyle(ChatFormatting.GOLD)
-                    .append(Component.literal(target.getDisplayName().getString()).withStyle(ChatFormatting.WHITE))
-                    .append(Component.translatable("ability.lotmcraft.punishment.marked_suffix").withStyle(ChatFormatting.GOLD)));
+            player.sendSystemMessage(Component.translatable("ability.lotmcraft.punishment.marked." + rank,
+                    target.getDisplayName().copy().withStyle(ChatFormatting.WHITE)).withStyle(ChatFormatting.GOLD));
+        }
+        if (target instanceof ServerPlayer player) {
+            player.sendSystemMessage(Component.translatable("ability.lotmcraft.punishment.condemned." + rank)
+                    .withStyle(ChatFormatting.GOLD));
         }
 
         NeoForge.EVENT_BUS.post(new AbilityUsedEvent(serverLevel, entity.position(), entity, this, interactionFlags, interactionRadius, 20 * 2));
@@ -177,8 +186,9 @@ public class PunishmentAbility extends Ability {
     }
 
     public static void cancelPunishment(UUID casterUUID, ServerLevel serverLevel) {
+        PunishmentRapierVisuals.stop(casterUUID);
         UUID targetUUID = CASTER_TO_TARGET.remove(casterUUID);
-        if (targetUUID != null) TARGET_TO_CASTER.remove(targetUUID);
+        if (targetUUID != null) TARGET_TO_CASTER.remove(targetUUID, casterUUID);
         PUNISHMENT_EXPIRY.remove(casterUUID);
 
         ServerPlayer casterPlayer = serverLevel.getServer().getPlayerList().getPlayer(casterUUID);
@@ -201,6 +211,11 @@ public class PunishmentAbility extends Ability {
         }
 
         applyRandomDebuff(target);
+        if (target instanceof ServerPlayer punishedPlayer) {
+            punishedPlayer.sendSystemMessage(Component.translatable("ability.lotmcraft.punishment.suffered")
+                    .withStyle(ChatFormatting.RED));
+        }
+        PunishmentRapierVisuals.strike(casterUUID);
         spawnTriggerEffect(serverLevel, casterPlayer, target);
     }
 
@@ -274,15 +289,14 @@ public class PunishmentAbility extends Ability {
     public static void onEntityKilled(LivingDeathEvent event) {
         if (event.getEntity().level().isClientSide) return;
         if (!(event.getEntity().level() instanceof ServerLevel serverLevel)) return;
-        if(!(event.getSource().getEntity() instanceof LivingEntity)) return;
-
         UUID deadUUID = event.getEntity().getUUID();
 
-        if(!TARGET_TO_CASTER.containsKey(deadUUID) || !TARGET_TO_CASTER.containsKey(event.getSource().getEntity().getUUID())) return;
-        UUID casterOfKiller = TARGET_TO_CASTER.get(event.getSource().getEntity().getUUID());
-        if (casterOfKiller != null) {
-            triggerPunishment(casterOfKiller, (LivingEntity) event.getSource().getEntity(), serverLevel,
-                    "ability.lotmcraft.punishment.reason_kill");
+        if (event.getSource().getEntity() instanceof LivingEntity killer) {
+            UUID casterOfKiller = TARGET_TO_CASTER.get(killer.getUUID());
+            if (casterOfKiller != null) {
+                triggerPunishment(casterOfKiller, killer, serverLevel,
+                        "ability.lotmcraft.punishment.reason_kill");
+            }
         }
 
         UUID casterWhoMarkedDead = TARGET_TO_CASTER.get(deadUUID);

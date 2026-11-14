@@ -101,5 +101,6 @@ public class EffectRegistry {
         register(EffectIds.RING_PULSE, RingPulseEffect::new, 20 * 2);
         register(EffectIds.CHAOS_VORTEX, ChaosVortexEffect::new, 20 * 6);
         register(EffectIds.MARIONETTE_THREADS, MarionetteThreadsEffect::new, 20 * 6);
+        register(EffectIds.PUNISHMENT_RAPIERS, PunishmentRapiersEffect::new, 60);
     }
 }
