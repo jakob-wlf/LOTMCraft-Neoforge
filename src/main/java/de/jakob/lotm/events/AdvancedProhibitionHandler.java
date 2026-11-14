@@ -54,7 +54,6 @@ public final class AdvancedProhibitionHandler {
 
     private static boolean contains(ProhibitionZone zone, LivingEntity position, ProhibitionType type) {
         return zone.type == type && zone.isActive() && !DeceitAbility.isReversed(zone)
-                && de.jakob.lotm.beyonders.abilities.justiciar.balancing.BalanceBattlefields.canApplyFrom(zone.ownerId, position)
                 && position.level() instanceof ServerLevel level && zone.isInZone(position.position(), level);
     }
 

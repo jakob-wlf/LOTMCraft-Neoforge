@@ -86,7 +86,7 @@ public abstract class ToggleAbility extends Ability {
             return;
         }
 
-        de.jakob.lotm.beyonders.abilities.justiciar.balancing.BalanceContext.run(entity, () -> tick(level, entity));
+        tick(level, entity);
         if(level instanceof ServerLevel serverLevel) NeoForge.EVENT_BUS.post(new AbilityUsedEvent(serverLevel, entity.position(), entity, this, interactionFlags, interactionRadius, interactionCacheTicks));
     }
 

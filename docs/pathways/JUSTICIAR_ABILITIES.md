@@ -124,12 +124,14 @@ Exiled entities are removed from active participation for a random duration betw
 - **Sequence Required:** 3
 - **Spirituality Cost:** 400
 - **Cooldown:** 5 seconds
-- **Interaction Radius:** 20 blocks (optimal: 10 blocks)
+- **Target Range:** 30 × multiplier blocks
 
-Issue a direct Judgment that cannot be avoided. Spawns a JudgmentSwordEntity 15 blocks above the target, which falls and deals **50% of the target's max health** on impact.
+Summon a sword 15 blocks above the selected target. On its first ground impact, it directly subtracts **55% of the target's maximum health**, calculated at activation, and applies a separate 1-point Beyonder damage hit. The sword stays at the original target location rather than following movement; damage still addresses the selected target if they remain loaded in the same dimension.
 
 **Success Chance:** 40% base + 10% per time the target previously resisted a Prohibition.  
-On a successful hit, the target's Prohibition resistance count is cleared. Creates a gold-white ring effect and camera shake on impact.
+A successful cast clears the target's recorded Prohibition resistance count immediately. Six recorded resistances raise the success chance to 100%. Impact creates a gold-white ring and camera shake. The sword disappears after 5 seconds total, including its fall.
+
+The summoned sword has a silver runic blade, a circular open guard, three wing ornaments and a connected arrowhead detail. It falls point-first from the sky and remains embedded in the ground for the rest of its existing lifetime.
 
 ---
 
@@ -146,26 +148,18 @@ Teleport instantly to the entity that has resisted your Prohibition abilities th
 - **Sequence Required:** 3
 - **Spirituality Cost:** 1,600
 - **Cooldown:** 30 seconds
-- **Type:** Selectable; the first two modes remain available through Sequence 0
+- **Type:** Fixed area; no target required
 
-Establish order on the battlefield. Select one mode:
+Declare Balance over a territory. The Beyonder potency of those within it, including the caster, is equalized toward the average captured when the area is established. New beneficial and harmful status effects cannot be applied inside the area; existing effects are not stripped.
 
-| Mode | Unlocked At | Effect |
+| Sequence | Radius | Base Duration |
 |---|---|---|
-| Ordered Confrontation | Seq 3 | Bind an enemy and the caster to a fixed battlefield, admitting both sides' allies present at activation and repelling third-party interference. Withdrawal meets boundary resistance. |
-| Battlefield Order | Seq 3 | Establish a fixed area for the caster and allies present at activation without requiring an enemy target. Outsiders are repelled; the caster is not bound against leaving. |
-| Balancing | Seq 2 | Divide combatants into separate confrontations, preserving allied groups and matching factions by approximate strength. Unmatched groups wait for an opening. |
+| 3 | 60 blocks | 1 minute |
+| 2–0 | 120 blocks | 4 minutes |
 
-The first two modes last 20 seconds with a 48-block radius; Ordered Confrontation requires an enemy within 64 blocks and centers the field between both opponents. Their preliminary restrictions do not bind angels of Sequence 2 or above.
-
-The third mode divides eligible combatants within 120 blocks for at most 60 seconds. Separate confrontations cannot target or damage one another; bound participants cannot leave by teleportation. The division ends when contested fights finish, the caster dies or leaves, or time expires. Terrain and weather remain shared between confrontations.
-
-All modes contribute to the Balancing acting task when activated.
-
-Allied groups remain together throughout the division. Factions are paired by approximate strength, with the caster's faction matched first. Unmatched factions wait; survivors whose confrontation ends are released but cannot interfere in remaining fights.
+Duration scales with the caster's ability multiplier. Equalization strength is identical at every rank. Leaving the area or ending the effect restores normal potency. Casting again replaces the caster's previous area. Allies and enemies are treated alike; there is no admission barrier, repulsion, teleport restriction, or division into separate confrontations. Activation contributes to the existing Balancing acting task.
 
 ---
-
 ### Law
 - **Sequence Required:** 4
 - **Spirituality Cost:** 800
@@ -236,6 +230,10 @@ Mark a target for Punishment (caster gains Glowing while active). Re-cast to can
 
 **Possible Buffs (caster):** Strength II, Speed II, Resistance II, Regeneration II, Absorption II  
 **Possible Debuffs (target):** Slowness II, Weakness II, Blindness, Poison II, Wither
+
+A soft dawn-like aura surrounds the caster, with a thin golden arc linking the rapier formation. Striking rapiers brighten and leave a short trail; a golden seal and metallic chime mark their impact. Marking messages become more authoritative with the caster's Sequence. These effects do not change the punishment's combat bonuses or penalties.
+
+Silver rapiers form an outward-pointing semicircle aligned with the caster and extending along their right side while the mark is active. Fixed positions fill from the top downward: 3 at Sequence 5, 5 at Sequence 4, 7 at Sequence 3, and all 9 at Sequences 2–0. A rapier thrusts toward the target on marking and whenever a punishment triggers, then returns to its position. Rapid triggers queue one follow-up animation; all existing punishments still apply. The rapiers are visual manifestations and add no damage or use limit. Canceling the mark, expiry, death, disconnection, or separation into different dimensions dismisses the formation.
 
 ---
 
@@ -467,8 +465,7 @@ Several abilities interact with shared state:
 | Individual Potency Override | Individual Balance | BeyonderData multiplier calculation; abilities remain available |
 | Exiled Entities | Exile of Balance | Ability use / combat systems |
 | World Judgment Tier | World Judgment | WorldJudgmentHandler (escalates on Prohibition violations) |
-| Preliminary Battlefields | Balancing: Ordered Confrontation / Battlefield Order | Admission, boundary resistance, interference checks and visual feedback |
-| Divided Confrontations | Balancing (Seq 2+) | Targeting, damage, supported effects, scheduled caster context and movement checks |
+| Balancing Areas | Balancing | Beyonder potency equalization and prevention of new status effects |
 | Confinement Zones | Confinement | Teleport event handler and direct teleport/dimension mixins |
 | Ancient Court Zones | Ancient Court of Judgment | Court enforcement tick |
 | Order Proxy Zones | Order Proxy | Resurrection / death / combat event handlers |
@@ -482,7 +479,7 @@ Several abilities interact with shared state:
 |---|---|
 | 0 | Ancient Court of Judgment, World Judgment |
 | 1 | Order Proxy |
-| 2 | Individual Balance, Exile of Balance; Balancing confrontation-division mode |
+| 2 | Individual Balance, Exile of Balance; increased Balancing radius and duration |
 | 3 | Sword of Judgment, Delivering Judgment, Balancing, Chaos Hunting; Solace and advanced Prohibition modes |
 | 4 | Law, Deprivation, Execution; Prohibit Item Use |
 | 5 | Punishment, Enhanced Mental Attributes |

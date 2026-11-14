@@ -45,7 +45,6 @@ public class ProhibitionHandler {
         for (ProhibitionAbility.ProhibitionZone zone : ProhibitionAbility.ACTIVE_ZONES) {
             if (de.jakob.lotm.beyonders.abilities.error.DeceitAbility.isReversed(zone)) continue;
             if (zone.type != ProhibitionAbility.ProhibitionType.OUTSIDE_WORLD) continue;
-            if (!de.jakob.lotm.beyonders.abilities.justiciar.balancing.BalanceBattlefields.canApplyFrom(zone.ownerId, entity)) continue;
             if (!zone.level.equals(serverLevel)) continue;
             if (zone.expiryTick < now) continue;
             double dist = entity.position().distanceTo(zone.center);
@@ -99,7 +98,6 @@ public class ProhibitionHandler {
         for (ProhibitionAbility.ProhibitionZone zone : ProhibitionAbility.ACTIVE_ZONES) {
             if (de.jakob.lotm.beyonders.abilities.error.DeceitAbility.isReversed(zone)) continue;
             if (!zone.type.equals(ProhibitionAbility.ProhibitionType.PLAYERS)) continue;
-            if (!de.jakob.lotm.beyonders.abilities.justiciar.balancing.BalanceBattlefields.canApplyFrom(zone.ownerId, player)) continue;
             if (!zone.level.equals(serverLevel)) continue;
             if (!zone.isActive()) continue;
             if (zone.ownerId.equals(player.getUUID())) continue;
@@ -119,7 +117,6 @@ public class ProhibitionHandler {
         for (ProhibitionAbility.ProhibitionZone zone : ProhibitionAbility.ACTIVE_ZONES) {
             if (de.jakob.lotm.beyonders.abilities.error.DeceitAbility.isReversed(zone)) continue;
             if (!zone.type.equals(ProhibitionAbility.ProhibitionType.OUTSIDE_WORLD)) continue;
-            if (!de.jakob.lotm.beyonders.abilities.justiciar.balancing.BalanceBattlefields.canApplyFrom(zone.ownerId, player)) continue;
             if (!zone.level.equals(serverLevel)) continue;
             if (!zone.isActive()) continue;
             if (zone.ownerId.equals(player.getUUID())) continue;
@@ -188,7 +185,7 @@ public class ProhibitionHandler {
 
     private static boolean isInZone(Vec3 pos, ServerLevel level, ProhibitionAbility.ProhibitionType type, int targetSequence) {
         return isInZone(pos, level, type, targetSequence,
-                de.jakob.lotm.beyonders.abilities.justiciar.balancing.BalanceContext.source());
+                null);
     }
 
     private static boolean isInZone(Vec3 pos, ServerLevel level, ProhibitionAbility.ProhibitionType type, int targetSequence, LivingEntity target) {
@@ -196,7 +193,6 @@ public class ProhibitionHandler {
         for (ProhibitionAbility.ProhibitionZone zone : ProhibitionAbility.ACTIVE_ZONES) {
             if (de.jakob.lotm.beyonders.abilities.error.DeceitAbility.isReversed(zone)) continue;
             if (zone.type != type) continue;
-            if (target != null && !de.jakob.lotm.beyonders.abilities.justiciar.balancing.BalanceBattlefields.canApplyFrom(zone.ownerId, target)) continue;
             if (!zone.level.equals(level)) continue;
             if (zone.expiryTick < now) continue;
             if (isTargetTooStrong(zone.casterSequence, targetSequence)) continue;

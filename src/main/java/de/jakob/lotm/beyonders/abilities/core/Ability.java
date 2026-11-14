@@ -182,8 +182,7 @@ public abstract class Ability {
                 ? selectable.getCastSubAbilityIndex(newUser) : -1;
 
         try {
-            de.jakob.lotm.beyonders.abilities.justiciar.balancing.BalanceContext.run(newUser,
-                    () -> onAbilityUse(serverLevel, newUser));
+            onAbilityUse(serverLevel, newUser);
         } finally {
             // Always restore, otherwise a throwing ability would keep its multiplied damage and compound it on every use
             baseDamage = damageBackup;
